@@ -43,5 +43,22 @@ Narrowed on fastest-x86-64's A: `: X7 3 0 DO ."  y" LOOP ; X7` prints once and d
 EXECUTE's helper and its inline cache (engine/jit.c, the JITEXEC block) - against the self-built image's layout lines
 (cross-cv8.4's J-OFF, jit_wends). To find before self-hosting phase 6; the search does not use self-built images.
 
+### The fault narrowed (Iteration 682) - fastest-x86-64's image A on its engine (build/selfhost/check-fastest-x86-64)
+
+- Deterministic: `: X7 3 0 DO ."  y" LOOP ; X7` dies 20 of 20 runs with address randomisation and 10 of 10 without;
+  0 of 20 on designs/fastest-x86-64 (676's self-built image) and on the translator's build of the same genome.
+- Not the bytes: X7 compiles to the same bytes on A and on the translator's image but for the call encodings
+  (`10 14 0 0 128 | 5 3 5 0 11 | call (.") | 2 32 121 | 12 250 255 | 1`), and the calls decode to A's own offsets -
+  (S") 6179, (.") 6191, TYPE 908, (ABORT") 6208 - which are A.img.jit.h's JIT_W_ lines; JIT_W_COLD has the same
+  twelve entries in both; TYPE's word end (908, 910) is right.
+- The site: JITLOG (a forth-libc build with -DJITLOG=1) - X7 translated native (offset 0x2c0), then `X 38c ... TYPE`:
+  the native (.")'s EXECUTE of TYPE refused native code (f = 1), so TYPE runs in the interpreter through jitre's
+  sentinel. gdb (-Oz -g, .text identical to the crashing build): the CPU at jit_mem + 0xFFFFF - the JIT buffer's last
+  byte - with jit_call's return address on the stack; the EXECUTE site's inline cache (jit_ic[0]) still empty. An -O0
+  build of the same source runs X7. `['] TYPE EXECUTE` in a loop died once and ran once on A.
+- Next: the sentinel path's return in A (engine/vm-lab.c's jit_interp and L_x_jit, engine/jit.c's jit_exec and
+  jit_leave) - what the interpreted TYPE's EXIT lands on - against the translator's engine under the same JITLOG
+  build; why TYPE is refused native in A (its kslot, jit_body).
+
 designs/ is unchanged: its images, engines and the cross compiler's copy (designs/forth/) stay the roles as shipped
 at 676, consistent with each other (run-tests' make selfhost); the new roles come from the reopened search.

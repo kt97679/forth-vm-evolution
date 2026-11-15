@@ -11541,3 +11541,10 @@ op_bytes under V8, cross-cv8.4's S-STR and E-STR, jit.c's resume, the spn decode
 cell, cpt16 and frozen stages untouched. Every design and s6 smaller: total -152 to -266 B at 8-byte cells, -51 to -93
 at 4 (app code as priced, images -40 to -104); run-tests PASS, validate 7 of 7. Self-hosting 8 of 11: the three jitexec
 designs' self-built images die on `."` in a loop - open. lab/evolve/design-sizes.py; results/unaligned-strings-681.md.
+
+## Iteration 682 - 2026-11-14 - Claude
+
+681's self-hosting fault narrowed, not fixed: on fastest-x86-64's self-built image A, `."` in a loop dies 20 of 20
+runs (0 of 20 on 676's image and on the translator's build); the same bytes but for call encodings, A's JIT_W_ offsets
+right; JITLOG and gdb put it in jitre's sentinel path - the native (.")'s EXECUTE of TYPE, refused native, lands on
+jit_mem + 0xFFFFF; an -O0 build runs it. The findings and the next step: results/unaligned-strings-681.md.
