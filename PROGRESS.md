@@ -11525,3 +11525,11 @@ Step 0's rest: the cross-run tools never pool the two sizes - lab/evolve/appsize
 refuses databases of both, final-pick candidates of both, stopping.py a run against a series of the other size (its
 ledger line now says `"app": true`; the first new run opens a series). hv-bounds.json's box holds the new totals.
 appsize-check.py part 5, 5 of 5, in --quick; made to fail with the guard off. results/app-size-measure-678.md.
+
+## Iteration 680 - 2026-11-14 - Claude
+
+Step 1, the pure savings. Item 7 taken: forth/coreext.4's VALUE is its cell alone (`CREATE , DOES> @`), TO telling a
+2VALUE by a list of their bodies - brainless -696 bytes at 8-byte cells (-348 to -352 at 4) on all eleven systems, the
+four and minif 0 (none makes a VALUE), no image moved; run-tests (the ANS suite's VALUE tests) and validate pass. Item 6
+priced, not built (lab/evolve/string-price.py): the four -103 to -203 bytes at 8-byte cells, -25 to -40 at 4; the
+held-out three about -300 - and the contract it changes mapped. results/pure-savings-680.md.

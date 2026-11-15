@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 679.
+- master: Iteration 680.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -58,7 +58,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   lab/evolve/appsize.py, genapps.py's count; lab/evolve/appsize-check.py PASS - the same binaries equal at both widths,
   the translator's ten 674's table, planted changes, a database of the old size refused a resume; run-tests runs
   `--quick` (results/app-size-measure-678.md); compare-fronts, stopping.py and final-pick refuse to pool the two sizes
-  (679; the first new run's processing opens a series: NEXT_METHOD). **Next: step 1.** Self-hosting phase 6 waits.
+  (679; the first new run's processing opens a series: NEXT_METHOD). **Step 1 (680)**: VALUE without its kind cell
+  taken (coreext.4; brainless -696 B, the four 0 - no VALUE in them, no image moves); the unaligned strings priced
+  (lab/evolve/string-price.py: the four -103 to -203 B at 8-byte cells, the held-out three about -300) - results/pure-savings-680.md.
+  **Next: build the strings' change** (the alignment a contract across kernel.4, sod16.py, layout.py, cross.4,
+  cross-cv8.4: the family's code alignment, the frozen stages unmoved), every image measured before and after;
+  brainless's dispatches before and after VALUE (genapps-dispatch.py); then step 2. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts

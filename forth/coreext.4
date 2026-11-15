@@ -138,10 +138,15 @@ GET-CURRENT ROOT-WORDLIST SET-CURRENT
 SET-CURRENT
 \ The fifth wave (Iteration 170): coreexttest at VALUE, doubletest at 2VALUE,
 \ toolstest at [DEFINED], filetest at RENAME-FILE, searchordertest at C".
-: VALUE ( x "name" --- )  CREATE 1 , , DOES> CELL+ @ ;          \ the kind first: TO
-: 2VALUE ( x1 x2 "name" --- )  CREATE 2 , , , DOES> CELL+ 2@ ;  \ stores one cell or two
+\ Iteration 680 (item 7 of results/drafts/search-reopen-plan-677.md): a VALUE is its cell alone, relf's way -
+\ 8 bytes and a CELL+ a fetch less than the kind cell it had. TO tells a 2VALUE by the list its bodies are on: each
+\ 2VALUE's first cell links to the one before (where its kind cell was), and the list is walked only by TO.
+VARIABLE 2VALUES  0 2VALUES !
+: VALUE ( x "name" --- )  CREATE , DOES> @ ;
+: 2VALUE ( x1 x2 "name" --- )  CREATE HERE 2VALUES @ , 2VALUES ! , , DOES> CELL+ 2@ ;
+: 2VALUE? ( a-addr --- flag )  2VALUES @ BEGIN DUP WHILE 2DUP = IF 2DROP -1 EXIT THEN @ REPEAT NIP ;
 : TO ( i*x "name" --- )
-  ' >BODY DUP CELL+ SWAP @ 2 =
+  ' >BODY DUP 2VALUE? DUP IF SWAP CELL+ SWAP THEN
   STATE @ IF SWAP POSTPONE LITERAL IF POSTPONE 2! ELSE POSTPONE ! THEN
           ELSE IF 2! ELSE ! THEN THEN ; IMMEDIATE
 : [DEFINED] ( "name" --- flag )  BL WORD FIND NIP 0<> ; IMMEDIATE
