@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 689.
+- master: Iteration 690.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -90,8 +90,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (gc16), shellmix 0.750; the apps workload 0.902 with varslot, 1.038 without (16-bit slots reach 64 KB; scan starts
   at 388 KB in it) - so rtvar needs varslot. results/rtvar-688.md. 689: the tag too (one overlay, VAR-OPS in its
   one-byte codes, vf/vs pinned) - but on fastest-x86-64 the JIT refused run-time words holding vf (the apps workload
-  1.999, interpreted): rtvar needs no JIT under the tag until that is found. **Next: the JIT's refusal** (a JITLOG
-  build), then the other step-3 genes. (batch-check.sh tests results/pending's patches only - not direct commits.)
+  1.999, interpreted). **690: found and fixed** - engine/jit.c took jitvar's slot kinds 8 and 9 for branches and
+  refused every word holding vf or vs, the kernel's HERE too (JIT_BROPND); since, rtvar's words translate, the JIT
+  design 1.022 (the JIT already compiles call and @ natively) - rtvar under the JIT needs jitvar. **Next: the other
+  step-3 genes** (constants by relf's test, inlining at 3/6, the JIT header, DOES> @, the DODOES stencil).
+  (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

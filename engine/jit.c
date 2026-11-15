@@ -238,10 +238,12 @@ struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; }
    was translated). Without JITVAR the very expression it was. */
 #if JITVAR
 #define JIT_LITOPND(o) (((o)->opnd >= 1 && (o)->opnd <= 5) || (o)->opnd >= 8)
+#define JIT_BROPND(o) ((o)->opnd == 6 || (o)->opnd == 7)   /* 690: a branch - 8 and 9 are jitvar's slots, not targets */
 #else
 /* the original tokens exactly - unparenthesized: a && b && (c && d) is another tree than a && b &&
    c && d, and GCC compiled three of seed 55's JIT designs differently from it */
 #define JIT_LITOPND(o) o->opnd >= 1 && o->opnd <= 5
+#define JIT_BROPND(o) ((o)->opnd >= 6)
 #endif
 #include "vm-jit-ops.h"                 /* jit_ops[], JIT_CODE: this design's */
 #define JIT_NOPS ((int)(sizeof jit_ops / sizeof jit_ops[0]))
@@ -589,7 +591,7 @@ static int jit_inl1(UNS64 a, unsigned short *op, UNS64 *v) {
     if (T2_CALL(b)) return 0;
     L = jit_one[T2_ONEIX(b)]; a++;
     if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
-    if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok || jit_ops[L].opnd >= 6) return 0;
+    if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok || JIT_BROPND(&jit_ops[L])) return 0;
     for (j = 0; j < jit_ops[L].n; j++) {
         int s = jit_ops[L].st[j];
         if (s == S_EXIT || s == S_CALL || s == S_INTERP || s == S_TOR || s == S_FROMR || s == S_RFETCH ||
@@ -686,7 +688,7 @@ static int jit_tail(int i, int n, const unsigned short *opl, const UNS64 *arg, c
         if (opl[k] >= 0xFFFD) return 0;
         o = &jit_ops[opl[k]];
         if (o->n == 1 && o->st[0] == S_EXIT) return 1;
-        if (!(o->n == 1 && o->st[0] == S_BRANCH && o->opnd >= 6)) return 0;
+        if (!(o->n == 1 && o->st[0] == S_BRANCH && JIT_BROPND(o))) return 0;
         for (j = 0; j < n && at[j] != arg[k]; j++) ;
         k = j;
     }
@@ -709,11 +711,11 @@ static void jit_fuse(int n, const unsigned short *opl, const UNS64 *arg, const U
     if (hi > lo && hi - lo <= JIT_FUSE_SPAN) {       /* 509: the targets marked by address - a pass each way, where every */
         memset(map, 0, (size_t)(hi - lo));           /* branch had rescanned the word (kernel +1.2%, corpus +2.4% at 507) */
         for (i = 0; i < n; i++)
-            if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6 && arg[i] >= lo && arg[i] < hi) map[arg[i] - lo] = 1;
+            if (opl[i] < 0xFFFD && JIT_BROPND(&jit_ops[opl[i]]) && arg[i] >= lo && arg[i] < hi) map[arg[i] - lo] = 1;
         for (j = 0; j < n; j++) if (at[j] >= lo && at[j] < hi && map[at[j] - lo]) tg[j] = 1;   /* S" literals' at: bit 63, out */
     } else
         for (i = 0; i < n; i++)
-            if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6)
+            if (opl[i] < 0xFFFD && JIT_BROPND(&jit_ops[opl[i]]))
                 for (j = 0; j < n; j++) if (at[j] == arg[i]) { tg[j] = 1; break; }
     for (i = 0; i + 1 < n; i++) {
         unsigned short a = opl[i], b = opl[i + 1]; int s = 0;
@@ -913,7 +915,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             default: return 0;
             }
 #if JITX
-            if (jit_ops[L].opnd >= 6 && arg[n] > far) far = arg[n];
+            if (JIT_BROPND(&jit_ops[L]) && arg[n] > far) far = arg[n];
             if (!end && jit_ends(L) && a > far) { n++; end = a; break; }   /* the end: an EXIT no branch reaches past */
 #endif
         }
@@ -945,7 +947,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                     else if (s == S_EXIT) { if (d) return 0; unc_ = 1; }
                     else if (s == S_BRANCH || s == S_LEAVE) unc_ = 1;
                 }
-                if (o_->opnd >= 6) {                 /* a branch: its target is given this depth */
+                if (JIT_BROPND(o_)) {                 /* a branch: its target is given this depth */
                     for (k = 0; k < n && at[k] != arg[i]; k++) ;
                     if (k == n) return 0;
                     if (k <= i) { if (dv[k] != d) return 0; }
@@ -1027,7 +1029,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #if JITK
     memset(jitk_tg, 0, (size_t)n + 1);  /* the branch targets: state 1 there */
     for (i = 0; i < n; i++)
-        if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6) {
+        if (opl[i] < 0xFFFD && JIT_BROPND(&jit_ops[opl[i]])) {
             for (j = 0; j < n && at[j] != arg[i]; j++) ;
             if (j < n) jitk_tg[j] = 1;
         }
@@ -1051,7 +1053,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             if (m_ < 0) return 0;
             for (q_ = 0; q_ < m_; q_++) {
                 int s = st_[q_];
-                if (!jit_usable(s) || (wh_[q_] >= 0 && opl[i] < 0xFFFD && jit_st[s].njump && jit_ops[opl[i]].opnd < 6)) return 0;
+                if (!jit_usable(s) || (wh_[q_] >= 0 && opl[i] < 0xFFFD && jit_st[s].njump && !JIT_BROPND(&jit_ops[opl[i]]))) return 0;
                 size += (uint32_t)jit_len(s);
             }
             continue;
@@ -1071,7 +1073,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #endif
         for (j = 0; j < jit_ops[opl[i]].n; j++) {
             int s = jit_ops[opl[i]].st[j];
-            if (!jit_usable(s) || (jit_st[s].njump && jit_ops[opl[i]].opnd < 6)) return 0;
+            if (!jit_usable(s) || (jit_st[s].njump && !JIT_BROPND(&jit_ops[opl[i]]))) return 0;
             size += (uint32_t)jit_len(s);
         }
     }
@@ -1098,7 +1100,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
             const struct jit_op *o_ = opl[i] < 0xFFFD ? &jit_ops[opl[i]] : 0;
             if (m_ < 0) return 0;
-            if (o_ && o_->opnd >= 6) {              /* a branch: to one of this word's operations */
+            if (o_ && JIT_BROPND(o_)) {              /* a branch: to one of this word's operations */
                 for (j = 0; j < n && at[j] != arg[i]; j++) ;
                 if (j == n) return 0;
                 jt = (UNS64)(uintptr_t)(jit_mem + off + nat[j]);
@@ -1133,7 +1135,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             continue;
         }
         o = &jit_ops[opl[i]];
-        if (o->opnd >= 6) {             /* a branch: to one of this word's operations */
+        if (JIT_BROPND(o)) {             /* a branch: to one of this word's operations */
             for (j = 0; j < n && at[j] != arg[i]; j++) ;
             if (j == n) return 0;
             jt = (UNS64)(uintptr_t)(jit_mem + off + nat[j]);
@@ -1147,7 +1149,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     }
 #if PROFILE && JIT_PRICE
     for (i = 0; i < n; i++)
-        JITPRICE(w, at[i], opl[i], (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6) ? arg[i] : 0);
+        JITPRICE(w, at[i], opl[i], (opl[i] < 0xFFFD && JIT_BROPND(&jit_ops[opl[i]])) ? arg[i] : 0);
 #endif
     jit_used = off + size;
     return off;

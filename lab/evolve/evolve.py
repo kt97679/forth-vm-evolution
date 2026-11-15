@@ -407,10 +407,10 @@ def rtvar_on(g):
     23 bits (8 MB) the workload ran 0.902."""
     return bool(g.get('rtvar')) and rtvar_can(g)
 def rtvar_can(g):
-    """rtvar's conditions: the run-time fusers, spec var, varslot (688); under the two-bit tag, no JIT (689): with
-    jitvar the JIT translates the kernel's vf and vs, but refused a run-time word holding one - fastest-x86-64's
-    apps workload ran 1.999 with rtvar, interpreted (results/rtvar-688.md); until that is found."""
-    return bool(overlay(g) and 'var' in g['spec'] and g.get('varslot') and (not g.get('tag2') or not jit_on(g)))
+    """rtvar's conditions: the run-time fusers, spec var, varslot (688); under the two-bit tag with the JIT, its jitvar
+    - vf and vs translated (690: engine/jit.c took jitvar's slot kinds 8 and 9 for branches and refused every word
+    holding one, the kernel's HERE too; fixed, the run-time words translate - results/rtvar-688.md)."""
+    return bool(overlay(g) and 'var' in g['spec'] and g.get('varslot') and (not g.get('tag2') or not jit_on(g) or g.get('jitvar')))
 def rtiplus_on(g):
     """Iteration 60: I then + as I+ in code compiled at run time
     (forth/cv8-fuse-iplus.4) - a design with rtloopall, whose LOOPTAB knows I."""

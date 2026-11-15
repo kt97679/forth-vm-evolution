@@ -11602,3 +11602,11 @@ rtvar under the two-bit tag: the same overlay, the tag's -var dumps, VAR-OPS in 
 On fastest-x86-64 the values right and the apps' code -102 B, but the JIT refused the run-time words holding vf and the
 apps workload ran 1.999 interpreted - so rtvar needs no JIT under the tag until the refusal is found (next, by JITLOG).
 rtvar-check.py's fusion test for both families. results/rtvar-688.md.
+
+## Iteration 690 - 2026-11-15 - Claude
+
+The JIT's refusal of words holding vf found (a JITLOG build): engine/jit.c treated any operand kind of 6 or more as a
+branch, and jitvar's slots are kinds 8 and 9 - so every such word was refused, the kernel's HERE too, since jitvar
+began (Iteration 344). JIT_BROPND: under JITVAR a branch is 6 or 7; without it the same code as before. rtvar's words
+on fastest-x86-64 now translate: its apps workload 1.022 with rtvar (1.999 before); rtvar under the JIT needs jitvar.
+run-tests PASS. results/rtvar-688.md.

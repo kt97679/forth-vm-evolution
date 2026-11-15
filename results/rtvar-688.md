@@ -48,6 +48,23 @@ and [100], jitvar) and translates the kernel's own; why it refuses a run-time wo
 JITLOG build of that engine. Until then rtvar needs no JIT under the tag (evolve.py's rtvar_can): the byte header's
 designs and the tag's interpreted ones.
 
-Next: the JIT's refusal; then the other step-3 genes (constants as literals by relf's test, inlining at 3/6, the JIT
+## The JIT's refusal found and fixed (Iteration 690)
+
+A JITLOG build (EVOLVE_JITLOG=1 EVOLVE_LIBC=1) of fastest-x86-64 with rtvar: every word holding a vf or vs refused,
+reason 3 (a stencil not usable) - and the kernel's own HERE too (its JIT header's offset 0, never translated), so
+it predates rtvar. engine/jit.c took an operand kind of 6 or more for a branch, in ten places; jitvar's slots are kinds
+8 and 9 (Iteration 344), so a vf's slot - a variable's address - was looked for among the word's own operations as a
+branch target, not found, and the word refused (and the farthest-target scan took the variable's address for the
+word's end). JIT_BROPND: under JITVAR a branch is kind 6 or 7; without it `>= 6` as before, the same code. The comment
+at jit.c's JIT_LITOPND had called it latent "while no word with vf was translated" - none ever was.
+
+Since: T1 (`V @`) translated with rtvar (its header the native offset 0x380), the values the same, and the apps
+workload on fastest-x86-64 1.022 with rtvar against 1.999 before - about even, as expected where the JIT already
+compiles a data word's call and @ as a literal and a fetch: the fusion has little left to take natively. rtvar under
+the tag with the JIT now needs jitvar (evolve.py's rtvar_can). Every jitvar engine's kernel words holding vf or vs
+translate now (HERE among them) - the gene-off build's apps workload 0.322 s at 689 against 0.310 s here, not an A/B.
+run-tests PASS (the JIT's tests and engines-check among them).
+
+Next: the other step-3 genes (constants as literals by relf's test, inlining at 3/6, the JIT
 header, DOES> @ as VAR@, the DODOES stencil); the compile layer's cost weighed on the kernel and corpus workloads by
 the search.
