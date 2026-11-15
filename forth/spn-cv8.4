@@ -394,7 +394,7 @@ VARIABLE TYPE-XT VARIABLE AM-XT
   PICK-XT @ = IF 9 ELSE 0 THEN ;
 : INLINE-CELL? ( k --- f )  DUP 2 = OVER 3 = OR OVER 4 = OR SWAP 8 = OR ;
 : STRING-WORD? ( xt --- f )  DUP SQ-XT @ = OVER DQ-XT @ = OR SWAP AQ-XT @ = OR ;
-: PAST-STRING ( a --- a' )  DUP C@ 1+ + ALIGNED ;
+: PAST-STRING ( a --- a' )  DUP C@ 1+ + ;     \ 681: CV8's strings unpadded (cv8.4's (S")8)
 
 \ ---- does this code read its caller's return address? ----
 \ Decodes linearly: R> or R@ before any >R or exit means yes. Inline

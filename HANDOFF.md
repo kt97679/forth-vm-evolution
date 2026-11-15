@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 680.
+- master: Iteration 681.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -61,9 +61,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (679; the first new run's processing opens a series: NEXT_METHOD). **Step 1 (680)**: VALUE without its kind cell
   taken (coreext.4; brainless -696 B, the four 0 - no VALUE in them, no image moves); the unaligned strings priced
   (lab/evolve/string-price.py: the four -103 to -203 B at 8-byte cells, the held-out three about -300) - results/pure-savings-680.md.
-  **Next: build the strings' change** (the alignment a contract across kernel.4, sod16.py, layout.py, cross.4,
-  cross-cv8.4: the family's code alignment, the frozen stages unmoved), every image measured before and after;
-  brainless's dispatches before and after VALUE (genapps-dispatch.py); then step 2. Self-hosting phase 6 waits.
+  **The strings built (681)**: CV8's inline strings unpadded - cv8.4/cv8t.4's (S")8 (.")8 (ABORT")8 STRING,8, sod16.py's
+  op_bytes, cross-cv8.4, jit.c, the spn decoders; the cell and cpt16 families, kernel.4 and the frozen stages
+  untouched; every design and s6 smaller, total -152 to -266 B at 8-byte cells, -51 to -93 at 4
+  (lab/evolve/design-sizes.py; results/unaligned-strings-681.md). designs/ unchanged (the shipped roles).
+  **Open (681): self-hosting fails on the three jitexec designs** - their self-built image dies on `."` in a loop
+  on its own engine (`: X7 3 0 DO ."  y" LOOP ; X7`); the search's translator-built images and 676's shipped
+  ones do not; lead and repro in the results file - before phase 6; 8 of 11 self-host.
+  **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
+  dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts

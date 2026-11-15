@@ -778,7 +778,7 @@ S" DUP<I" OPS10-OF CONSTANT X-DLTI
 \ form (layout.py's pad_before), else as near as it reaches.
   G-TAG2 IF DROP 4 ELSE OP-A FWD-SITE-SIZE THEN ;
 : S-OPDC ( addr i --- n ) OPDC-CALL DUP >R PADDED R> + TARGET-CELL-BYTES @ + ;
-: S-STR ( addr i --- n ) OP-B 1+ OVER + ALIGNED-T SWAP - ;
+: S-STR ( addr i --- n ) OP-B 1+ SWAP DROP ;    \ 681: the count and the characters, unpadded (cv8.4's (S")8)
 
 : E-DEAD ( i --- ) DROP ;
 : E-P ( i --- ) OP-A OP,-T ;
@@ -808,7 +808,7 @@ S" DUP<I" OPS10-OF CONSTANT X-DLTI
   R@ OP-K O-LOOPC = IF R@ OP-B ADDR THERE - ,-T R> DROP EXIT THEN
   R@ OP-C DUP PENDING? IF 14 CELLS + DUP @ SWAP THERE SWAP ! ,-T ELSE @ THERE - ,-T THEN R> DROP ;
 : E-STR ( i --- )
-  DUP OP-B DUP C,-T SWAP OP-A THERE CHARS IMAGE + ROT DUP ALLOT-T CMOVE ALIGN-T ;
+  DUP OP-B DUP C,-T SWAP OP-A THERE CHARS IMAGE + ROT DUP ALLOT-T CMOVE ;    \ 681: no ALIGN-T after it
 
 \ A buffer word's LIT32 (the translator's LITOFF), patched at the end.
 14 CONSTANT O-LIT32

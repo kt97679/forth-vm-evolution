@@ -89,7 +89,7 @@ X' (S") SQ-XT !    X' (.") DQ-XT !      X' (ABORT") AQ-XT !
 : OPD-WORD? ( xt --- f )
   DUP QDO-XT @ = OVER LOOP-XT @ = OR OVER PLOOP-XT @ = OR SWAP LEAVE-XT @ = OR ;
 : STR-WORD? ( xt --- f )  DUP SQ-XT @ = OVER DQ-XT @ = OR SWAP AQ-XT @ = OR ;
-: PAST-STRING ( a --- a' )  DUP C@ 1+ + ALIGNED ;
+: PAST-STRING ( a --- a' )  DUP C@ 1+ + ;     \ 681: CV8's strings unpadded (cv8.4's (S")8)
 
 \ ---- walking a whole word ----
 \ The end is an operation that exits - EXIT, or a folded form - at or

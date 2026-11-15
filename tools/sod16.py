@@ -1062,7 +1062,7 @@ def op_bytes(k, pl, t):
     if k == 'LITOFF': return 6          # always the 32-bit form
     if k in ('BR', 'QBR'): return 4
     if k in ('OPD', 'XT'): return CELL
-    if k == 'STR': return align_up(t + len(pl), CELL) - t
+    if k == 'STR': return len(pl) if V8 else align_up(t + len(pl), CELL) - t   # 681: CV8's strings unpadded (cv8.4's (S")8)
     raise AssertionError("unknown op kind %r" % k)
 
 # ---- the two-bit tag (Iteration 66, FORMAT-TAG2.md) ----------------------

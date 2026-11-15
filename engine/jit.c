@@ -861,14 +861,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             /* Iteration 485: (S") and (.") read the counted string after their call - a call native code cannot make
                (its return address is no bytecode), and decoded as code it was refused at the count byte (gc16's GC at
                ` ." HEAP FULL"`, every caller with it). Here: the string's address and length as literals, and for (.")
-               TYPE through EXECUTE's helper; the decoding goes on after the string, aligned as the run-time words do.
+               TYPE through EXECUTE's helper; the decoding goes on after the string, where the run-time words do (681: unpadded).
                The added operations get addresses no branch can name.  */
 #if JITMUL
             if (JIT_W_AQ >= 0 && arg[n] == jit_cbase + (UNS64)JIT_W_AQ) {   /* 488: (ABORT") - the flag tested here; the call's
                                            own address kept for the interpreter to resume at when it is true */
                 UNS64 s_ = a; unsigned c_ = BYTE(s_);
                 opl[n] = JIT_L_ABORTQ; arg[n] = at[n];
-                a = (s_ + 1 + c_ + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);
+                a = s_ + 1 + c_;     /* 681: CV8's strings unpadded (cv8.4's (S")8) */
             } else
 #endif
             if (JIT_W_SQ >= 0 && JIT_W_DQ >= 0 && JIT_W_TYPE >= 0 &&
@@ -880,7 +880,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                 if (dq_) { n++; at[n] = ((UNS64)1 << 63) | (s_ + 2); opl[n] = 0xFFFD; arg[n] = jit_cbase + (UNS64)JIT_W_TYPE;
                            n++; at[n] = ((UNS64)1 << 63) | (s_ + 3); opl[n] = JIT_L_EXECUTE;
                            arg[n] = (UNS64)(uintptr_t)jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1]; }
-                a = (s_ + 1 + c_ + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);
+                a = s_ + 1 + c_;     /* 681: CV8's strings unpadded (cv8.4's (S")8) */
             }
 #endif
         } else {

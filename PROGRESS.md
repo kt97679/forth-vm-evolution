@@ -11533,3 +11533,11 @@ Step 1, the pure savings. Item 7 taken: forth/coreext.4's VALUE is its cell alon
 four and minif 0 (none makes a VALUE), no image moved; run-tests (the ANS suite's VALUE tests) and validate pass. Item 6
 priced, not built (lab/evolve/string-price.py): the four -103 to -203 bytes at 8-byte cells, -25 to -40 at 4; the
 held-out three about -300 - and the contract it changes mapped. results/pure-savings-680.md.
+
+## Iteration 681 - 2026-11-14 - Claude
+
+Step 1's item 6 built: CV8's inline strings unpadded - (S")8 (.")8 (ABORT")8 STRING,8 in cv8.4 and cv8t.4, sod16.py's
+op_bytes under V8, cross-cv8.4's S-STR and E-STR, jit.c's resume, the spn decoders (s8 failed first); kernel.4 and the
+cell, cpt16 and frozen stages untouched. Every design and s6 smaller: total -152 to -266 B at 8-byte cells, -51 to -93
+at 4 (app code as priced, images -40 to -104); run-tests PASS, validate 7 of 7. Self-hosting 8 of 11: the three jitexec
+designs' self-built images die on `."` in a loop - open. lab/evolve/design-sizes.py; results/unaligned-strings-681.md.

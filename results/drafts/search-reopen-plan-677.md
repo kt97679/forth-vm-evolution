@@ -51,7 +51,7 @@ A mechanism that does not pay goes to GOALS.md's register with its numbers.
    results/app-size-measure-678.md; the cross-run tools refuse to pool the two sizes (679).
 1. **The pure savings** (6, 7): kernel and library changes - every image and s6 move, so measured on the ten and s6
    before and after, speed by dispatches. **680**: 7 taken (coreext.4; the four do not see it), 6 priced and mapped -
-   results/pure-savings-680.md; 6's build next.
+   results/pure-savings-680.md; 6 built (681): results/unaligned-strings-681.md.
 2. **The prices** of 1-5, 8, 9 on the four (and the held-out three) - a results file, a row each.
 3. **The genes** that pay, as a batch (results/pending/, ORDER.md, tools/batch-check.sh). The gene rules
    (results/seed63-rules.md): rule 11 - a gene leaves FROZEN only when a selection workload can see its benefit; the

@@ -214,6 +214,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `generic-apps-674.md` - Step 1 after relf's report: seven generic programs on the ten designs, s6, relf's CV8 and gforth - application code +7-10 % (JIT designs +18-28 %), 1.3-1.9x CV8's dispatches, the JIT 90 % idle on brainless.
 - `app-size-measure-678.md` - Step 0 of the reopened search: evolve.py's size counts the four selection apps' code (genapps.py's count, appsize.py), checked byte for byte at both widths.
 - `pure-savings-680.md` - Step 1: VALUE without its kind cell taken (brainless -696 B, invisible to the four); inline strings without alignment priced (the four -103 to -203 B) and what building it takes.
+- `unaligned-strings-681.md` - CV8's inline strings unpadded: every design and s6 smaller (total -152 to -266 B at 8-byte cells), the cell and cpt16 families untouched.
 - `jit-throw-unwind-673.md` - relf's report (its Iteration 942) fixed: on the jitexec designs a THROW from a nested interpreter now unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; tests in designs/test.sh.
 - `relf-questions-665.md` - What relf asked this lab (its Iteration 716), answered as far as the generic search can, from the ten winners' expressed genes: (+LOOP) and operand forms yes; XF@/XV@, DEFER and PICK not in the search.
 - `article-check-659.md` - The article's figures checked (Iteration 659): the same numbers in both drafts, 195 of 197 distinctive figures in the records; part one's image sizes regenerate at a105e59, not at master.

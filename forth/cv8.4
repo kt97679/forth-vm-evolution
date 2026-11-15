@@ -244,6 +244,18 @@ ALIGN
 : RECURSE8 ( --- )
   ?COMP LAST @ NAME> CALL, ; IMMEDIATE
 
+\ Iteration 681 (item 6 of results/drafts/search-reopen-plan-677.md): an inline string ends where its characters do -
+\ CV8's byte code has no alignment to keep (the cell and cpt16 families keep kernel.4's ALIGNED). The translator
+\ (tools/sod16.py's op_bytes under V8), the self-hosting cross compiler (forth/cross-cv8.4's S-STR and E-STR) and the
+\ JIT's decoder (engine/jit.c) lay and step past them so; these run-time words read and compile them so.
+: (S")8 ( --- c-addr u )  R> COUNT 2DUP + >R ;
+: (.")8 ( --- )  R> COUNT 2DUP TYPE + >R ;
+: (ABORT")8 ( f --- )
+  IF HANDLER @ IF -2 THROW THEN R> COUNT TYPE SPACE HERE COUNT TYPE CR -2 THROW
+  ELSE R> COUNT + >R THEN ;
+: STRING,8 ( c-addr u --- )  DUP C, HERE OVER ALLOT SWAP MOVE ;
+
+
 \ ---- DO ... LOOP ----------------------------------------------------
 \ (LOOP) and (+LOOP) read an inline CELL operand, and it must stay
 \ cell-aligned - the one place CV8 keeps cell granularity
