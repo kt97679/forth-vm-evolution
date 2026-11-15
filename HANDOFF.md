@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 685.
+- master: Iteration 686.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -79,7 +79,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   constant test, inlining rule (3 instructions, 6 bytes) and the peepholes 684 missed. Its shellmix.fth is in
   lab/evolve/apps (held out): the JIT designs 1.11-1.49 of relf64's time on it; the knee 22.3 % of dispatches from
   VAR@/VAR!, 3.0 % from DOES> @. relf will measure the new roles - tell it when they exist and how to fetch them.
-  **The owner decides**: shellmix as the fifth selection program; mechanism 8 dropped. **Then step 3.**
+  **The owner decided (686)**: shellmix the fifth selection program - the apps workload runs `150 SHELLMIX` after
+  the four, the size counts its code, appsize.size_key() keeps 0-, 4- and 5-program measures apart (evolve.py
+  resumes only five); mechanism 8 deferred, not dropped - no word goes, the lab's 9-byte literal is the general form
+  (GOALS.md's register). results/shellmix-686.md. **Next: step 3** - VAR@/VAR! to relf's form, constants by relf's
+  test, inlining at 3/6, the JIT header, DOES> @ as VAR@ and the DODOES stencil.
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

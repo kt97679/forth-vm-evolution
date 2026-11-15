@@ -178,13 +178,14 @@ if __name__ == '__main__':
     import appsize                               # Iteration 679: a run sized with the applications' code (678) is judged only
     new = appsize.one_size(R.values(), 'stopping.py')   # against runs sized so - a series of its own (NEXT_METHOD)
     earlier = [x for x in runs if x['seed'] < seed]
-    if earlier and any(bool(x.get('app')) != new for x in earlier):
+    na = len(appsize.SELECTION) if new else 0      # 686: the ledger line says how many applications (True was 678's four)
+    if earlier and any((x.get('app') if x.get('app') is not True else 4) != na for x in earlier):
         sys.exit('stopping.py: seed %d is sized %s the applications\' code and the series\' earlier runs %s - open a new series '
                  '(process-records.sh: NEXT_METHOD)' % (seed, 'with' if new else 'without', 'are not' if new else 'are'))
     x = pick(m)
     run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(x['fastest'], 6), smallest=x['smallest'],
                memory=x['memory'], fastest32=round(x['fastest32'], 6))
-    if new: run['app'] = True                    # 679: the ledger's line says its size
+    if new: run['app'] = len(appsize.SELECTION)  # 679: the ledger's line says its size (686: how many applications)
     if method.get('matched') or opt('--curve'):  # 562: its last generation; its curve for --append, or alone
         run['gens'] = max((r.get('gen') or 0) for r in R.values()); cf = opt('--curve')
         if opt('--curve') and '--append' not in a:

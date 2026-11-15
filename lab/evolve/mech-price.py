@@ -16,7 +16,7 @@ cols = [c.strip() for c in tab[0].strip('|').split('|')][1:]
 cost = {r.strip('|').split('|')[0].strip(): dict(zip(cols, (float(x) for x in r.strip('|').split('|')[1:]))) for r in tab[2:]}
 SYS = ['s6', 'smallest', 'portable-knee', 'small-jit', 'fastest-x86-64']
 FOUR, HELD = ('sim16', 'gc16', 'scan', 'evo'), ('wordfreq', 'minif', 'brainless')
-SM = ('shellmix',) if 'shellmix' in C else ()      # 685: relf 953's, relfsh's mix
+SM = ('shellmix',) if 'shellmix' in C else ()      # 685: relf 953's, relfsh's mix (the selection's fifth since 686)
 def n(progs, k): return sum(C[p][k] for p in progs)
 def saved(s, progs):
     c = lambda k: cost[k][s]

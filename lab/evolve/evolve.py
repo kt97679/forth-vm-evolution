@@ -1193,7 +1193,7 @@ def long_files():
 def program(w, single=False):
     """The workload's input: the long one (Iteration 100), or single - as before."""
     if w == 'kernel': return KERNEL_IN
-    if w == 'apps': return APPS_IN       # 495: the four applications of lab/evolve/apps/, a short pass each
+    if w == 'apps': return APPS_IN       # 495: the applications of lab/evolve/apps/ (five since 686), a short pass each
     if w == 'far':         # Iteration 159: fib's words past 1 MB - long calls under the tag, within s6's reach
         return ('1048576 ALLOT\n' + program('fib', single).decode()).encode()
     path = os.path.join(ROOT, 'bench', w + '.fth') if w != 'corpus' else CORPUS
@@ -1206,10 +1206,12 @@ def program(w, single=False):
 # Iteration 495 (the owner: add the applications): the seventh selection workload - our own four applications (a CPU
 # simulated, a collector, a scanner generator, a genetic algorithm), each one short pass checking itself, their source
 # inline so the program needs no file wherever it runs; sized as the six, ~11 ms on the fastest. Appbench's programs
-# stay held out (appbench.py). results/drafts/apps-selection-491.md priced it.
+# stay held out (appbench.py). results/drafts/apps-selection-491.md priced it. Iteration 686 (the owner): relf's
+# shellmix.fth the fifth - relfsh's mix of variables, DEFER-style hooks and DOES> @ buffers (results/shellmix-686.md).
 APPS_IN = b''.join(open(os.path.join(ROOT, 'lab', 'evolve', 'apps', f), 'rb').read() + b'\n' + call + b'\n' for f, call in (
     ('sim16.fth', b'700 ORG 15 LIT, FIB CALL, HALT,  0 STEPS !  700 RUN DPOP . STEPS @ . CR'),   # fib(15) on the simulated CPU
-    ('gc16.fth', b'200 BENCH'), ('scan.fth', b'3 BENCH'), ('evo.fth', b'12 BENCH'))) + b'BYE\n'
+    ('gc16.fth', b'200 BENCH'), ('scan.fth', b'3 BENCH'), ('evo.fth', b'12 BENCH'),
+    ('shellmix.fth', b'150 SHELLMIX'))) + b'BYE\n'     # 686 (the owner): relf's shellmix.fth fifth - relfsh's mix, 150 turns
 FAR_IN = open(os.path.join(ROOT, 'tests', 'core', 'far.fth'), 'rb').read()
 def jit_diff_in():
     """tests/jit's programs as one input (Iteration 501, engines-check.py's; 567: design.py's too): jit-diff.fth and
@@ -2307,9 +2309,10 @@ def main(argv):
     R = load()
     # Iteration 677: 'total' counts the applications' code since 677 - a database from before it measures another size;
     # resumed, its designs and the new ones would rank on two measures (--report and --carry still read it, by its own)
-    old = sum(1 for r in R.values() if r.get('status') == 'ok' and r.get('speed') and 'app' not in r)
-    if old: sys.exit('evolve.py: %s - %d designs measured before Iteration 677 (no applications in their size): '
-                     'resume only a database of this measure; start a new one, or --carry from it' % (DB, old))
+    # 686: and since 686 the five applications' (appsize.size_key: how many programs a record's size counts)
+    old = sum(1 for r in R.values() if r.get('status') == 'ok' and r.get('speed') and appsize.size_key(r) != len(appsize.SELECTION))
+    if old: sys.exit('evolve.py: %s - %d designs measured before Iteration 677 (no applications in their size) or before '
+                     '686 (four): resume only a database of this measure; start a new one, or --carry from it' % (DB, old))
     # Iteration 610: a resumed run's replay saw each gated design's second reading from its first generation - written
     # a generation later, it ranked on it early and forked (seed 87: at generation 3, 133 generations lost). The first
     # reading stands until the batch that measured it again, as it did the first time (flush()).

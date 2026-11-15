@@ -72,7 +72,7 @@ try:
             for k in range(3):
                 r = dict(id='%010x' % (k + 16 * app), status='ok', speed=1.0 + k / 10, speed32=1.0 + k / 10, size=9000, bin=20000,
                          total=29000 - 100 * k + 7000 * app, rss=100, genome={}, gen=k)
-                if app: r['app'] = 7000
+                if app: r['app'] = 7000; r['appby'] = [1400] * len(appsize.SELECTION)
                 f.write(json.dumps(r) + '\n')
         return path
     o5, n5 = fake(os.path.join(tmp, 'old.jsonl'), 0), fake(os.path.join(tmp, 'new.jsonl'), 1)
@@ -80,7 +80,7 @@ try:
     five = {}
     r = run_(os.path.join(HERE_, 'compare-fronts.py'), o5, n5); five['compare-fronts mixed'] = r.returncode != 0 and 'never pooled' in r.stdout + r.stderr
     for name, line, want in (('stopping old series', {'seed': 1, 'hv': 0.5, 'fastest': 1.0, 'smallest': 29000, 'memory': 100, 'fastest32': 1.0}, True),
-                             ('stopping new series', {'seed': 1, 'hv': 0.5, 'fastest': 1.0, 'smallest': 36000, 'memory': 100, 'fastest32': 1.0, 'app': True}, False)):
+                             ('stopping new series', {'seed': 1, 'hv': 0.5, 'fastest': 1.0, 'smallest': 36000, 'memory': 100, 'fastest32': 1.0, 'app': len(appsize.SELECTION)}, False)):
         led = os.path.join(tmp, 'ledger.md'); open(led, 'w').write('{"method": "check"}\n' + json.dumps(line) + '\n')
         r = run_(os.path.join(HERE_, 'stopping.py'), n5, '--seed', '2', '--ledger', led); refused = 'open a new series' in r.stdout + r.stderr
         five[name] = refused == want and (want or 'verdict' in r.stdout)

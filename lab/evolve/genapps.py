@@ -41,7 +41,7 @@ APPS = {'sim16': ('sim16.fth', '25 BENCH', r'SIM16 SIEVE \d+ FIB \d+ STEPS \d+')
         'wordfreq': ('wordfreq.fth', '60 BENCH', r'WORDFREQ WORDS \d+ DISTINCT \d+ TOP \d+ CHECK \d+'),
         'minif': ('minif.fth', '2500 BENCH', r'MINIF CHECK \d+ ERRS \d+ DEFS \d+'),
         'brainless': ('benchmark.fs', 'BENCHMARK', r'\d+ nodes .* \d+ evals'),   # 110023 and 163278 at 8-byte cells
-        'shellmix': ('shellmix.fth', '10000 SHELLMIX', r'10000 50005000 \d+ 80000')}   # 685: relf 953's, relfsh's mix (held out)
+        'shellmix': ('shellmix.fth', '10000 SHELLMIX', r'10000 50005000 \d+ 80000')}   # 685: relf 953's, relfsh's mix; the selection's fifth since 686
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
 ap.add_argument('--rounds', type=int, default=5); ap.add_argument('--cells', type=int, default=8, choices=(8, 4))
 ap.add_argument('--sizes', action='store_true');   # 677: the sizes alone (appsize-check.py)

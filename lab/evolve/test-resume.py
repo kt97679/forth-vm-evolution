@@ -23,7 +23,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'child':
         i = E.gid(E.canon(g)); h = int(i, 16); cnt[0] += 1
         s = (0.3 + (h % 997) / 997.0) * (1 + AMP * (((cnt[0] * 7919) % 101) / 100.0 - 0.5))
         rec = {'status': 'ok', 'speed': s, 't': {w: s for w in E.WORK_SEL}, 'raw': {w: 1000.0 for w in E.WORK_SEL}, 'size': 8000 + h % 3001,
-               'bin': 4000, 'app': 0, 'total': 12000 + h % 3001, 'rss': 100 + h % 41, 'mem': {}, 'unit': 1.0, 'etext': None, 'secs': 0}
+               'bin': 4000, 'app': 0, 'appby': [0] * 5, 'total': 12000 + h % 3001, 'rss': 100 + h % 41, 'mem': {}, 'unit': 1.0, 'etext': None, 'secs': 0}
         if gate and s < gate and not again: rec['gated'] = 1
         return rec
     E._job = fake_job

@@ -11573,3 +11573,11 @@ test, inlining rule (3 instructions, 6 bytes) and the run-time peepholes 684 mis
 relf64's time on it (0.35 on the six smaller programs); on the knee VAR@/VAR! 22.3 % of its dispatches, DOES> @ 3.0 %.
 The owner decides on shellmix as a fifth selection program. results/relf-reply-685.md; the reply as
 results/drafts/relf-reply-953.md.
+
+## Iteration 686 - 2026-11-15 - Claude
+
+The owner: relf's shellmix.fth is the fifth selection program - the apps workload runs `150 SHELLMIX` after the four
+(the same line as alone; about a fifth of the workload), the size counts its code (appsize.py's SELECTION), and
+appsize.size_key() keeps the 0-, 4- and 5-program measures apart in every pooling tool and in evolve.py's resume.
+Mechanism 8 deferred, not dropped: no word goes and nothing is limited - the lab's 9-byte address literal is the general
+form (GOALS.md's register). results/shellmix-686.md.

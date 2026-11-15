@@ -217,6 +217,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `unaligned-strings-681.md` - CV8's inline strings unpadded: every design and s6 smaller (total -152 to -266 B at 8-byte cells), the cell and cpt16 families untouched.
 - `mech-prices-684.md` - Step 2: relf's mechanisms priced on the four (bytes and the knee's dispatches) and the held-out three - which pay, which the selection cannot see.
 - `relf-reply-685.md` - relf's answers to 684 (the reply: drafts/relf-reply-953.md) and its shellmix.fth measured: mechanism 8 dropped, VAR@ saves dispatches not bytes, the JIT designs slow on relf's mix.
+- `shellmix-686.md` - relf's shellmix.fth the fifth selection program (apps workload, size score, the measures kept apart); mechanism 8 deferred with no limitation imposed.
 - `jit-throw-unwind-673.md` - relf's report (its Iteration 942) fixed: on the jitexec designs a THROW from a nested interpreter now unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; tests in designs/test.sh.
 - `relf-questions-665.md` - What relf asked this lab (its Iteration 716), answered as far as the generic search can, from the ten winners' expressed genes: (+LOOP) and operand forms yes; XF@/XV@, DEFER and PICK not in the search.
 - `article-check-659.md` - The article's figures checked (Iteration 659): the same numbers in both drafts, 195 of 197 distinctive figures in the records; part one's image sizes regenerate at a105e59, not at master.
