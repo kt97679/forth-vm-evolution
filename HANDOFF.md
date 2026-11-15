@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 686.
+- master: Iteration 687.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -82,8 +82,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **The owner decided (686)**: shellmix the fifth selection program - the apps workload runs `150 SHELLMIX` after
   the four, the size counts its code, appsize.size_key() keeps 0-, 4- and 5-program measures apart (evolve.py
   resumes only five); mechanism 8 deferred, not dropped - no word goes, the lab's 9-byte literal is the general form
-  (GOALS.md's register). results/shellmix-686.md. **Next: step 3** - VAR@/VAR! to relf's form, constants by relf's
-  test, inlining at 3/6, the JIT header, DOES> @ as VAR@ and the DODOES stencil.
+  (GOALS.md's register). results/shellmix-686.md.
+  **Step 3 begun (687): the gene rtvar** - forth/cv8-fuse-var.4 (a data word's @ and ! as vf/vs at run time, never
+  across a branch target), layout.py's VAR-OPS, the gene and its -var dumps; the byte header only (tag 2 next).
+  lab/evolve/rtvar-check.py on the knee: alive both ways, the fusion fires (T1 = vf slot EXIT), the values the same;
+  the five apps' code 8,365 -> 8,278 B; **but the apps workload's time 1.003 - no gain yet.** Next: separate its
+  compile time from its run (the extra COMPILE,8 layer on every word - 59's rtlit lesson) with genapps' drivers (my
+  first try ran them wrongly), then batch-check.sh; then the tag-2 overlay, the other step-3 genes.
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

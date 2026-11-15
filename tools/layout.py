@@ -1385,7 +1385,7 @@ def emit(path):
     if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1   # 592: varcall retired at 1
     for w in order:
-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB') + tuple(CVARS): continue
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB', 'VAR-OPS') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + cfd(w['s']), G['cv8_op']   # [DOVAR][pad], then the data
         if w['n'] in CVARS:
             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
@@ -1404,6 +1404,12 @@ def emit(path):
             _o = [new_off[_byn[n]['s']]['body'] for n in ('I', 'J', 'UNLOOP')]
             assert _o[0] < 65536 and 0 < _o[1] - _o[0] < 256 and 0 < _o[2] - _o[0] < 256, 'LOOPTAB: I J UNLOOP not neighbours %r' % _o
             data = bytes([G['X_OPS10'][n] for n in _lw] + [_o[0] & 255, _o[0] >> 8, _o[1] - _o[0], _o[2] - _o[0]])
+        elif w['n'] == 'VAR-OPS':
+            # Iteration 687: vf and vs for code compiled at run time (forth/cv8-fuse-var.4, the gene rtvar) - where this
+            # design has them (spec var), on the byte header; @ and ! to compare against; VARSLOT; SCALE 0, the
+            # translator's own slots being unscaled offsets (v8pfa). Zeros: the fusion off.
+            rt = 'var' in G['SPEC'] and not TAG2_ON
+            data = bytes([G['X_VF'] if rt else 0, G['X_VS'] if rt else 0, op('@')[0], op('!')[0], 1 if G['VARSLOT'] else 0, 0, 0, 0])
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time
             # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has

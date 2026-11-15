@@ -11581,3 +11581,10 @@ The owner: relf's shellmix.fth is the fifth selection program - the apps workloa
 appsize.size_key() keeps the 0-, 4- and 5-program measures apart in every pooling tool and in evolve.py's resume.
 Mechanism 8 deferred, not dropped: no word goes and nothing is limited - the lab's 9-byte address literal is the general
 form (GOALS.md's register). results/shellmix-686.md.
+
+## Iteration 687 - 2026-11-15 - Claude
+
+Step 3 begun: the gene rtvar - forth/cv8-fuse-var.4 makes a data word's @ and ! one operation (vf, vs and the slot of
+its parameter field) in code compiled at run time, the byte header first; layout.py writes VAR-OPS; evolve.py's gene,
+its -var dumps. lab/evolve/rtvar-check.py on the knee: alive with 0 and 1, the fusion fires, the same values, the five
+apps' code -87 B; the apps workload's time 1.003 - no gain measured yet: its compile and run to be separated next.

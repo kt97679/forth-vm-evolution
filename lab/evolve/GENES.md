@@ -25,7 +25,7 @@ later conversion the same way).
 
 **Iteration 278: 31 older genes are rows too** - their express() rules, their
 values where they have more than two, and five converter flags (bss, thinhdr,
-opbody, abortif, lean): rtfuse, rtimm, rtloop, rtloopall, kfast, tfind, kinput,
+opbody, abortif, lean): rtfuse, rtimm, rtvar (687), rtloop, rtloopall, kfast, tfind, kinput,
 klookup, jit, rtiplus, swapi, tag2 (registered before the six rules that read it),
 hotcalls, t2hot, hotinl, t2wide, rtempty, kstack, jitx, opbody, bss, thinhdr,
 abortif, lean, jitloop, jitinl, jitos, jittail, jitk, and factor. Still code, each
