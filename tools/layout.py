@@ -1408,7 +1408,7 @@ def emit(path):
             # Iteration 687: vf and vs for code compiled at run time (forth/cv8-fuse-var.4, the gene rtvar) - where this
             # design has them (spec var), on the byte header; @ and ! to compare against; VARSLOT; SCALE 0, the
             # translator's own slots being unscaled offsets (v8pfa). Zeros: the fusion off.
-            rt = 'var' in G['SPEC'] and not TAG2_ON
+            rt = 'var' in G['SPEC'] and not TAG2_ON and bool(G['VARSLOT'])   # 688: 16-bit slots reach 64 KB - too near
             data = bytes([G['X_VF'] if rt else 0, G['X_VS'] if rt else 0, op('@')[0], op('!')[0], 1 if G['VARSLOT'] else 0, 0, 0, 0])
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time

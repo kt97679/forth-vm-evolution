@@ -157,7 +157,7 @@ def gene(name, values=None, show=None, family='cv8', late=True, needs=None, conv
 # dormant sysc stay in express() as code. Genes listed above keep their place.
 gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  # nothing to fuse at run time otherwise; older than LATE
 gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
-gene('rtvar', values=range(2), needs=lambda g, e: overlay(g) and 'var' in g['spec'] and not g.get('tag2'))   # Iteration 687: a data word's @ and ! as vf, vs at run time (forth/cv8-fuse-var.4); the byte header first
+gene('rtvar', values=range(2), needs=lambda g, e: overlay(g) and 'var' in g['spec'] and g.get('varslot') and not g.get('tag2'))   # Iteration 687: a data word's @ and ! as vf, vs at run time (forth/cv8-fuse-var.4); the byte header first; 688: varslot's 23-bit slots
 gene('rtloop', values=range(2), needs=lambda g, e: rtloopall_on(g))            # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired; 641: with all eight only - the partial compiler retired)
 gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
 gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
@@ -401,8 +401,11 @@ def swapi_on(g):
     SWAP -2 + took two dispatches. A design with the 'imm' specialisation."""
     return g['enc'] == 'cv8' and 'imm' in g['spec'] and bool(g.get('swapi'))
 def rtvar_on(g):
-    """Iteration 687: the gene rtvar expressed - the byte header's run-time fusers with spec var."""
-    return bool(g.get('rtvar')) and overlay(g) and 'var' in g['spec'] and not g.get('tag2')
+    """Iteration 687: the gene rtvar expressed - the byte header's run-time fusers with spec var. Iteration 688: and
+    varslot - without it a slot is 16 bits from the image, 64 KB: in the apps workload only sim16 and gc16 lie
+    within it (scan starts at 388 KB, behind gc16's heap), the fusion missed the rest and cost 1.038; with varslot's
+    23 bits (8 MB) the workload ran 0.902."""
+    return bool(g.get('rtvar')) and overlay(g) and 'var' in g['spec'] and bool(g.get('varslot')) and not g.get('tag2')   # 688: varslot
 def rtiplus_on(g):
     """Iteration 60: I then + as I+ in code compiled at run time
     (forth/cv8-fuse-iplus.4) - a design with rtloopall, whose LOOPTAB knows I."""

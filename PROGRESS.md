@@ -11588,3 +11588,10 @@ Step 3 begun: the gene rtvar - forth/cv8-fuse-var.4 makes a data word's @ and ! 
 its parameter field) in code compiled at run time, the byte header first; layout.py writes VAR-OPS; evolve.py's gene,
 its -var dumps. lab/evolve/rtvar-check.py on the knee: alive with 0 and 1, the fusion fires, the same values, the five
 apps' code -87 B; the apps workload's time 1.003 - no gain measured yet: its compile and run to be separated next.
+
+## Iteration 688 - 2026-11-15 - Claude
+
+rtvar measured and fixed: each program's benchmark alone on the knee 0.733 (scan), 0.750 (shellmix), 0.947 (sim16),
+0.958 (evo), 0.980 (gc16), the same outputs. The apps workload ran 1.038 without varslot - its programs load at 10 to
+451 KB from the image and 16-bit slots reach 64 KB - and 0.902 with varslot's 23 bits: rtvar now needs varslot
+(evolve.py, layout.py). rtvar-check.py PASS with varslot on. results/rtvar-688.md.

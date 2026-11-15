@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """lab/evolve/rtvar-check.py [DESIGN] - the gene rtvar checked on a design (Iteration 687: forth/cv8-fuse-var.4).
 
-Builds DESIGN (default portable-knee; its record's genome) with rtvar 0 and 1 as the search does, and checks:
+Builds DESIGN (default portable-knee; its record's genome, varslot on - rtvar needs it, 688) with rtvar 0 and 1 as
+the search does, and checks:
   alive     both pass the gate's alive() (corpus, kernel workload, far);
   fuses     with 1, `V @` and `V !` in a colon definition compile to vf and vs (the bytes shrink by the calls' and
             @'s, and hold the codes), with 0 they do not; a CREATEd word's @ too;
@@ -14,7 +15,7 @@ HERE_ = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.pa
 D = sys.argv[1] if len(sys.argv) > 1 else 'portable-knee'; sys.argv = sys.argv[:1]
 spec = importlib.util.spec_from_file_location('evolve', os.path.join(HERE_, 'evolve.py')); E = importlib.util.module_from_spec(spec); spec.loader.exec_module(E)
 E.setup()
-g0 = E.canon(json.load(open(os.path.join(ROOT, 'designs', D, 'record.json')))['genome']); g0['rtvar'] = 0; g0 = E.canon(g0)
+g0 = E.canon(json.load(open(os.path.join(ROOT, 'designs', D, 'record.json')))['genome']); g0['rtvar'] = 0; g0['varslot'] = 1; g0 = E.canon(g0)   # 688: rtvar needs varslot
 g1 = dict(g0); g1['rtvar'] = 1; g1 = E.canon(g1)
 if not E.rtvar_on(g1): sys.exit('rtvar-check: %s cannot express rtvar (needs the fusers, spec var, the byte header)' % D)
 PROG = b'''VARIABLE V  VARIABLE W  CREATE C 0 ,
