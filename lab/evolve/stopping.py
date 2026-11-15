@@ -175,9 +175,16 @@ if __name__ == '__main__':
     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E, hv
     method, runs = series(led); R = hv.load(db, E); m = hv.measure(db, E, R=R)
     pick = lambda m: m['alive'] if method.get('extremes') == 'alive' else m      # 556: the series says whose extremes
+    import appsize                               # Iteration 679: a run sized with the applications' code (678) is judged only
+    new = appsize.one_size(R.values(), 'stopping.py')   # against runs sized so - a series of its own (NEXT_METHOD)
+    earlier = [x for x in runs if x['seed'] < seed]
+    if earlier and any(bool(x.get('app')) != new for x in earlier):
+        sys.exit('stopping.py: seed %d is sized %s the applications\' code and the series\' earlier runs %s - open a new series '
+                 '(process-records.sh: NEXT_METHOD)' % (seed, 'with' if new else 'without', 'are not' if new else 'are'))
     x = pick(m)
     run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(x['fastest'], 6), smallest=x['smallest'],
                memory=x['memory'], fastest32=round(x['fastest32'], 6))
+    if new: run['app'] = True                    # 679: the ledger's line says its size
     if method.get('matched') or opt('--curve'):  # 562: its last generation; its curve for --append, or alone
         run['gens'] = max((r.get('gen') or 0) for r in R.values()); cf = opt('--curve')
         if opt('--curve') and '--append' not in a:

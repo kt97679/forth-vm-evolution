@@ -269,6 +269,7 @@ def main(a):
     sys.argv = ['x']; import evolve as E
     b = json.load(open(hv.BOUNDS))
     C = {i: r for i, r in records(a[0]).items() if r.get('genome') is not None}; L = records(a[1])
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import appsize; appsize.one_size(C.values(), 'final-pick.py')   # 679
     H = [json.load(open(f)) for f in a[2:]]
     if also:                                             # Iteration 588: another session's readings beside these
         L = merge_sessions([L] + [records(os.path.join(d, 'loadtest.md')) for d in also if os.path.exists(os.path.join(d, 'loadtest.md'))])   # 595: a hosts-only session

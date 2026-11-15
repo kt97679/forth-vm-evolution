@@ -48,7 +48,7 @@ A mechanism that does not pay goes to GOALS.md's register with its numbers.
 ## The order - each step leaves a working, checked state
 
 0. **The measure** (above): evolve.py counts the four apps' code; checked; run-tests, validate. **Done (678)**:
-   results/app-size-measure-678.md - left: compare-fronts, stopping.py and final-pick refuse to pool the two sizes.
+   results/app-size-measure-678.md; the cross-run tools refuse to pool the two sizes (679).
 1. **The pure savings** (6, 7): kernel and library changes - every image and s6 move, so measured on the ten and s6
    before and after, speed by dispatches.
 2. **The prices** of 1-5, 8, 9 on the four (and the held-out three) - a results file, a row each.
@@ -58,7 +58,7 @@ A mechanism that does not pay goes to GOALS.md's register with its numbers.
 4. **The rehearsal** (HANDOFF-REFERENCE.md's lesson, 405): the front evaluated with the genes on, a short run, in a
    scratch clone; engines-check builds each gene's code.
 5. **The laptop**: a seed per lab/evolve/NEXT-RUN, its hours the owner's; processed as usual; the stopping rule
-   counts from it.
+   counts from it - its processing opens the new series (`NEXT_METHOD='...'`: stopping.py refuses the old one).
 6. **After the search**: self-hosting phase 6 on the new roles (results/drafts/selfhost-plan-666.md) - the cross
    compiler learns any new way of laying the kernel; step 3's held-out checks; the article.
 

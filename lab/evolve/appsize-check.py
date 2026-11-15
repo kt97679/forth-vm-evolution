@@ -9,7 +9,9 @@ step 0 of results/drafts/search-reopen-plan-677.md - the size score counts the c
     translator's images at 674). Reported: a kernel change since 674 moves it, and that is not a fault of the measure.
  3. Planted (prompts/15): one definition more in sim16 must move its code; an ALLOT more must not (it is data).
  4. The guard: a database holding a design of the old size is refused a resume.
---quick (run-tests): 1 on s6 at 8-byte cells, and 3. Exit 0 when 1, 3 and 4 hold; the last line says PASS or FAIL."""
+ 5. The cross-run tools (Iteration 679): compare-fronts refuses databases of both sizes; stopping.py judges a run only
+    against a series of its own size; appsize.one_size(), which they and final-pick call.
+--quick (run-tests): 1 on s6 at 8-byte cells, 3 and 5. Exit 0 when 1, 3 and 4 hold; the last line says PASS or FAIL."""
 import json, os, re, shutil, subprocess, sys, tempfile
 HERE_ = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE_))
 sys.path.insert(0, HERE_); import appsize
@@ -64,6 +66,31 @@ try:
     # CREATE lays a header (code, names and headers count); the 100 bytes it ALLOTs must not
     if not (0 < data[0] - base[0] < 100): fails.append('3: CREATE + 100 ALLOT moved sim16 by %d (its header only, under 100)' % (data[0] - base[0]))
     print('appsize-check: 3 planted: sim16 %d, a definition more %d, CREATE 100 ALLOT %d' % (base[0], more[0], data[0]), flush=True)
+    # ---- 5 (Iteration 679): the cross-run tools never pool the two sizes
+    def fake(path, app):
+        with open(path, 'w') as f:
+            for k in range(3):
+                r = dict(id='%010x' % (k + 16 * app), status='ok', speed=1.0 + k / 10, speed32=1.0 + k / 10, size=9000, bin=20000,
+                         total=29000 - 100 * k + 7000 * app, rss=100, genome={}, gen=k)
+                if app: r['app'] = 7000
+                f.write(json.dumps(r) + '\n')
+        return path
+    o5, n5 = fake(os.path.join(tmp, 'old.jsonl'), 0), fake(os.path.join(tmp, 'new.jsonl'), 1)
+    run_ = lambda *c: subprocess.run([sys.executable] + list(c), capture_output=True, text=True)
+    five = {}
+    r = run_(os.path.join(HERE_, 'compare-fronts.py'), o5, n5); five['compare-fronts mixed'] = r.returncode != 0 and 'never pooled' in r.stdout + r.stderr
+    for name, line, want in (('stopping old series', {'seed': 1, 'hv': 0.5, 'fastest': 1.0, 'smallest': 29000, 'memory': 100, 'fastest32': 1.0}, True),
+                             ('stopping new series', {'seed': 1, 'hv': 0.5, 'fastest': 1.0, 'smallest': 36000, 'memory': 100, 'fastest32': 1.0, 'app': True}, False)):
+        led = os.path.join(tmp, 'ledger.md'); open(led, 'w').write('{"method": "check"}\n' + json.dumps(line) + '\n')
+        r = run_(os.path.join(HERE_, 'stopping.py'), n5, '--seed', '2', '--ledger', led); refused = 'open a new series' in r.stdout + r.stderr
+        five[name] = refused == want and (want or 'verdict' in r.stdout)
+    try: appsize.one_size(list(appsize.db_records(o5)) + list(appsize.db_records(n5)), 'x'); five['one_size mixed'] = False
+    except SystemExit: five['one_size mixed'] = True
+    five['one_size one each'] = appsize.one_size(appsize.db_records(n5), 'x') is True and appsize.one_size(appsize.db_records(o5), 'x') is False
+    report['cross-run'] = five
+    for k, v in five.items():
+        if not v: fails.append('5: %s' % k)
+    print('appsize-check: 5 the cross-run tools: %d of %d right (%s)' % (sum(five.values()), len(five), ', '.join(k for k, v in five.items() if not v) or 'all'), flush=True)
     if not QUICK:
         # ---- 2: the translator's images of the ten, from their genomes
         t674 = open(os.path.join(ROOT, 'results', 'generic-apps-674.md')).read().split('## What each construct costs')[0]

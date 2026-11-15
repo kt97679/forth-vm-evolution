@@ -58,6 +58,8 @@ HERE_DBS = set('/'.join(d.split('/')[-4:-3] + d.split('/')[-1:]) for d in dbs)
 def carried_from(r):
     h = r.get('how', '')
     return h[len('carried from '):].split(':')[0] if h.startswith('carried from ') else None
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import appsize   # Iteration 679: one size measure
+appsize.one_size((r for db in dbs for r in appsize.db_records(db)), 'compare-fronts.py')
 for db in dbs:
     R = {}
     for l in open(db):

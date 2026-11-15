@@ -11518,3 +11518,10 @@ app` (app32 tracked at 4-byte cells), by genapps.py's count moved into lab/evolv
 PASS: 11 of 11 systems equal to genapps.py at both widths, the translator's ten equal to 674's table, planted changes
 caught, an old-size database refused a resume; made to fail first; run-tests runs --quick. The knee 6,988 bytes, s6
 7,572, fastest-x86-64 8,368. Left: the cross-run tools refuse mixed sizes. results/app-size-measure-678.md.
+
+## Iteration 679 - 2026-11-14 - Claude
+
+Step 0's rest: the cross-run tools never pool the two sizes - lab/evolve/appsize.py's one_size(): compare-fronts
+refuses databases of both, final-pick candidates of both, stopping.py a run against a series of the other size (its
+ledger line now says `"app": true`; the first new run opens a series). hv-bounds.json's box holds the new totals.
+appsize-check.py part 5, 5 of 5, in --quick; made to fail with the guard off. results/app-size-measure-678.md.

@@ -39,6 +39,9 @@ PASS. run-tests runs `--quick` (1 on s6 at 8-byte cells, and 3; under a second).
 Two self-built images lay a little less application code than the translator's (8-16 bytes at 8-byte cells): the
 records measure the translator's, which builds the search's images (the plan, "What stays").
 
-Left of step 0: the cross-run tools - compare-fronts, stopping.py, final-pick - must refuse to pool records of the two
-sizes (or re-measure the old ones), before the first new run is processed (step 5). The full check:
+The cross-run tools (Iteration 679): appsize.one_size() - compare-fronts refuses databases of both sizes, final-pick
+candidates of both, stopping.py judges a run only against a series of its own size and marks its ledger line `"app":
+true`; the first run of the new measure opens a series (process-records.sh's NEXT_METHOD). hv-bounds.json's box
+(total 12,000-64,000) holds the new totals (about 21-51 KB), so it stands. appsize-check.py part 5: 5 of 5; made to
+fail with the guard off (2 of 5 wrong). The full check:
 `python3 lab/evolve/appsize-check.py` (about a minute and a half; build/appsize-check.json).

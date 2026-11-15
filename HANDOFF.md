@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 678.
+- master: Iteration 679.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -57,8 +57,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   5 the laptop. **Step 0 done (678)**: `rec['total'] = bin + size + app` (rec['app'], at 4-byte cells app32, tracked) by
   lab/evolve/appsize.py, genapps.py's count; lab/evolve/appsize-check.py PASS - the same binaries equal at both widths,
   the translator's ten 674's table, planted changes, a database of the old size refused a resume; run-tests runs
-  `--quick` (results/app-size-measure-678.md). **Next: step 0's rest** - compare-fronts, stopping.py and final-pick
-  refuse to pool the two sizes - **then step 1.** Self-hosting phase 6 waits for the search's end.
+  `--quick` (results/app-size-measure-678.md); compare-fronts, stopping.py and final-pick refuse to pool the two sizes
+  (679; the first new run's processing opens a series: NEXT_METHOD). **Next: step 1.** Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
