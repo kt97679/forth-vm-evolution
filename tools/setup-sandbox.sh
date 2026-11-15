@@ -21,9 +21,11 @@
 # Iteration 590: the two detached jobs start by runuser and setsid -f directly, never through asme with a redirect and &:
 # dash kept the caller's stdout open (fds 10-11) in the subshell running the function, which waited on runuser, which
 # waited on the job - the setup call held to the job's end, past 300 s (589's "cause not found"; reproduced with a sleep).
+# Iteration 675: uploads now arrive with a prefix (5d9479d6-forth-vm-evolution-claude-...bundle): the globs here and in
+# process-run.sh and process-followup.sh take any prefix - without it the no-argument command found no bundle.
 set -u
 [ "$(id -u)" = 0 ] || { echo "setup-sandbox: as root"; exit 1; }
-B=${1:-$(ls -t /mnt/user-data/uploads/forth-vm-evolution-claude-*.bundle 2>/dev/null | grep -v -- '-checkpoint' | head -n 1)}
+B=${1:-$(ls -t /mnt/user-data/uploads/*forth-vm-evolution-claude-*.bundle 2>/dev/null | grep -v -- '-checkpoint' | head -n 1)}
 D=${DEST:-/home/claude/forth-vm-evolution}
 [ -f "$B" ] || { echo "setup-sandbox: no bundle (BUNDLE, or one in /mnt/user-data/uploads)"; exit 1; }
 asme() { runuser -u claude -- "$@"; }

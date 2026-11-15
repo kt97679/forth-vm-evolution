@@ -11484,3 +11484,10 @@ what relf's run-time compiler folds away (constants, VAR@, DOES> @, inlining). T
 on the six smaller programs, slower on brainless: the JIT leaves 86-90 % of its dispatches (jitapps.py: DODOES has no
 stencil, VALUE's DOES> code refused). Notes: results/generic-apps-674.md, with the step-2 candidates.
 tools/setup-sandbox.sh installs gforth for the baseline (detached, never waited for: nothing else needs it).
+
+## Iteration 675 - 2026-11-14 - Claude
+
+Setup found no bundle: uploads now arrive with a prefix (5d9479d6-forth-vm-evolution-claude-iter674-...bundle), and
+tools/setup-sandbox.sh, lab/evolve/process-run.sh and process-followup.sh looked only for names starting
+forth-vm-evolution-. Their globs take any prefix now (process-run.sh the newest, by ls -t, as the other two). The
+no-argument setup finds the bundle; build, run-tests PASS, validate 7 of 7 IDENTICAL at 674.

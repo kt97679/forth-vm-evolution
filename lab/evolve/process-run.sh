@@ -20,7 +20,7 @@
 # its run-tests). Start it early in a turn and see it to DONE; cut off: FROM=checks resumes at step 4 - /tmp/process and
 # the drafts kept, the chat's edits to them too - and with the batch already applied.
 set -u
-I=${1:?ITERATION}; A=${2:-$(ls /mnt/user-data/uploads/forth-vm-evolution-chain-*_tar.gz 2>/dev/null | tail -1)}
+I=${1:?ITERATION}; A=${2:-$(ls -t /mnt/user-data/uploads/*forth-vm-evolution-chain-*_tar.gz 2>/dev/null | head -n 1)}   # 675: any prefix, the newest
 cd "$(dirname "$0")/../.." || exit 1
 O=/tmp/process-run; mkdir -p "$O"; S=$O/status; : > "$S"
 st() { echo "$* $(date +%T)" >> "$S"; }

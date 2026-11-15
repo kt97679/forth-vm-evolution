@@ -20,7 +20,7 @@
 # results/followup-roles-seedN.md, the package and designs/ when a role changes (pack-designs.py, export-designs.py).
 set -u
 N=${1:?N}; I=${2:?ITERATION}; ROLES=${3:?ROLES}
-A=${4:-$(ls -t /mnt/user-data/uploads/forth-vm-evolution-chain-*_tar.gz 2>/dev/null | head -n 1)}
+A=${4:-$(ls -t /mnt/user-data/uploads/*forth-vm-evolution-chain-*_tar.gz 2>/dev/null | head -n 1)}   # 675: any prefix
 cd "$(dirname "$0")/../.." || exit 1
 O=${OUT:-/tmp/followup}; D=${DEST:-results}; C=results/followup-seed$N.md; K=$D/chain-followup$N; F=$D/followup-pick-seed$N.md
 die() { echo "process-followup: STOP - $*"; exit 1; }
