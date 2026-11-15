@@ -47,7 +47,9 @@ ap.add_argument('--rounds', type=int, default=5); ap.add_argument('--cells', typ
 ap.add_argument('--sizes', action='store_true');   # 677: the sizes alone (appsize-check.py)
 ap.add_argument('--systems', default=''); ap.add_argument('--apps', default=','.join(APPS)); ap.add_argument('--out', default='')
 a = ap.parse_args()
-B = os.path.join(ROOT, 'build'); W = os.path.join(B, 'genapps', 'work-%d' % a.cells)
+B = os.path.join(ROOT, 'build'); W = os.path.join(B, 'genapps', ('sizes-work-%d' if a.sizes else 'work-%d') % a.cells)   # 692: --sizes apart -
+# run-tests' appsize-check --quick ran --sizes, and its fresh work-8 lost the full and load drivers mech-dispatch.py,
+# genapps-dispatch.py and rtconst-check.py read
 shutil.rmtree(W, ignore_errors=True); os.makedirs(W)
 def sh(cmd, cwd=None, inp=None, timeout=900):
     r0 = resource.getrusage(resource.RUSAGE_CHILDREN)

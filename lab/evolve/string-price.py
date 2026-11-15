@@ -8,13 +8,13 @@ program's load, A less B, is the padding the change takes out of that program's 
 layout (a call to a colon word where a design's kernel may lay an opcode, so its padding can differ by a byte or two
 from the built change's). Both versions end their definitions at the same 256-byte boundary, so the program starts at
 the same address. Not the kernel's own strings - the image's - which move with the change itself. ABORT" is not in
-the seven. Needs build/genapps/work-CELLS (genapps.py makes it; this runs genapps.py --sizes on s6 for it).
+the seven. Needs build/genapps/sizes-work-CELLS (genapps.py --sizes makes it; this runs it on s6 for it).
 On s6 and the ten designs of designs/. Writes FILE (default build/genapps/string-price-CELLS.json); prints a table."""
 import json, os, re, subprocess, sys
 HERE_ = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE_))
 a = sys.argv[1:]; CELLS = int(a[a.index('--cells') + 1]) if '--cells' in a else 8
 OUT = a[a.index('--out') + 1] if '--out' in a else os.path.join(ROOT, 'build', 'genapps', 'string-price-%d.json' % CELLS)
-W = os.path.join(ROOT, 'build', 'genapps', 'work-%d' % CELLS)
+W = os.path.join(ROOT, 'build', 'genapps', 'sizes-work-%d' % CELLS)   # 692: genapps.py --sizes's own
 subprocess.run([sys.executable, os.path.join(HERE_, 'genapps.py'), '--sizes', '--cells', str(CELLS), '--systems', 's6', '--apps', 'sim16'],
                check=True, stdout=subprocess.DEVNULL)
 APPS = [('sim16', 'S" sim16.fth" INCLUDED'), ('gc16', 'S" gc16.fth" INCLUDED'), ('scan', 'S" scan.fth" INCLUDED'), ('evo', 'S" evo.fth" INCLUDED'),

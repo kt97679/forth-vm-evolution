@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 691.
+- master: Iteration 692.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -95,8 +95,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   design 1.022 (the JIT already compiles call and @ natively) - rtvar under the JIT needs jitvar.
   **691: the gene rtconst** (forth/cv8-fuse-const.4: a constant compiled as its value, relf's rule and test): the apps
   workload 0.975 on the knee, **0.770 on fastest-x86-64** (its constants no longer called through the interpreter);
-  lab/evolve/rtconst-check.py PASS on both. results/rtconst-691.md. **Next: the other step-3 genes** (inlining at
-  3/6, the JIT header, DOES> @ - its tail decoded in three call forms - and the DODOES stencil).
+  lab/evolve/rtconst-check.py PASS on both. results/rtconst-691.md.
+  **692: the JIT designs on shellmix** - nearly all its words refused (JITLOG): DOES> children without jitdoes, and
+  the parsing words PARSE WORD FIND >NUMBER (no stencils) cascading up through >NUM; jitdoes about even (0.950,
+  1.046); cold-calling the four slower (1.15, 1.11: GOALS.md's register). Native parsing operations would help - a
+  JIT project of its own. results/jit-shellmix-692.md. **Next: the other step-3 genes** (inlining at 3/6, the JIT
+  header, DOES> @ - its tail decoded in three call forms).
   (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.

@@ -11618,3 +11618,11 @@ literal (relf's rule, always; relf's constant-time test); the gene and its -cons
 the knee and fastest-x86-64 (lab/evolve/rtconst-check.py PASS): the right values at every literal width; the apps
 workload 0.975 on the knee and 0.770 on the JIT design, whose constants native code had called through the
 interpreter. results/rtconst-691.md.
+
+## Iteration 692 - 2026-11-15 - Claude
+
+The JIT designs on shellmix, by JITLOG: nearly all its words refused - DOES> children (no jitdoes) and the parsing words
+PARSE, WORD, FIND and >NUMBER (no stencils), refused callees taking their callers down. jitdoes about even (0.950 and
+1.046 on shellmix); the four as cold words, called through the helper, slower (1.152, 1.114) - rejected, GOALS.md's
+register. genapps.py --sizes now writes its own work directory (run-tests' quick check had wiped work-8's benchmark
+drivers). results/jit-shellmix-692.md.
