@@ -11610,3 +11610,11 @@ branch, and jitvar's slots are kinds 8 and 9 - so every such word was refused, t
 began (Iteration 344). JIT_BROPND: under JITVAR a branch is 6 or 7; without it the same code as before. rtvar's words
 on fastest-x86-64 now translate: its apps workload 1.022 with rtvar (1.999 before); rtvar under the JIT needs jitvar.
 run-tests PASS. results/rtvar-688.md.
+
+## Iteration 691 - 2026-11-15 - Claude
+
+Step 3's second gene, rtconst: forth/cv8-fuse-const.4 compiles a call to a word that is one literal and EXIT as that
+literal (relf's rule, always; relf's constant-time test); the gene and its -const dumps, no converter table. Checked on
+the knee and fastest-x86-64 (lab/evolve/rtconst-check.py PASS): the right values at every literal width; the apps
+workload 0.975 on the knee and 0.770 on the JIT design, whose constants native code had called through the
+interpreter. results/rtconst-691.md.

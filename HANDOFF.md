@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 690.
+- master: Iteration 691.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -92,8 +92,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   one-byte codes, vf/vs pinned) - but on fastest-x86-64 the JIT refused run-time words holding vf (the apps workload
   1.999, interpreted). **690: found and fixed** - engine/jit.c took jitvar's slot kinds 8 and 9 for branches and
   refused every word holding vf or vs, the kernel's HERE too (JIT_BROPND); since, rtvar's words translate, the JIT
-  design 1.022 (the JIT already compiles call and @ natively) - rtvar under the JIT needs jitvar. **Next: the other
-  step-3 genes** (constants by relf's test, inlining at 3/6, the JIT header, DOES> @, the DODOES stencil).
+  design 1.022 (the JIT already compiles call and @ natively) - rtvar under the JIT needs jitvar.
+  **691: the gene rtconst** (forth/cv8-fuse-const.4: a constant compiled as its value, relf's rule and test): the apps
+  workload 0.975 on the knee, **0.770 on fastest-x86-64** (its constants no longer called through the interpreter);
+  lab/evolve/rtconst-check.py PASS on both. results/rtconst-691.md. **Next: the other step-3 genes** (inlining at
+  3/6, the JIT header, DOES> @ - its tail decoded in three call forms - and the DODOES stencil).
   (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.

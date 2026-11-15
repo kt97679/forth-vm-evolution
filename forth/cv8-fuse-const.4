@@ -1,0 +1,29 @@
+\ cv8-fuse-const.4 - a constant compiled as its value in code compiled at RUN time (Iteration 691: the gene rtconst;
+\ step 3 of results/drafts/search-reopen-plan-677.md, mechanism 1 - relf's CONST-WORD?, its Iteration 681). Loaded
+\ after the other fusers of either family (cv8-fuse-var.4 among them), before cv8t-empty.4 and cv8t-jit.4, and only
+\ for designs with the gene: its code costs image bytes, and only the designs that choose it pay them.
+\
+\ A call to a word whose code is one literal and EXIT - CONSTANT8 lays LIT, (LIT8, LIT16, LIT32 or LIT64) and a plain
+\ EXIT; a colon definition of one number lays the same (`: X 5 ;`, its EXIT unfolded: LIT, clears LAST-OP) - becomes
+\ that literal, through LITERAL, so rtimm's n + still fuses after it: one dispatch for the call, the literal and the
+\ EXIT. relf's rule: always the literal, whatever its width (a 5- or 9-byte one is longer than a call; few constants
+\ are wide - 4 of relfsh's 122). A constant-time test of the callee's first byte and the one after its operand, as
+\ relf's (Iteration 59's rtlit searched, and lost the compiling workloads). Under the two-bit tag with the JIT a
+\ colon definition begins with the JIT's header, which this does not step over: there CONSTANTs only. The codes are
+\ the overlays' constants, which the converter writes to the design's own.
+
+: U32@ ( a-addr --- u )   DUP C@ OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ 16 LSHIFT OR SWAP 3 + C@ 24 LSHIFT OR ;
+
+: CONST-OF ( xt --- n -1 | 0 )
+\ The value of a word laid as LIT, and EXIT, or 0.
+  DUP C@ LIT8-OP = IF DUP 2 + C@ EXIT-OP = IF 1+ C@ -1 EXIT THEN DROP 0 EXIT THEN
+  DUP C@ LIT16-OP = IF DUP 3 + C@ EXIT-OP = IF 1+ DUP C@ SWAP 1+ C@ 8 LSHIFT OR -1 EXIT THEN DROP 0 EXIT THEN
+  DUP C@ LIT32-OP = IF DUP 5 + C@ EXIT-OP = IF
+      1+ U32@ 1 CELLS 8 = IF DUP 2147483648 AND IF 4294967296 - THEN THEN -1 EXIT
+    THEN DROP 0 EXIT THEN
+  DUP C@ LIT64-OP = IF DUP 9 + C@ EXIT-OP = IF 1+ DUP U32@ SWAP 4 + U32@ 32 LSHIFT OR -1 EXIT THEN DROP 0 EXIT THEN
+  DROP 0 ;
+
+: COMPILE,8 ( xt --- )
+\ The COMPILE,8 before this one, with a call to a constant laid as its value.
+  DUP PRIMITIVE? 0= IF DUP CONST-OF IF SWAP DROP POSTPONE LITERAL EXIT THEN THEN COMPILE,8 ;
