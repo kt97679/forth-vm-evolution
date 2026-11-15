@@ -44,7 +44,9 @@ FITNESS, both minimised and kept as a Pareto front, so nothing is traded:
          with loop), every program loaded from a FILE (standard input would
          measure read() calls, not engines)
   size   bytes of the engine plus the self-hosting image ('total': since
-         Iteration 75; before it, the image alone) - with speed, memory
+         Iteration 75; before it, the image alone) plus, since Iteration 677,
+         the code the selection's four applications lay ('app': appsize.py,
+         genapps.py's count) - with speed, memory
          (rss) and, under --widths 8,4, speed at 4-byte cells: the
          objectives of dominates(). The aim behind them: GOALS.md.
 WORK_HELD is HELD OUT: never selected on, reported for the survivors, so a
@@ -717,7 +719,9 @@ def eval32(g, rounds):
         with at_width(WIDTH4):
             eng, img = build(g32, d32); pw = private_work(d32)
             alive(eng, img, pw, far=not hand_made(g32))
+            ab = app_size(eng, img, pw)              # Iteration 677: tracked at 4-byte cells, not scored
             t, raw = measure(eng, img, pw, WORK_SEL, max(1, rounds - 1))
+        out['appby32'] = ab; out['app32'] = sum(ab)
         out['speed32'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL)); out['t32'] = t
     except (RuntimeError, subprocess.TimeoutExpired) as e:
         out['speed32'] = None; out['why32'] = str(e)[:200]
@@ -1113,6 +1117,8 @@ def _build(g, d):
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import elf_tight                                    # Iteration 149
 import farcheck                                     # Iteration 158: code far from the image base
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import appsize                                      # Iteration 677: the applications' code, genapps.py's count
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...'). The engine as
     it ships (Iteration 149): the ELF header, the program headers and the
@@ -1247,6 +1253,18 @@ def alive(eng, img, pw, far=True):
         except Exception: out = ''
         if 'dictionary full' not in out or [l for l in out.replace('\r', '').split('\n') if re.fullmatch(r'[0-9]+ ', l)] != ['1 ', '42 ']:
             raise RuntimeError('died: dictionary full not refused')
+
+def app_size(eng, img, pw):
+    """Iteration 677 (the owner; results/drafts/search-reopen-plan-677.md): the code bytes each of the selection's four
+    applications lays - HERE's advance over its load less its own ALLOT , and C, - by two deterministic loads each, no
+    timing (appsize.py: genapps.py's count). [sim16, gc16, scan, evo]; a program that gives no reading kills."""
+    out = []
+    for app in appsize.SELECTION:
+        o = [sh([eng, img], cwd=pw, inp=appsize.stdin(app, m), timeout=60, cpu=5).stdout.decode('latin-1') for m in ('size', 'count')]
+        v = appsize.parse(*o)
+        if v is None: raise RuntimeError('died: application size (%s)' % app)
+        out.append(v[0] - v[1])
+    return out
 
 METRIC = rb'^CYCLES (\d+)' if os.environ.get('EVOLVE_METRIC') == 'cycles' else rb'^CPUNS (\d+)'
 PIN, REF = [], None            # set by setup(): the core, the reference (eng, img, work dir)
@@ -1399,9 +1417,11 @@ def evaluate(g, rounds, keep=False, gate=None, again=False, stop=None):
     try:
         eng, img = build(g, d)
         rec['size'] = os.path.getsize(img)
-        rec['bin'] = bin_size(eng); rec['total'] = rec['bin'] + rec['size']     # Iteration 75: an objective
+        rec['bin'] = bin_size(eng)
         pw = private_work(d)
         alive(eng, img, pw, far=not hand_made(g))
+        rec['appby'] = app_size(eng, img, pw); rec['app'] = sum(rec['appby'])     # Iteration 677: the four's code
+        rec['total'] = rec['bin'] + rec['size'] + rec['app']     # an objective: Iteration 75, the applications' since 677
         if stop and rounds > 1 and not again:     # Iteration 529 (the owner): one round first
             st = ({}, {}, {}, {})
             t1, raw1 = measure(eng, img, pw, WORK_SEL + WORK_HELD, 1, state=st)
@@ -2026,6 +2046,11 @@ def setup():
         dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
     os.makedirs(EV, exist_ok=True)
+    # Iteration 677: the four applications and their size drivers (appsize.py), as genapps.py lays them out - every
+    # design's private work directory links them
+    for app in appsize.SELECTION:
+        shutil.copy(os.path.join(ROOT, 'lab', 'evolve', 'apps', appsize.FILES[app]), os.path.join(W, appsize.FILES[app]))
+        for m in ('size', 'count'): open(os.path.join(W, appsize.driver_name(app, m)), 'w').write(appsize.lab_text(app, m))
     # The corpus as tools/run-tests.sh feeds it, written here so a fresh
     # build is enough: the CORE tests, then a sentinel that proves the end.
     with open(CORPUS, 'wb') as f:
@@ -2280,6 +2305,11 @@ def main(argv):
     FASTGATE[0] = opt('--fastgate', FASTGATE[0])          # Iteration 391: 0, off
     JOBS, UNTIL = opt('--jobs', 1), opt('--until', 0)        # Iteration 99: workers on their own cores; a deadline
     R = load()
+    # Iteration 677: 'total' counts the applications' code since 677 - a database from before it measures another size;
+    # resumed, its designs and the new ones would rank on two measures (--report and --carry still read it, by its own)
+    old = sum(1 for r in R.values() if r.get('status') == 'ok' and r.get('speed') and 'app' not in r)
+    if old: sys.exit('evolve.py: %s - %d designs measured before Iteration 677 (no applications in their size): '
+                     'resume only a database of this measure; start a new one, or --carry from it' % (DB, old))
     # Iteration 610: a resumed run's replay saw each gated design's second reading from its first generation - written
     # a generation later, it ranked on it early and forked (seed 87: at generation 3, 133 generations lost). The first
     # reading stands until the batch that measured it again, as it did the first time (flush()).

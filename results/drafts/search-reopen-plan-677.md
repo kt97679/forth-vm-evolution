@@ -47,7 +47,8 @@ A mechanism that does not pay goes to GOALS.md's register with its numbers.
 
 ## The order - each step leaves a working, checked state
 
-0. **The measure** (above): evolve.py counts the four apps' code; checked; run-tests, validate.
+0. **The measure** (above): evolve.py counts the four apps' code; checked; run-tests, validate. **Done (678)**:
+   results/app-size-measure-678.md - left: compare-fronts, stopping.py and final-pick refuse to pool the two sizes.
 1. **The pure savings** (6, 7): kernel and library changes - every image and s6 move, so measured on the ten and s6
    before and after, speed by dispatches.
 2. **The prices** of 1-5, 8, 9 on the four (and the held-out three) - a results file, a row each.

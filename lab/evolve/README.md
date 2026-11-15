@@ -86,6 +86,8 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
 - `genapps.py` - generic applications (Iteration 674): seven programs on s6, the ten designs, relf's CV8 (relf64, relfasm64, relf32) and gforth-fast - the code each lays (HERE less its own data), its benchmark's CPU time, load and start; preludes in genapps/ (results/generic-apps-674.md)
+- `appsize.py` - an application's code bytes (HERE's advance less its own ALLOT , C,): the drivers and parse, one definition for genapps.py and evolve.py's rec['app'] (Iteration 678)
+- `appsize-check.py` - evolve.py's rec['app'] against genapps.py: the same binaries at both widths, the translator's ten against 674's table, planted changes, the resume guard; `--quick` in run-tests (Iteration 678)
 - `genapps-report.py` - genapps.py's results as Markdown tables: code, time, the whole system, and the lab's scores' rank correlation with them (Iteration 674)
 - `genapps-dispatch.py` - genapps.py's programs counted in dispatches on the interpreted designs (PROFILE=1) and on CV8 (relf's counting patch), with the calls', DOVAR's and DODOES's shares (Iteration 674)
 - `genapps-constructs.py` - each construct's code bytes per system (calls near and far, literals, data words, strings, control, definitions), and --census: brainless's definitions by kind (Iteration 674)

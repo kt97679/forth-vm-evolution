@@ -212,6 +212,7 @@ Each subject oldest first; a script or patch beside the document it made.
 
 - `drafts/article-method-548.md` - The article's method section, a draft (Iteration 548): the design space, the objectives, the search, the audited shortcuts, the true front, the checks, the stopping rule, the baseline - its figures recomputed at 600.
 - `generic-apps-674.md` - Step 1 after relf's report: seven generic programs on the ten designs, s6, relf's CV8 and gforth - application code +7-10 % (JIT designs +18-28 %), 1.3-1.9x CV8's dispatches, the JIT 90 % idle on brainless.
+- `app-size-measure-678.md` - Step 0 of the reopened search: evolve.py's size counts the four selection apps' code (genapps.py's count, appsize.py), checked byte for byte at both widths.
 - `jit-throw-unwind-673.md` - relf's report (its Iteration 942) fixed: on the jitexec designs a THROW from a nested interpreter now unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; tests in designs/test.sh.
 - `relf-questions-665.md` - What relf asked this lab (its Iteration 716), answered as far as the generic search can, from the ten winners' expressed genes: (+LOOP) and operand forms yes; XF@/XV@, DEFER and PICK not in the search.
 - `article-check-659.md` - The article's figures checked (Iteration 659): the same numbers in both drafts, 195 of 197 distinctive figures in the records; part one's image sizes regenerate at a105e59, not at master.

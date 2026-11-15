@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lab/evolve/genapps.py [--rounds R] [--cells 8|4] [--systems A,B] [--apps A,B] [--out FILE] - generic applications
+"""lab/evolve/genapps.py [--rounds R] [--sizes] [--cells 8|4] [--systems A,B] [--apps A,B] [--out FILE] - generic applications
 on the ten designs and on outside Forths (Iteration 674: step 1 after relf's report - measure application code
 generically, relf's shell left out of it).
 
@@ -29,6 +29,7 @@ and as written on gforth. Writes FILE (default build/genapps/results-CELLS.json)
 import argparse, json, os, re, resource, shutil, statistics, subprocess, sys, tempfile, time
 HERE_ = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE_))
 sys.path.insert(0, os.path.join(HERE_, 'appbench')); from fold import fold
+sys.path.insert(0, HERE_); import appsize    # Iteration 677: the size count, shared with evolve.py
 DESIGNS = ['smallest', 'least-memory', 'portable-small', 'portable-knee', 'portable-arm', 'portable-fastest',
            'best-all-round', 'small-jit', 'fastest-x86-64', 'fastest-x86-32']
 # name: (files, benchmark call, the result's line) - the calls about 2/5 of appbench.py's (about a second on the
@@ -42,6 +43,7 @@ APPS = {'sim16': ('sim16.fth', '25 BENCH', r'SIM16 SIEVE \d+ FIB \d+ STEPS \d+')
         'brainless': ('benchmark.fs', 'BENCHMARK', r'\d+ nodes .* \d+ evals')}   # 110023 and 163278 at 8-byte cells
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
 ap.add_argument('--rounds', type=int, default=5); ap.add_argument('--cells', type=int, default=8, choices=(8, 4))
+ap.add_argument('--sizes', action='store_true');   # 677: the sizes alone (appsize-check.py)
 ap.add_argument('--systems', default=''); ap.add_argument('--apps', default=','.join(APPS)); ap.add_argument('--out', default='')
 a = ap.parse_args()
 B = os.path.join(ROOT, 'build'); W = os.path.join(B, 'genapps', 'work-%d' % a.cells)
@@ -72,7 +74,8 @@ shutil.copy(os.path.join(RT, 'forth', 'extend.4'), os.path.join(W, 'relf-extend.
 shutil.copy(os.path.join(HERE_, 'genapps', 'relf-prelude.fth'), W)
 rtree = os.path.join(W, 'relf-tree'); shutil.copytree(RT, rtree, symlinks=True)
 want = ['relf64', 'relfasm64'] if a.cells == 8 else ['relf32']
-subprocess.run(['make', '-s'] + want, cwd=rtree, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+if not a.systems or [n for n in a.systems.split(',') if n.startswith('relf')]:    # 677: only when asked for
+    subprocess.run(['make', '-s'] + want, cwd=rtree, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 # ---- the systems: name -> (kind, command, engine file, image file)
 SYS = {}
@@ -93,21 +96,16 @@ for k, (kind, cmd) in SYS.items():
 apps = a.apps.split(',')
 
 # ---- the drivers: one file per system kind, program and mode
-COUNT = ("VARIABLE DATA#  0 DATA# !\n' ALLOT CONSTANT 'ALLOT  ' , CONSTANT ',  ' C, CONSTANT 'C,\n"
-         ": ALLOT DUP DATA# +! 'ALLOT EXECUTE ;  : , 1 CELLS DATA# +! ', EXECUTE ;  : C, 1 DATA# +! 'C, EXECUTE ;\n")
 def driver(kind, app, mode):
     f, call, _ = APPS[app]
     pre = ''
     if app == 'brainless': pre = {'lab': 'S" lab-prelude.fth" INCLUDED\n', 'relf': 'S" relf-prelude.fth" INCLUDED\n', 'gforth': ''}[kind]
     inc = ('INCLUDE %s\n' % f) if app == 'brainless' else ('S" %s" INCLUDED\n' % f)
     t = pre
-    if mode in ('size', 'count'):
-        if mode == 'count': t += COUNT
-        t += 'VARIABLE H0  HERE H0 !\n' + inc + '777001 . HERE H0 @ - . %s 777002 . CR\n' % ('DATA# @ .' if mode == 'count' else '')
-    elif mode == 'load': t += inc
-    elif mode == 'full': t += inc + (call.lower() if kind == 'gforth' and app == 'brainless' else call) + ' CR\n'
-    t += 'BYE\n'
-    name = '%s-%s-%s.fs' % (kind, app, mode)
+    if mode in ('size', 'count'): t = appsize.text(inc, mode, pre)       # Iteration 677: appsize.py's, as evolve.py's
+    elif mode == 'load': t += inc + 'BYE\n'
+    elif mode == 'full': t += inc + (call.lower() if kind == 'gforth' and app == 'brainless' else call) + ' CR\n' + 'BYE\n'
+    name = appsize.driver_name(app, mode, kind)
     d = os.path.join(W, 'gf') if kind == 'gforth' else W
     open(os.path.join(d, name), 'w').write(t)
     return name
@@ -130,13 +128,16 @@ for s, (kind, cmd) in SYS.items():
                           stderr=subprocess.DEVNULL).returncode == 0: e['engine_tight'] = os.path.getsize(tmp)
     for app in apps:
         _, o1 = run(s, app, 'size'); _, o2 = run(s, app, 'count')
-        m1 = re.search(r'777001 (-?\d+) +777002', o1); m2 = re.search(r'777001 (-?\d+) (-?\d+) +777002', o2)
-        if not m1 or not m2: sys.exit('genapps: %s on %s: no size\n%s\n%s' % (app, s, o1[-600:], o2[-600:]))
-        total, data = int(m1.group(1)), int(m2.group(2))
+        v = appsize.parse(o1, o2)
+        if not v: sys.exit('genapps: %s on %s: no size\n%s\n%s' % (app, s, o1[-600:], o2[-600:]))
+        total, data = v
         e['apps'][app] = {'total': total, 'data': data, 'code': total - data, 'load': [], 'full': []}
     R['systems'][s] = e
     print('genapps: %-16s sizes %s' % (s, ' '.join('%s %d' % (k, v['code']) for k, v in e['apps'].items())), flush=True)
 
+if a.sizes:
+    out = a.out or os.path.join(B, 'genapps', 'sizes-%d.json' % a.cells); json.dump(R, open(out, 'w'), indent=1)
+    sys.exit(print('genapps: wrote %s' % out))
 # ---- times: R rounds, systems interleaved and rotated; every full run's result checked
 names = list(SYS); RESULT = {}
 for rnd in range(a.rounds):

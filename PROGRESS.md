@@ -11510,3 +11510,11 @@ them), the batch, the rehearsal, the laptop - and its risks: results/drafts/sear
 size and register updated; self-hosting phase 6 after the search. tools/handoff-check.py's check 3 now wants the
 card's "master: Iteration N" to be HEAD's: a failed edit had left it at 676 under 677's commit and the check passed
 it (a planted copy now fails).
+
+## Iteration 678 - 2026-11-14 - Claude
+
+Step 0 of the reopened search: evolve.py's size counts the selection's four apps' code - `rec['total'] = bin + size +
+app` (app32 tracked at 4-byte cells), by genapps.py's count moved into lab/evolve/appsize.py. lab/evolve/appsize-check.py
+PASS: 11 of 11 systems equal to genapps.py at both widths, the translator's ten equal to 674's table, planted changes
+caught, an old-size database refused a resume; made to fail first; run-tests runs --quick. The knee 6,988 bytes, s6
+7,572, fastest-x86-64 8,368. Left: the cross-run tools refuse mixed sizes. results/app-size-measure-678.md.

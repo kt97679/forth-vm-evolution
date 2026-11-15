@@ -51,8 +51,8 @@ How each is measured:
   extension uses belongs in that extension (results/word-audit.md). **Reopened for application code (the
   owner, Iteration 677)**: the size is the engine, the kernel image and the code the selection's four
   applications lay (sim16, gc16, scan, evo), bytes equal - one total; an extension's code stays out, wordfreq,
-  minif and brainless are held out (results/drafts/search-reopen-plan-677.md; in force once evolve.py measures
-  it, the plan's step 0).
+  minif and brainless are held out (results/drafts/search-reopen-plan-677.md; in force since Iteration 678:
+  evolve.py's rec['app'], genapps.py's count - results/app-size-measure-678.md).
 - **speed**: median CPU time against the hand-made s6, the geometric mean over
   the selection workloads - kernel, fib, corpus, loop, bubble (300 cells),
   ackermann (A(3,5)); parse and sieve held out (Iterations 100, 127-128). The

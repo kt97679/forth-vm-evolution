@@ -375,6 +375,10 @@ else printf '  %-12s FAIL   %s\n' evolver "$(printf '%s' "$out" | grep FAIL | he
 # Iteration 610: a resumed run replays its first attempt - seed 87's restart forked at generation 3 (test-resume.py).
 if out=$(python3 "$ROOT/lab/evolve/test-resume.py" 2>&1); then printf '  %-12s ok     %s\n' resume "$(printf '%s' "$out" | tail -1 | cut -c14-110)"
 else printf '  %-12s FAIL   %s\n' resume "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+# Iteration 677: rec['app'] (the four applications' code in the size) is genapps.py's count - s6 both ways and the
+# planted changes (appsize-check.py --quick; the ten designs at both widths and the resume guard: without --quick).
+if out=$(python3 "$ROOT/lab/evolve/appsize-check.py" --quick 2>&1); then printf '  %-12s ok     %s\n' appsize "$(printf '%s' "$out" | tail -1 | cut -c16-110)"
+else printf '  %-12s FAIL   %s\n' appsize "$(printf '%s' "$out" | grep -v PASS | tail -1 | cut -c1-110)"; FAILED=1; fi
 # Iteration 628: remote-checks.sh's clean - each host's fve-xcheck emptied after a chain (test-remote-clean.sh).
 if out=$(sh "$ROOT/lab/evolve/test-remote-clean.sh" 2>&1); then printf '  %-12s ok     %s\n' rclean "$(printf '%s' "$out" | tail -1 | cut -c4-110)"
 else printf '  %-12s FAIL   %s\n' rclean "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; FAILED=1; fi
