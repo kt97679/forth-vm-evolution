@@ -11652,3 +11652,12 @@ field (forth/cv8-fuse-var.4's DOES-@ - the tail decoded from the child's far or 
 laid forms; layout.py's VAR-OPS 12 bytes). rtvar-check.py PASS on portable-knee, portable-fastest, fastest-x86-64 (a
 VALUE-like child read after its body is stored; DOES> @ 1+ left a call). shellmix alone: 0.606 on fastest-x86-64, its
 DOES> words' callers translated by the JIT now; 0.783 on portable-fastest. results/does-at-695.md.
+
+## Iteration 696 - 2026-11-15 - Claude
+
+Step 4's rehearsal of rtvar (with DOES> @), rtconst and rtinline together, in a scratch clone: the ten roles alive with
+them, the six that can express them evaluated off against on - the score 0.94 to 1.01, the image 0.8-1.6 KB larger.
+By workload the run-time programs gain (bubble and ackermann about 0.9) and the corpus pays 1.11-1.22: the compile
+layer, rtinline's scan the most of it (1.125 alone on the knee). Its fold search now behind a 32-byte bitmap: about 1.07;
+a second bitmap, to pass over calls at once, bought nothing and was taken out. The short run clean but for 693's
+founders. results/rehearsal-696.md.

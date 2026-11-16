@@ -10,10 +10,13 @@
 \ has the EXIT folded into it is copied with that operation's plain code. Under the two-bit tag with the JIT a word
 \ begins with the JIT's header, stepped over.
 
-CREATE INL-OPS ( --- c-addr )   HERE 120 ALLOT 120 0 FILL
-\ [0-63] two bits for each one-byte code: 0 not copied, else its length with its operand (1-3); [64] the JIT's code,
-\ [65] the length of its header (0: no header); [66] a count, then that many pairs: a code with the EXIT folded in,
-\ the same operation's code without it. All zeros: nothing copied.
+CREATE INL-OPS ( --- c-addr )   HERE 152 ALLOT 152 0 FILL
+\ [0-63] two bits for each one-byte code: 0 not copied, else its length with its operand (1-3); [64-95] a bit for each
+\ code with the EXIT folded in whose plain form is copied (695: the pairs searched only for those - the search for
+\ every call compiled cost the corpus workload 12 %); [96] the JIT's code, [97] the length of its header (0: none);
+\ [98] a count, then that many pairs: a code with the EXIT folded in, the same operation's code without it. All
+\ zeros: nothing copied. (696: a bitmap of the codes a body can begin with, to pass over the rest at once, bought
+\ nothing measurable - the scan's cost is in words that begin with a copied operation - results/rehearsal-696.md.)
 ALIGN
 
 VARIABLE INL-A ( --- a-addr )   \ the body's first byte
@@ -24,13 +27,14 @@ VARIABLE INL-F ( --- a-addr )   \ 0, or 256 + the plain code of a last instructi
 : INL-LEN ( c --- n )   DUP 2 RSHIFT INL-OPS + C@ SWAP 3 AND 2* RSHIFT 3 AND ;
 
 : INL-UNFOLD ( c --- c2 -1 | 0 )
-  INL-OPS 66 + C@ 0 ?DO
-    DUP INL-OPS 67 + I 2* + C@ = IF DROP INL-OPS 68 + I 2* + C@ -1 UNLOOP EXIT THEN
+  DUP 3 RSHIFT INL-OPS 64 + + C@ OVER 7 AND RSHIFT 1 AND 0= IF DROP 0 EXIT THEN
+  INL-OPS 98 + C@ 0 ?DO
+    DUP INL-OPS 99 + I 2* + C@ = IF DROP INL-OPS 100 + I 2* + C@ -1 UNLOOP EXIT THEN
   LOOP DROP 0 ;
 
 : INL-BODY ( xt --- flag )
 \ True if xt's body can be copied: INL-A, INL-U, INL-L and INL-F describe it.
-  DUP C@ INL-OPS 64 + C@ = INL-OPS 65 + C@ AND ?DUP IF + THEN
+  DUP C@ INL-OPS 96 + C@ = INL-OPS 97 + C@ AND ?DUP IF + THEN
   INL-A ! 0 INL-U ! 0 INL-F !
   4 0 DO
     INL-A @ INL-U @ + C@

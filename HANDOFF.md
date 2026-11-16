@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 695.
+- master: Iteration 696.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -112,8 +112,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/rtinline-694.md.
   **695: DOES> @ in rtvar** (cv8-fuse-var.4's DOES-@: the tail decoded from the child's call, `R> @` and EXIT in its
   three forms): shellmix alone 0.606 on fastest-x86-64 (the JIT translates the hooks' and buffers' callers now), 0.783
-  on portable-fastest; rtvar-check.py PASS on three. results/does-at-695.md. **Next:** a rehearsal of the genes
-  together (rtvar with DOES> @, rtconst, rtinline), then the laptop. Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
+  on portable-fastest; rtvar-check.py PASS on three. results/does-at-695.md.
+  **696: the rehearsal of the three together** (a scratch clone): the front alive with them; per workload the programs
+  gain (bubble, ackermann ~0.9) and the corpus pays 1.11-1.22 (the compile layer - rtinline's scan most); rtinline's
+  fold search behind a bitmap halved its share (1.125 -> ~1.07); the score nets 0.94-1.01, at 0.8-1.6 KB of image.
+  results/rehearsal-696.md. **Next: the laptop** (step 5; its hours the owner's) - or more genes first (the plan's
+  left: the JIT header, a DODOES stencil - jitdoes was about even at 692). Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
   the fusions off in self-built images - phase 6's).
   (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's

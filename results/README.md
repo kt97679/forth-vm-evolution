@@ -224,6 +224,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `rehearsal-693.md` - Step 4's rehearsal for rtvar and rtconst: the front alive with them, the search's speed 0.999-0.960 at about 350 bytes; s1-sod16 past sod16's DOES> reach with shellmix.
 - `rtinline-694.md` - The gene rtinline (a short body copied for its call at run time): the programs 5-15 % faster alone; and the dumps made when first asked for (setup 63 s -> 1.6 s).
 - `does-at-695.md` - DOES> @ as a variable's fetch, in rtvar: shellmix 0.606 on fastest-x86-64 (the JIT now translates its DOES> words' callers), 0.783 on portable-fastest.
+- `rehearsal-696.md` - Step 4's rehearsal of rtvar, rtconst and rtinline together: the front alive; the programs gain, the corpus pays (the compile layer); the score 0.94-1.01; rtinline's scan made cheaper.
 - `jit-throw-unwind-673.md` - relf's report (its Iteration 942) fixed: on the jitexec designs a THROW from a nested interpreter now unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; tests in designs/test.sh.
 - `relf-questions-665.md` - What relf asked this lab (its Iteration 716), answered as far as the generic search can, from the ten winners' expressed genes: (+LOOP) and operand forms yes; XF@/XV@, DEFER and PICK not in the search.
 - `article-check-659.md` - The article's figures checked (Iteration 659): the same numbers in both drafts, 195 of 197 distinctive figures in the records; part one's image sizes regenerate at a105e59, not at master.

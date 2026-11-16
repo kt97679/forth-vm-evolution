@@ -1444,9 +1444,12 @@ def emit(path):
             _fold = {nm: nm[:-5] for nm in _names.values() if nm.endswith(';EXIT')}; _fold.update({'LIT8X': 'LIT8', 'ADDIX': 'ADDI', 'EQIX': 'EQI'})
             _pairs = [(_code[f_], _code[p_]) for f_, p_ in sorted(_fold.items()) if f_ in _code and p_ in _code and _ilen(p_)][:26]
             _jit = _byte(0xFFFD) if (TAG2_ON and G.get('JIT_ON')) else None
-            data = (bytes(sum(_bits[4 * i + k] << (2 * k) for k in range(4)) for i in range(64))
+            _fb = [0] * 32
+            for f_, p_ in _pairs: _fb[f_ >> 3] |= 1 << (f_ & 7)      # 695: which codes are folds - the pairs searched only for them
+            data = (bytes(sum(_bits[4 * i + k] << (2 * k) for k in range(4)) for i in range(64)) + bytes(_fb)
                     + bytes([_jit or 0, 5 if _jit is not None else 0, len(_pairs)]) + bytes(x for e in _pairs for x in e))
-            assert len(data) <= 120, 'INL-OPS overflows'
+            assert len(data) <= 152, 'INL-OPS overflows'
+            if _os.environ.get('SOD16_NO_INLINE'): data = bytes(len(data))   # =1: nothing copied - the overlay's cost alone, to measure
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time
             # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has
