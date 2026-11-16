@@ -1412,6 +1412,12 @@ def emit(path):
             # translator's own slots being unscaled offsets (v8pfa). Zeros: the fusion off.
             rt = 'var' in G['SPEC'] and bool(G['VARSLOT'])   # 688: 16-bit slots reach 64 KB - too near; 689: the tag too
             data = bytes([G['X_VF'], G['X_VS'], op('@')[0], op('!')[0]] if rt else [0, 0, 0, 0]) + bytes([1 if G['VARSLOT'] else 0, 0, 0, 0])
+            # 695: DOES> @ too - the tail's codes, in this design's final one-byte codes (not remapped below): R>, @ with
+            # its EXIT folded in, the pair R> @; which of them it has; the family, for the tail's call form
+            _inv = {nm: x for x, nm in G['t2_names']().items()}
+            _b = lambda nm: ((T2MAP['one'].get(_inv[nm]) if TAG2_ON else (_inv[nm] if _inv[nm] < 128 else None)) if nm in _inv else None)
+            _t = [_b(nm) for nm in ('R>', '@;EXIT', 'R> @')] if rt and not _os.environ.get('SOD16_NO_DOESAT') else [None] * 3   # =1: off, to measure
+            data = data[:6] + bytes([1 if TAG2_ON else 0, 0] + [x or 0 for x in _t] + [sum(1 << k for k, x in enumerate(_t) if x is not None)])
         elif w['n'] == 'INL-OPS':
             # Iteration 694: what code compiled at run time may copy for a call (forth/cv8-fuse-inline.4, the gene
             # rtinline) - in this design's one-byte codes, either family (not remapped below): two bits a code, its

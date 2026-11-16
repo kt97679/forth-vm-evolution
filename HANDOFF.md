@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 694.
+- master: Iteration 695.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -109,8 +109,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (gc16 0.825 on fastest-x86-64), the apps workload about even; lab/evolve/rtinline-check.py PASS on four. **The dumps
   are made when first asked for** (evolve.py's dump_file, build/dumps-HASH): setup 63 s -> 1.6 s, the run-time genes no
   longer doubling it; boot_files() the one list (export-genes.py's copy had missed -var and -const).
-  results/rtinline-694.md. **Next:** DOES> @ as VAR@ (its tail decoded in three call forms), then a rehearsal of the
-  three genes together, then the laptop. Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
+  results/rtinline-694.md.
+  **695: DOES> @ in rtvar** (cv8-fuse-var.4's DOES-@: the tail decoded from the child's call, `R> @` and EXIT in its
+  three forms): shellmix alone 0.606 on fastest-x86-64 (the JIT translates the hooks' and buffers' callers now), 0.783
+  on portable-fastest; rtvar-check.py PASS on three. results/does-at-695.md. **Next:** a rehearsal of the genes
+  together (rtvar with DOES> @, rtconst, rtinline), then the laptop. Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
   the fusions off in self-built images - phase 6's).
   (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's

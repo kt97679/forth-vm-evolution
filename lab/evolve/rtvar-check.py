@@ -4,6 +4,7 @@
 Builds DESIGN (default portable-knee; its record's genome, varslot on - rtvar needs it, 688) with rtvar 0 and 1 as
 the search does, and checks:
   alive     both pass the gate's alive() (corpus, kernel workload, far);
+  does      (695) a DOES> @ child (V4: a VALUE) compiles to vf, its body stored between two uses; DOES> @ 1+ stays a call;
   fuses     with 1, `V @` and `V !` in a colon definition compile to vf and vs (the bytes shrink by the calls' and
             @'s, and hold the codes), with 0 they do not; a CREATEd word's @ too;
   labels    no fusion across a branch target: `IF V ELSE W THEN @` and `BEGIN @` after a call give the right values,
@@ -18,14 +19,16 @@ E.setup()
 g0 = E.canon(json.load(open(os.path.join(ROOT, 'designs', D, 'record.json')))['genome']); g0['rtvar'] = 0; g0['varslot'] = 1; g0 = E.canon(g0)   # 688: rtvar needs varslot
 g1 = dict(g0); g1['rtvar'] = 1; g1 = E.canon(g1)
 if not E.rtvar_on(g1): sys.exit('rtvar-check: %s cannot express rtvar (it needs the run-time fusers, spec var, varslot; no JIT under the tag)' % D)
-PROG = b'''VARIABLE V  VARIABLE W  CREATE C 0 ,
+PROG = b'''VARIABLE V  VARIABLE W  CREATE C 0 ,  : VAL CREATE , DOES> @ ;  : VAL2 CREATE , DOES> @ 1+ ;  4 VAL V4  6 VAL2 V6
 : DMP ( a n -- ) 0 DO DUP I + C@ . LOOP DROP ;
 : T1 V @ ;  : T2 5 V ! ;  : T3 C @ ;  : T4 ( f -- n ) IF V ELSE W THEN @ ;  : T5 V BEGIN @ ;
 : T6 0 10 0 DO V @ I + V ! V @ + LOOP ;
+: T7 V4 1+ ;  : T8 V6 ;
 7 V !  9 W !  3 C !
 777001 . T1 . 777002 .  T2 777003 . V @ . 777004 .  777005 . T3 . 777006 .
 777007 . -1 T4 . 0 T4 . 777008 .  0 V ! 777009 . T6 . V @ . 777010 .
 777011 . ' T1 12 DMP 777012 .  777013 . ' T2 12 DMP 777014 .
+777015 . T7 . 8 ' V4 >BODY ! T7 . T8 . 777016 .  777017 . ' T7 6 DMP 777018 .  777019 . ' T8 6 DMP 777020 .
 BYE
 '''
 fails, out = [], {}
@@ -35,13 +38,16 @@ for tag, g in (('0', g0), ('1', g1)):
     except Exception as e: fails.append('alive with rtvar %s: %s' % (tag, str(e)[:120]))
     o = subprocess.run([eng, img], input=PROG, capture_output=True, cwd=pw, timeout=30).stdout.decode('latin-1')
     val = lambda a, b: re.search(r'%d (.*?) ?%d' % (a, b), o, re.S)
-    out[tag] = dict(vals=[(val(a, a + 1).group(1).split() if val(a, a + 1) else None) for a in (777001, 777003, 777005, 777007, 777009)],
+    out[tag] = dict(vals=[(val(a, a + 1).group(1).split() if val(a, a + 1) else None) for a in (777001, 777003, 777005, 777007, 777009, 777015)],
                     t1=[int(x) for x in val(777011, 777012).group(1).split()] if val(777011, 777012) else [],
                     t2=[int(x) for x in val(777013, 777014).group(1).split()] if val(777013, 777014) else [],
+                    t7=[int(x) for x in val(777017, 777018).group(1).split()] if val(777017, 777018) else [],   # 695: DOES> @
+                    t8=[int(x) for x in val(777019, 777020).group(1).split()] if val(777019, 777020) else [],   # DOES> @ 1+: not
                     app=E.app_size(eng, img, pw))
     t, raw = E.measure(eng, img, pw, ['apps'], 5); out[tag]['apps'] = t['apps']
     print('rtvar-check: rtvar %s - values %s; T1 %s; T2 %s; apps code %d; apps %.4f s' % (tag, out[tag]['vals'], out[tag]['t1'][:8], out[tag]['t2'][:8], sum(out[tag]['app']), t['apps']), flush=True)
-want = [['7'], ['5'], ['3'], ['5', '9'], ['165', '45']]   # T1; T2 then V @; T3; T4 true (V, 5 since T2), false; T6, V after
+want = [['7'], ['5'], ['3'], ['5', '9'], ['165', '45'], ['5', '9', '7']]   # T1; T2 then V @; T3; T4 true (V, 5 since T2), false; T6, V after;
+# 695: T7 (a DOES> @ child, 1+) before and after its body is stored, T8 (DOES> @ 1+: a call)
 for tag in '01':
     if out[tag]['vals'] != want: fails.append('values with rtvar %s: %s, not %s' % (tag, out[tag]['vals'], want))
 vf, vs = 0x63, 0x64     # the byte header's codes; under the two-bit tag the design's own (689): there, that it changed
@@ -50,6 +56,11 @@ if not g1.get('tag2'):
     if vf not in out['1']['t1'][:3]: fails.append("rtvar 1: T1's code does not begin with vf: %s" % out['1']['t1'][:6])
     if vs not in out['1']['t2'][:5]: fails.append("rtvar 1: T2's code holds no vs: %s" % out['1']['t2'][:8])
     if vf in out['0']['t1'][:3]: fails.append("rtvar 0: T1 fused: %s" % out['0']['t1'][:6])
+    if out['1']['t7'][:1] != [vf]: fails.append("rtvar 1: T7 (DOES> @) does not begin with vf: %s" % out['1']['t7'])   # 695
+    if out['1']['t8'][:1] == [vf]: fails.append("rtvar 1: T8 (DOES> @ 1+) laid as vf: %s" % out['1']['t8'])
+_k = next((k for k, (a, b) in enumerate(zip(out['0']['t1'], out['1']['t1'])) if a != b), None)   # vf's place in T1 (after a JIT header)
+if _k is None or _k >= len(out['1']['t7']) or out['1']['t7'][_k] != out['1']['t1'][_k]:
+    fails.append("rtvar 1: T7 (DOES> @) holds no vf where T1 does: T1 %s, T7 %s" % (out['1']['t1'][:8], out['1']['t7']))
 print('rtvar-check: the five applications\' code %d -> %d bytes; the apps workload %.4f -> %.4f s (%.3f)' % (
     sum(out['0']['app']), sum(out['1']['app']), out['0']['apps'], out['1']['apps'], out['1']['apps'] / out['0']['apps']))
 for f in fails: print('rtvar-check: ' + f)

@@ -11644,3 +11644,11 @@ codes' plain forms. lab/evolve/rtinline-check.py PASS on portable-knee, least-me
 fastest-x86-64: the programs alone 5-15 % faster (gc16 0.825 on the JIT design), the apps workload about even. And
 evolve.py's dumps are made when first asked for (dump_file, build/dumps-HASH): setup 63 s to 1.6 s; boot_files() the
 one list, export-genes.py's copy having missed -var and -const. results/rtinline-694.md.
+
+## Iteration 695 - 2026-11-15 - Claude
+
+Step 3's mechanism 3, in rtvar: a call to a DOES> child whose tail is `R> @` and EXIT is laid as vf of its parameter
+field (forth/cv8-fuse-var.4's DOES-@ - the tail decoded from the child's far or tagged call; `R> @` matched in its three
+laid forms; layout.py's VAR-OPS 12 bytes). rtvar-check.py PASS on portable-knee, portable-fastest, fastest-x86-64 (a
+VALUE-like child read after its body is stored; DOES> @ 1+ left a call). shellmix alone: 0.606 on fastest-x86-64, its
+DOES> words' callers translated by the JIT now; 0.783 on portable-fastest. results/does-at-695.md.
