@@ -13,6 +13,14 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 697 (the owner: "let's do 14 hours run unless you think we should make it longer"): 14 - the search
+#   reopened (results/drafts/search-reopen-plan-677.md step 5): the size score with the five programs' code (678, 686),
+#   and step 3's genes - rtvar (687, DOES> @ 695), rtconst (691), rtinline (694) - rehearsed (693, 696). Every design,
+#   the JIT's too (the genes reach both), at both widths; the newest four runs' fronts carried, as always (not carryall:
+#   574's generation 0 took 5 hours). About 105,000 designs at 12h's pace; mutation turns rtvar on in 0.4 % of the
+#   front's mutations, rtconst 1.3 % - each tried hundreds of times or more. No remotes (REMOTES has no line). Its
+#   processing opens the new series (process-records.sh: NEXT_METHOD - stopping.py refuses the old size); the stopping
+#   rule counts from it, so the next runs come anyway - more hours here would buy less than a second run.
 # Iteration 603 (the owner: 9 or 21 hours, "whatever makes sense"): 21 - generation 0 measures every carried design
 # JIT-off (new ids), the run is a single one, and the Tegra's 282 take about 4.6 hours a session: four sessions in 21
 # hours against one in 9 (REMOTES), dream about 12 a width. The chain about 22.5 hours.
@@ -304,4 +312,4 @@
 # (ran from 652's bundle at c8c423671f - its archive the rage check, PASS:) experiment rage-designs.py
 # Iteration 654 (the rage check processed - PASS, results/rage-designs-654.md): none - the freeze is the sandbox's; a
 # pull of this bundle must not run the rage check again.
-none
+seed 92 14h widths

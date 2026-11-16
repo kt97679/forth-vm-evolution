@@ -342,10 +342,38 @@ def dump_file(name):
     if not os.path.exists(p):
         boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['dict-dump-addr.4']) + 'BYE\n'
         out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
-        dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
+        try: dump_guard(name, boot, out)                     # Iteration 212: every file loaded, whole
+        except SystemExit as e: raise RuntimeError(str(e))   # 697: an error, not an exit - in a pool's worker an exit left
+                                                             # its design's result never coming (prebuild_dumps checks them first)
         t = '%s.%d' % (p, os.getpid()); open(t, 'wb').write(out.replace(b'\r', b'')); os.replace(t, p)
     else: os.utime(DUMPS[cellw()])                       # in use: not pruned
     return p
+def all_dump_names():
+    """Every dump a design can ask for, at the current width (697: setup()'s loop before 694, with rtinline's -inl) - in
+    build()'s order of the parts."""
+    bt = KW() + '-bt'
+    return [b + k + f + l + t + v + i + c + e + j + y + '.txt' for b in (KW() + '-b', bt)
+            for k in ('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber')
+            for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loopall')
+            for t in (('', '-iplus') if l == '-loopall' else ('',))
+            for v in (('', '-var') if f else ('',)) for i in (('', '-inl') if f else ('',)) for c in (('', '-const') if f else ('',))
+            for e in (('', '-empty') if b == bt else ('',)) for j in (('', '-jit') if b == bt else ('',))
+            for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or v or i or c or e or j or y or b == bt]
+def prebuild_dumps():
+    """Iteration 697: a search makes and checks every dump before its workers start, at each width it selects at - so a
+    dump that does not load whole stops the run at its start (dump_guard), as setup() did before 694; a check tool
+    makes only the ones it asks for. About 5,100 a width; build/dumps-HASH keeps them for the next run of the same tree."""
+    t0, n = time.time(), 0
+    for w4 in ((True, False) if TWO_WIDTHS[0] else (False,)):
+        env = {k: os.environ.get(k) for k in W4_ENV}
+        if w4: os.environ.update(W4_ENV)
+        try:
+            for name in all_dump_names(): dump_file(name); n += 1
+        finally:
+            for k, v in env.items():
+                if v is None: os.environ.pop(k, None)
+                else: os.environ[k] = v
+    print('dumps: %d made or found, checked, in %.0f s' % (n, time.time() - t0), flush=True)
 def dump_guard(name, boot, out):
     text = out.replace(b'\r', b'').decode('latin-1')
     m = re.search(r'^S \d+ \d+', text, re.M)
@@ -2347,6 +2375,7 @@ def main(argv):
             json.dump(out, open(path, 'w'))
         report(R); return
     N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
+    prebuild_dumps()                       # Iteration 697: every dump checked before the workers fork
     FASTGATE[0] = opt('--fastgate', FASTGATE[0])          # Iteration 391: 0, off
     JOBS, UNTIL = opt('--jobs', 1), opt('--until', 0)        # Iteration 99: workers on their own cores; a deadline
     R = load()

@@ -11661,3 +11661,12 @@ By workload the run-time programs gain (bubble and ackermann about 0.9) and the 
 layer, rtinline's scan the most of it (1.125 alone on the knee). Its fold search now behind a 32-byte bitmap: about 1.07;
 a second bitmap, to pass over calls at once, bought nothing and was taken out. The short run clean but for 693's
 founders. results/rehearsal-696.md.
+
+## Iteration 697 - 2026-11-15 - Claude
+
+The owner: a 14-hour run. NEXT-RUN set to `seed 92 14h widths` - every design, the JIT's too, at both widths, the
+newest four fronts carried (about 105,000 designs at 12h's pace; each new gene tried hundreds of times). The new stopping
+series opened from seed 92 in results/stopping-series.md (matched by generation, as since 562) - seed 91 was processed
+before the change, so the line is written now, not by NEXT_METHOD. And 694's lazy dumps made safe for a long run: a
+search makes and checks every dump before its workers fork (evolve.py's prebuild_dumps: 10,198 at two widths in 246 s
+here), and a dump failing in a worker raises an error instead of exiting it. A two-width search of 4 x 1 ran clean.

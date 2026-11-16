@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 696.
+- master: Iteration 697.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -116,8 +116,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **696: the rehearsal of the three together** (a scratch clone): the front alive with them; per workload the programs
   gain (bubble, ackermann ~0.9) and the corpus pays 1.11-1.22 (the compile layer - rtinline's scan most); rtinline's
   fold search behind a bitmap halved its share (1.125 -> ~1.07); the score nets 0.94-1.01, at 0.8-1.6 KB of image.
-  results/rehearsal-696.md. **Next: the laptop** (step 5; its hours the owner's) - or more genes first (the plan's
-  left: the JIT header, a DODOES stencil - jitdoes was about even at 692). Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
+  results/rehearsal-696.md.
+  **697: the laptop's run set - `seed 92 14h widths`** (lab/evolve/NEXT-RUN; the owner: 14 hours): every design, the
+  JIT's too, at both widths, the newest four fronts carried. The new series' method line is in
+  results/stopping-series.md already ("from seed 92", matched by generation) - **process seed 92 without
+  NEXT_METHOD**. A search now makes and checks every dump before its workers fork (evolve.py's prebuild_dumps: 10,198
+  at two widths, 246 s here; ~1.1 GB in build/dumps-HASH), and a dump that fails in a worker is an error there, not an
+  exit (which would have left its design's result never coming). **Next: process seed 92** when its pack comes. Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
   the fusions off in self-built images - phase 6's).
   (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
