@@ -2,11 +2,11 @@
 # lab/evolve/process-checks.sh RESULTS [COMPARE] - the checks on master once a seed's processing has applied its batch
 # (Iteration 551; HANDOFF.md, "Processing a returned seed" 5), in their order and the jail last, alone: build, run-tests,
 # validate, the gate (RESULTS, and COMPARE - a comparison pack's compare-fronts.md - when the chain had one), ans-check on
-# every fourth of RESULTS' front by size and its extremes, the jail. Started detached, polled by its status:
+# every fourth of RESULTS' front by size and its extremes, deaths-check, heldout-code.py (698), the jail. Started detached, polled by its status:
 #     setsid nohup sh lab/evolve/process-checks.sh RESULTS > /dev/null 2>&1 &
 # then wait for "DONE" in /tmp/process-checks/status - its lines the results, the logs beside it (OUT= elsewhere).
 # Nothing else of this user may run while the jail does. After a sandbox restart (background jobs die, /tmp stays):
-# FROM=tests, validate, gate, ans, deaths or jail starts there. DB= a seed pack's db.jsonl for the deaths step
+# FROM=tests, validate, gate, ans, deaths, heldout or jail starts there. DB= a seed pack's db.jsonl for the deaths step
 # (default: process-seed.sh's, under /tmp/process). Not as root - the evolver refuses it.
 RES=$1; CMP=${2:-}; OUT=${OUT:-/tmp/process-checks}; FROM=${FROM:-build}
 cd "$(dirname "$0")/../.." || exit 1
@@ -41,6 +41,11 @@ if step deaths; then          # Iteration 560: the seed's deaths and wrong outpu
     DB=${DB:-$(ls /tmp/process/*-seed[0-9]*/pack/db.jsonl 2>/dev/null | head -1)}
     if [ -n "$DB" ]; then python3 lab/evolve/deaths-check.py "$DB" > "$OUT/deaths.log" 2>&1; st "deaths=$? $(tail -n 1 "$OUT/deaths.log")"
     else st "deaths - no db (DB=, or process-seed.sh's /tmp/process)"; fi
+fi
+if step heldout; then        # Iteration 698: the held-out programs' code on the front (heldout-code.py) - read, not gating
+    DB=${DB:-$(ls /tmp/process/*-seed[0-9]*/pack/db.jsonl 2>/dev/null | head -1)}
+    python3 lab/evolve/heldout-code.py "$DB" "$RES" --every 5 > "$OUT/heldout-code.txt" 2>&1
+    st "heldout-code=$? $(grep -m 1 '^Spearman' "$OUT/heldout-code.txt" | cut -c1-80); $(grep -m 1 '^the small end' "$OUT/heldout-code.txt" | sed 's/.*the regret/the regret/')"
 fi
 if step jail; then st "jail - alone"; python3 lab/evolve/test-jail.py > "$OUT/jail.log" 2>&1; st "jail=$? $(tail -n 1 "$OUT/jail.log")"; fi
 st DONE

@@ -1,0 +1,24 @@
+e97f72d39e sod16 gen 0 wrong output: apps: 1 lines differ; the first: s6 'de2d334f78be932ad396cfd687df95b3ba563093' / here '551ae7a428abf8fac1aa1de4e9e07faffa83e065'
+99d582de7d cpt16 gen 0 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+e332ec44cb cpt16 gen 1 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+266cbaa300 cpt16 gen 40 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+9f78c54668 sod16 gen 56 wrong output: apps: 1 lines differ; the first: s6 'de2d334f78be932ad396cfd687df95b3ba563093' / here '551ae7a428abf8fac1aa1de4e9e07faffa83e065'
+d38da1c76c cpt16 gen 64 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+db78efc5fa sod16 gen 72 wrong output: apps: 1 lines differ; the first: s6 'de2d334f78be932ad396cfd687df95b3ba563093' / here '551ae7a428abf8fac1aa1de4e9e07faffa83e065'
+72e8b3be50 cpt16 gen 73 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+6f63e50f6a sod16 gen 77 wrong output: apps: 1 lines differ; the first: s6 'de2d334f78be932ad396cfd687df95b3ba563093' / here '551ae7a428abf8fac1aa1de4e9e07faffa83e065'
+077eecd896 cpt16 gen 79 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+7cb1984238 cpt16 gen 79 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+80f5049e8c cpt16 gen 83 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+3fc0092c3e sod16 gen 84 wrong output: apps: 1 lines differ; the first: s6 'de2d334f78be932ad396cfd687df95b3ba563093' / here '551ae7a428abf8fac1aa1de4e9e07faffa83e065'
+77260d1b6c cpt16 gen 85 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+92fcb60df2 sod16 gen 97 wrong output: apps: 1 lines differ; the first: s6 'de2d334f78be932ad396cfd687df95b3ba563093' / here '551ae7a428abf8fac1aa1de4e9e07faffa83e065'
+2d478d0530 cpt16 gen 99 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+7cd10825ca cpt16 gen 108 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+0507bf04f8 cpt16 gen 108 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+6c31ca8d0a cpt16 gen 118 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+9f768629b2 sod16 gen 119 wrong output: apps: 1 lines differ; the first: s6 'de2d334f78be932ad396cfd687df95b3ba563093' / here '551ae7a428abf8fac1aa1de4e9e07faffa83e065'
+241162a7d4 cpt16 gen 133 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+40787e9b1e cpt16 gen 142 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+7e1523f24c cpt16 gen 147 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472
+67523c27c4 cpt16 gen 162 died: application size (gc16): sim16 2802; gc16 none (its load ends: 'Welcome to Forth \r | call out of reach ROOTS'); scan 4570; evo 1522; shellmix 2472

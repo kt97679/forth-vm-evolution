@@ -25,7 +25,7 @@ for f in glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')):
     it = re.findall(r'Iteration (\d+)', text.split('\n', 1)[0])
     recs = []
     for l in text.split('\n'):
-        if l.startswith('{"bin"'):
+        if (l.startswith('{"') and '"genome": {' in l):
             try: r = json.loads(l)
             except ValueError: continue
             if isinstance(r.get('speed'), (int, float)) and r.get('bin') and r.get('size'): recs.append(r)

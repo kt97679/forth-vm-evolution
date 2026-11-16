@@ -76,7 +76,7 @@ late = [r for r in kids if r['gen'] >= 0.8 * max(gens)]
 print('  the last fifth: crossover %.1f%% of %d' % (100 * sum(kind(r['how']) == 'crossover' for r in late) / max(1, len(late)), len(late)))
 print('  via the attic: %d children' % sum('via the attic' in (r['how'] or '') for r in kids))
 
-front = [json.loads(l)['id'] for l in open(results) if l.startswith('{"bin"')]
+front = [json.loads(l)['id'] for l in open(results) if (l.startswith('{"') and '"genome": {' in l)]
 fr = [R[i] for i in front if i in R]
 print('\nthe front: %d designs (%d not in the db); by how made: %s; via the attic %d' % (
     len(front), len(front) - len(fr), dict(collections.Counter(kind(r['how']) for r in fr)), sum('via the attic' in (r['how'] or '') for r in fr)))

@@ -184,7 +184,7 @@ if '--sample' in ARGS:
         except ValueError: pass
     gen = {}
     for l in L:
-        if l.startswith('{"bin"'):
+        if (l.startswith('{"') and '"genome": {' in l):
             r = json.loads(l); gen[r['id']] = r['genome']
     ok = []
     for i, (sp, tot) in rows.items():

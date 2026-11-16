@@ -35,7 +35,7 @@ def donor(gene, base=None):
     val = None
     for f in sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md'))):
         for l in open(f):
-            if l.startswith('{"bin"'):
+            if (l.startswith('{"') and '"genome": {' in l):
                 try: g = json.loads(l)['genome']
                 except (ValueError, KeyError): continue
                 if g.get(gene) and E.express(E.canon(dict(S6, **dict(base or {}, **{gene: g[gene]})))).get(gene):

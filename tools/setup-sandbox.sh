@@ -69,7 +69,8 @@ if [ -d "$D/.git" ]; then                 # 567: left as it is, and said how it 
     elif asme git -C "$D" merge-base --is-ancestor "$M" HEAD 2> /dev/null; then echo "setup-sandbox: $D there, ahead of the bundle (this session's commits) - left as it is"
     else echo "setup-sandbox: $D there at $(echo "$H" | cut -c1-7), NOT the bundle's ${M:-?} - left as it is (DEST= another directory to start from the bundle)"; fi
 else mkdir -p "$D" && chown claude:claude "$D" && asme git clone -q "$B" "$D" || { echo "setup-sandbox: the clone failed"; exit 1; }; fi
-asme git -C "$D" config user.name "Kirill Timofeev" && asme git -C "$D" config user.email kt97679@gmail.com
+asme git -C "$D" config user.name "Kirill Timofeev" && asme git -C "$D" config user.email kt97679@gmail.com \
+    && asme git -C "$D" config commit.gpgsign false   # 698: the sandbox signs commits globally, with a key this user cannot read; the project's are unsigned
 echo "setup-sandbox: $(basename "$B") -> $D at $(asme git -C "$D" log --oneline -1 | cut -c1-70)"
 echo "setup-sandbox: $(dpkg -s gcc-multilib clang-19 2>/dev/null | grep -c '^Status: install ok') of 2 packages in; asm/ $([ -e /usr/include/asm ] && echo there)"
 if [ "${CHECK:-0}" = 1 ] && [ -z "$PKG" ]; then echo "setup-sandbox: the checks not started - the packages are not in yet"
@@ -93,7 +94,8 @@ elif [ -n "${SCRATCH:-}" ]; then                                     # 567: a sc
     if [ -d "$X/.git" ]; then echo "setup-sandbox: scratch $X there at $(asme git -C "$X" log --oneline -1 | cut -c1-60) - left as it is"
     else
         mkdir -p "$X" && chown claude:claude "$X" && asme git clone -q "$D" "$X" || { echo "setup-sandbox: the scratch clone failed"; exit 1; }
-        asme git -C "$X" config user.name "Kirill Timofeev" && asme git -C "$X" config user.email kt97679@gmail.com
+        asme git -C "$X" config user.name "Kirill Timofeev" && asme git -C "$X" config user.email kt97679@gmail.com \
+            && asme git -C "$X" config commit.gpgsign false   # 698
         Q=${PENDING:-results/pending}
         n=0; for p in $(sed -n "s|^ *git apply \\($Q/[^ ]*\\.patch\\).*|\\1|p" "$X/$Q/ORDER.md" 2>/dev/null); do
             asme git -C "$X" apply --index "$p" && asme git -C "$X" commit -q -m "scratch: $p" || { echo "setup-sandbox: $p does not apply in $X"; exit 1; }

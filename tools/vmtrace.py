@@ -35,7 +35,7 @@ def genome(E, design):
     for f in sorted(os.listdir(os.path.join(ROOT, 'results'))):
         if f.startswith('evolve-') and f.endswith('.md'):
             for l in open(os.path.join(ROOT, 'results', f), errors='replace'):
-                if l.startswith('{"bin"') and '"id": "%s"' % design in l:
+                if (l.startswith('{"') and '"genome": {' in l) and '"id": "%s"' % design in l:
                     return E.canon(json.loads(l)['genome'])
     sys.exit('vmtrace: no design %s' % design)
 

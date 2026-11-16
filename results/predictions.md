@@ -1458,3 +1458,19 @@ the lab's simulated bytes by the same rule; 647: end to end with stand-ins PASS)
 Not scored (652): the run at 2e9343d91f failed on a tool fault before any GCC design was checked - (1) stands for the rerun.
 Scored (Iteration 654, results/rage-designs-654.md): (1) right - the rerun at c8c423671f PASS, all three the lab's
 bytes and running. The rage check's: 1 of 1.
+
+## Seed 92, the reopened search (14 hours, both widths) - not predicted (Iteration 697)
+
+**Scored at seed 92 (Iteration 698): none due** - Iteration 697 wrote no prediction for it. The run opened the series
+from seed 92 (results/evolve-amd-ryzen-7-pro-8840hs-seed92.md).
+
+## Seed 93, the series' second run (14 hours, both widths) - predicted (Iteration 698)
+
+Seed 92's setup, the newest four databases carried (seed 92's among them). (1) The stopping rule: seed 93 gains on seed
+92 by at least one criterion at its last generation (stopping.py's bars: the hypervolume 0.31700, fastest 0.1220,
+smallest 22,193, memory 104 KB, 32-bit 0.1511) - 55/45 (it starts from seed 92's front among the carried;
+the series from seed 77 took seven runs to stop; seed 92's size stopped gaining at generation 69 of 166). (2) Step 3's
+genes - rtvar, rtconst, rtinline - together on more of the true front than seed 92's 51 of 386 (13 %) - 40/60 (each
+below its children's share in seed 92, a trade the size end refuses; the carried front starts with few). (3) The deaths
+only the 16-bit families' reach (sod16 on apps, cpt16's gc16) and the frozen founders - 85/15. (4) heldout-code.py's
+small-end regret 0 bytes again - 80/20 (seed 92's 0; the score against the score with the held-out code 0.992).

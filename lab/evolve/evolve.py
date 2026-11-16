@@ -557,7 +557,7 @@ def newest_front():
     measures (Iteration 278: c-baseline.py and counters.py choose their designs from it)."""
     import glob                                   # not among the module's imports
     fs = sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')), key=lambda f: int(re.search(r'seed(\d+)\.md$', f).group(1)) if re.search(r'seed(\d+)\.md$', f) else -1)
-    recs = [json.loads(l) for l in open(fs[-1], errors='replace') if l.startswith('{"bin"')]
+    recs = [json.loads(l) for l in open(fs[-1], errors='replace') if (l.startswith('{"') and '"genome": {' in l)]
     return fs[-1], recs
 def recorded_genome(i):
     """A recorded design's genome, from results/evolve-*.md - None if absent (Iteration 155)."""
@@ -565,7 +565,7 @@ def recorded_genome(i):
     key = '"id": "%s"' % i
     for p in sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*.md'))):
         for l in open(p, errors='replace'):
-            if l.startswith('{"bin"') and key in l:
+            if (l.startswith('{"') and '"genome": {' in l) and key in l:
                 try: return json.loads(l)['genome']
                 except ValueError: pass
     return None

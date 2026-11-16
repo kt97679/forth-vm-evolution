@@ -52,7 +52,7 @@ for name in ('speed', 'size'):
     for t, A, B, m0, m1, n0, n1 in top:
         print('  %-9s x %-9s t %5.1f   B off %+.3f (%d)  B on %+.3f (%d)%s' % (A, B, t, m0, n0, m1, n1, '  [linked]' if linked(A, B) else ''))
 
-FR = [json.loads(l)['id'] for l in open('/home/claude/forth-vm-evolution/results/evolve-amd-ryzen-7-pro-8840hs-seed46.md') if l.startswith('{"bin"')]
+FR = [json.loads(l)['id'] for l in open('/home/claude/forth-vm-evolution/results/evolve-amd-ryzen-7-pro-8840hs-seed46.md') if (l.startswith('{"') and '"genome": {' in l)]
 fj = [R[i] for i in FR if i in R and on(ex(R[i]).get('jit'))]
 print('\nfront JIT designs: %d; rtloop on %d' % (len(fj), sum(on(ex(r).get('rtloop')) for r in fj)))
 aj = [r for r in R.values() if ok(r) and on(ex(r).get('jit'))]

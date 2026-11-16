@@ -39,7 +39,7 @@ sys.argv = ['x']; sys.path.insert(0, HERE)
 import evolve as E
 
 E.setup()
-run = [json.loads(l)['id'] for l in open(results) if l.startswith('{"bin"')]
+run = [json.loads(l)['id'] for l in open(results) if (l.startswith('{"') and '"genome": {' in l)]
 line = [l for l in open(compare).read().split('\n') if l.startswith('The front of all runs together')] if compare else []
 joint = re.findall(r'\b([0-9a-f]{10}) [0-9.]+ at', line[0]) if line else []
 ids = list(dict.fromkeys(run + joint)); bad = apart = 0

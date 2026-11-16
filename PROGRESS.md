@@ -11670,3 +11670,19 @@ series opened from seed 92 in results/stopping-series.md (matched by generation,
 before the change, so the line is written now, not by NEXT_METHOD. And 694's lazy dumps made safe for a long run: a
 search makes and checks every dump before its workers fork (evolve.py's prebuild_dumps: 10,198 at two widths in 246 s
 here), and a dump failing in a worker raises an error instead of exiting it. A two-width search of 4 x 1 ran clean.
+
+## Iteration 698 - 2026-11-16 - Claude
+
+Seed 92 processed (results/evolve-amd-ryzen-7-pro-8840hs-seed92.md): 14 hours, 49,601 designs, 166 generations; it
+opens the series from seed 92 - hypervolume 0.31386, fastest 0.1245, smallest 22,417 B (with the five programs' code),
+108 KB, 32-bit 0.1542. Deaths only the 16-bit families' reach. Step 3's genes each under their children's share on the
+true front - rtinline 32 of 386 (8 in the fastest tenth), rtconst 17, rtvar 2, jitvar 18, jitdoes 2 - speed-for-bytes
+trades by pairs (rtinline 0.959 for +673 B, rtconst 0.982 for +332, rtvar 0.988 for +712): results/drafts/newgenes-seed92.py,
+its output results/drafts/newgenes-seed92.txt. The held-out code, the plan's check, now a tool - lab/evolve/heldout-code.py
+(results/drafts/heldout-code-seed92.txt): 78 front designs, Spearman 0.813 against the selection's code, the small end's
+regret 0 B, the selection re-counted equal to the records for 78 of 78. A fault found: since 678 the report's records
+begin `{"app"` and eleven readers keyed on `{"bin"` saw no front (seed-facts.py's empty front; gate.py would have
+checked none) - fixed before the gate ran. The deaths, all the 16-bit families refused out loud (sod16's DOES> reach in
+shellmix, cpt16's call reach in gc16 - results/drafts/deaths-verify-698.py and .txt): deaths-check.py taught both and 678's
+"died: application size" (it had run it as a workload); process-checks.sh runs heldout-code.py before the jail. NEXT-RUN:
+`seed 93 14h widths` (the owner: 14 hours).

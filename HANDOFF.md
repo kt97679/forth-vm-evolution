@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 697.
+- master: Iteration 698.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -122,11 +122,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/stopping-series.md already ("from seed 92", matched by generation) - **process seed 92 without
   NEXT_METHOD**. A search now makes and checks every dump before its workers fork (evolve.py's prebuild_dumps: 10,198
   at two widths, 246 s here; ~1.1 GB in build/dumps-HASH), and a dump that fails in a worker is an error there, not an
-  exit (which would have left its design's result never coming). **Next: process seed 92** when its pack comes. Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
-  the fusions off in self-built images - phase 6's).
-  (batch-check.sh tests results/pending's patches only - not direct commits.)
-  **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
-  dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
+  exit (which would have left its design's result never coming). Self-hosting (cross-cv8.4) fills neither VAR-OPS nor
+  INL-OPS yet (zeros: the fusions off in self-built images - phase 6's).
+  **698: seed 92 processed** (results/evolve-amd-ryzen-7-pro-8840hs-seed92.md): 49,601 designs, 166 generations, the
+  checks clean; it opens the series (hypervolume 0.31386; fastest 0.1245, smallest 22,417 B with the five programs'
+  code, 108 KB, 32-bit 0.1542). Step 3's genes each below their children's share on the front (rtinline 32 of 386, 8 in
+  the fastest tenth; rtconst 17, rtvar 2): speed-for-bytes trades (pairs: rtinline 0.959 for +673 B) - newgenes-seed92.
+  The held-out code (lab/evolve/heldout-code.py, new): Spearman 0.813 with the selection's, the small end's regret 0 B.
+  Found and fixed: since 678 the report's records begin `{"app"`, and eleven readers keyed on `{"bin"` saw no front
+  (seed-facts.py, gate.py among them) - fixed before the gate ran. **Next: seed 93** (14 h, the owner, 698;
+  NEXT-RUN) - processed as seed 92 was, heldout-code.py beside it; the stopping rule's earliest stop after seed 94.
+  (batch-check.sh tests results/pending's patches only - not direct commits.) Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -248,7 +254,8 @@ Three commands, the judgment between them (Iteration 560; each step's detail and
    drafted, the batch checked and applied, the checks on master, the control. At "summary" read /tmp/process/summary.md
    and judge while the rest runs: the stopping rule (stopping.py; GOALS.md), the verdict from both CPUs, the predictions
    scored and the next written (results/predictions.md), the results file's TODO lines, the spread's session; NEXT-RUN
-   (the owner's hours), this card, the PROGRESS entry. Run nothing as claude while the status's last line says "jail".
+   (the owner's hours), this card, the PROGRESS entry; at DONE /tmp/process-checks/heldout-code.txt (the held-out programs'
+   code on the front, 698) for the results file. Run nothing as claude while the status's last line says "jail".
    A detached job dies when the turn ends (the sandbox suspends; /tmp stays - 561): start it early, see it to DONE in
    the same turn; cut off, `FROM=checks` resumes it at the checks.
 3. At DONE: `sh lab/evolve/process-finish.sh N ITERATION` - it stops naming anything wrong or missing (a check, a TODO, a

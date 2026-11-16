@@ -53,7 +53,7 @@ rd = os.path.join(E.EV, 'arm-ref'); shutil.rmtree(rd, ignore_errors=True); os.ma
 ref = {w: E.sh([os.path.join(E.O, 's6-cv8b-32'), os.path.join(E.O, 's6-cv8b-s32.img')], cwd=rp, inp=E.program(w), timeout=120, cpu=30).stdout
        for w in ('fib', 'apps')}
 shutil.rmtree(rd, ignore_errors=True)
-recs = [json.loads(l) for l in open(A[0]) if l.startswith('{"bin"')]
+recs = [json.loads(l) for l in open(A[0]) if (l.startswith('{"') and '"genome": {' in l)]
 ex = lambda r: E.express(E.canon(r['genome']))
 if gcc or NATIVE:
     pick = [{'id': k, 'genome': v, 'speed': 0} for k, v in sorted(E.HUMAN.items()) if not ex({'genome': v}).get('jit')] + [

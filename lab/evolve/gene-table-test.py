@@ -27,7 +27,7 @@ E.opcall_avail = lambda g: list(E.OPCALL_POOL)
 recs = []
 for f in sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*.md'))):
     for l in open(f, errors='replace'):
-        if l.startswith('{"bin"'):
+        if (l.startswith('{"') and '"genome": {' in l):
             try: recs.append(json.loads(l))
             except ValueError: pass
 before = [E.gid(copy.deepcopy(r['genome'])) for r in recs]

@@ -86,6 +86,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
 - `genapps.py` - generic applications (Iteration 674): seven programs on s6, the ten designs, relf's CV8 (relf64, relfasm64, relf32) and gforth-fast - the code each lays (HERE less its own data), its benchmark's CPU time, load and start; preludes in genapps/ (results/generic-apps-674.md)
+- `heldout-code.py` - the held-out programs' code (wordfreq, minif, brainless) on a run's front designs at 8-byte cells, beside the selection's (re-counted as a check): the Spearman and the small end's regret in bytes (Iteration 698)
 - `appsize.py` - an application's code bytes (HERE's advance less its own ALLOT , C,): the drivers and parse, one definition for genapps.py and evolve.py's rec['app'] (Iteration 678)
 - `appsize-check.py` - evolve.py's rec['app'] against genapps.py: the same binaries at both widths, the translator's ten against 674's table, planted changes, the resume guard; `--quick` in run-tests (Iteration 678)
 - `rtconst-check.py` - the gene rtconst on a design, 0 against 1: alive, every literal width's value, the call folded, the apps workload and each program's benchmark (Iteration 691)

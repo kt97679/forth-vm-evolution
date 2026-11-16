@@ -25,6 +25,12 @@ sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 def expected(r, w):
     if 'not run' in r['status']: return 'reach limit, not run (556)'
     if w == 'apps' and r['genome'].get('enc') == 'cpt16': return 'cpt16 on apps (516)'
+    # 698: seed 92, both checked on this tree (results/drafts/deaths-verify-698.py) - shellmix (the fifth program since
+    # 686) takes sod16's dictionary past DODOESF's 16-bit half-word offset: "sod16: DOES> tail beyond 128 KB" (693); and
+    # a cpt16 design's load of gc16 past its 16-bit call reach: "call out of reach ROOTS" - no reading of its code (678)
+    if w == 'apps' and r['genome'].get('enc') == 'sod16': return 'sod16 on apps - shellmix past its 128 KB DOES> reach, refused out loud (693)'
+    if r['status'].startswith('died: application size') and r['genome'].get('enc') == 'cpt16':
+        return "cpt16's application size - a load past its 16-bit call reach, refused out loud (678)"
     g = r['genome']                                     # 564: reach_lethal's scale 1 - run, jailed (Iteration 10)
     if w == 'kernel' and g.get('enc') == 'cv8' and g.get('scale') == 1 and not (g.get('varcall') and g.get('doesfar')):
         return 'the reach limit at scale 1, run and jailed (10; back with doesfar lifted, 556)'
@@ -71,10 +77,11 @@ todo, skip, ret = [], {}, []
 for l in open(DB):
     r = json.loads(l); m = re.match(r'(died|wrong output): (\w+)', r.get('status', ''))
     if not m: continue
+    w = 'appsize' if r['status'].startswith('died: application size') else m.group(2)    # 698: 678's measure, not a workload
     if not ALL and RETIRED.match(r['status']): ret.append(r); continue        # 615: made again below, not rebuilt
-    e = None if ALL else expected(r, m.group(2))
+    e = None if ALL else expected(r, w)
     if e: skip[e] = skip.get(e, 0) + 1
-    else: todo.append((r, m.group(2)))
+    else: todo.append((r, w))
 print('deaths-check: %s - %d to rebuild%s%s' % (DB, len(todo), ''.join('; expected, not rebuilt: %s %d' % kv for kv in skip.items()),
       '; a retired value, its refusal made again here: %d' % len(ret) if ret else ''))
 if len(todo) > MAX: print('deaths-check: only the first %d (--max)' % MAX); todo = todo[:MAX]
@@ -83,12 +90,15 @@ same = [r for r in ret if refused(r)]; diff = [r for r in ret if r not in same]
 print('| design | gen | in the run | genes | here |\n|---|---|---|---|---|')
 for r in diff: print('| %s | %s | %s | %s | NOT refused the same here - open |' % (r['id'], r.get('gen'), r['status'], sign(r['genome'])))
 for r, w in todo:
-    if w not in ref: E.run_metric(*E.REF, w); ref[w] = E.OUT_LAST[0]
+    if w != 'appsize' and w not in ref: E.run_metric(*E.REF, w); ref[w] = E.OUT_LAST[0]
     d = os.path.join(E.EV, 'deaths-check'); shutil.rmtree(d, ignore_errors=True)
     try:
         eng, img = E.build(E.canon(r['genome']), d)
-        E.run_metric(eng, img, E.private_work(d), w)
-        here = 'right - as s6' if E.OUT_LAST[0] == ref[w] else 'DIFFERS from s6'
+        if w == 'appsize':                                # 698: the measure again - E.app_size raises if no reading
+            here = 'right - its code counted here (%d bytes)' % sum(E.app_size(eng, img, E.private_work(d)))
+        else:
+            E.run_metric(eng, img, E.private_work(d), w)
+            here = 'right - as s6' if E.OUT_LAST[0] == ref[w] else 'DIFFERS from s6'
     except Exception as x:
         here = 'DIES here: %s' % str(x)[:80]
     shutil.rmtree(d, ignore_errors=True)

@@ -34,7 +34,7 @@ for M in (A, B):
 gs = []
 for f in sorted(glob.glob(os.path.join(ROOT, 'results', '*.md'))):
     for l in open(f, errors='replace'):
-        if l.startswith('{"bin"'):
+        if (l.startswith('{"') and '"genome": {' in l):
             try: gs.append(json.loads(l)['genome'])
             except (ValueError, KeyError): pass
 J = lambda x: json.dumps(x, sort_keys=True)
