@@ -1,0 +1,57 @@
+diff --git a/lab/evolve/chainctl.py b/lab/evolve/chainctl.py
+index 0eefce6..7118546 100644
+--- a/lab/evolve/chainctl.py
++++ b/lab/evolve/chainctl.py
+@@ -238,20 +238,50 @@ def evolution_progress(repo):
+     return gen, n
+ 
+ 
++def machine():
++    """Iteration 701: what the machine was doing, beside each progress line - seed 94's stall (93 minutes at generation
++    44: runs timed out, compiles past cc's 60 s CPU limit, the 300 s ticks 25-70 s late) left no trace of why. The load,
++    the memory free and the swap used, the cores' mean clock, the hottest zone, AC or battery - each where Linux has it."""
++    import glob
++    def rd(p):
++        try:
++            with open(p) as f: return f.read()
++        except OSError: return None
++    out = []
++    l = rd('/proc/loadavg')
++    if l: out.append('load %s' % l.split()[0])
++    try:
++        m = {k: int(v.split()[0]) for k, v in (x.split(':', 1) for x in (rd('/proc/meminfo') or '').splitlines() if ':' in x)}
++        out.append('%.1f GB free, swap %.1f GB' % (m['MemAvailable'] / 1048576, (m['SwapTotal'] - m['SwapFree']) / 1048576))
++    except (KeyError, ValueError): pass
++    f = [int(x) for x in map(rd, glob.glob('/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq')) if x and x.strip().isdigit()]
++    if f: out.append('%.2f GHz' % (sum(f) / len(f) / 1e6))
++    t = [int(x) for x in map(rd, glob.glob('/sys/class/thermal/thermal_zone*/temp')) if x and x.strip().lstrip('-').isdigit()]
++    if t: out.append('%d C' % (max(t) // 1000))
++    for d in sorted(glob.glob('/sys/class/power_supply/*')):
++        if (rd(d + '/type') or '').strip() == 'Mains' and rd(d + '/online') is not None:
++            out.append('AC' if rd(d + '/online').strip() == '1' else 'battery'); break
++    return ', '.join(out)
++
++
+ def cmd_ticker(pid, until, every=300):
+     every = int(os.environ.get('TICK_EVERY', every))      # a test's shorter interval
+     repo = os.getcwd()
+     while True:
++        t0 = time.monotonic()
+         for _ in range(every):
+             time.sleep(1)
+             if not os.path.exists('/proc/%d' % pid): return 0
++        late = time.monotonic() - t0 - every       # 701: a tick late by a tenth or more - the machine stalled
+         gen, n = evolution_progress(repo)
+         left = ''
+         if until > 0:
+             m = max(0, int((until - time.time()) / 60))
+             left = ', the evolution stops in %d h %02d min' % (m // 60, m % 60)
+-        print('%sprogress %s - %s, %d designs in the database%s' % (STEP_PREFIX, time.strftime('%H:%M:%S', time.gmtime()),
+-                                                                   gen or 'no generation yet', n, left), flush=True)
++        mc = machine()
++        print('%sprogress %s - %s, %d designs in the database%s%s%s' % (STEP_PREFIX, time.strftime('%H:%M:%S', time.gmtime()),
++              gen or 'no generation yet', n, left, '; the machine: ' + mc if mc else '',
++              '; the tick %d s late' % late if late > every / 10 else ''), flush=True)
+ 
+ 
+ def cmd_recover(runs, repo):
