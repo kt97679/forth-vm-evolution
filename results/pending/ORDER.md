@@ -8,7 +8,7 @@ method stands (no NEXT_METHOD) and seed 96 is judged against seeds 92-95 as befo
     git apply results/pending/remeasure32-after-seed95.patch
     git apply results/pending/ticker-after-seed95.patch
 
-batch-check (700, on 01f7c7f - 3 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
+batch-check (701, on 01f7c7f - 3 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
 
 **why32-after-seed95.patch** (lab/evolve/evolve.py, lab/evolve/review-checks.py) - a 32-bit failure's message keeps its

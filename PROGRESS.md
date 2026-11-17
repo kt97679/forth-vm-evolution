@@ -11712,3 +11712,12 @@ least memory alone (104 KB, one page on carried designs), the earliest stop afte
 the fastest tenth (results/drafts/newgenes-seed94.txt); the held-out code's regret +8 B
 (results/drafts/heldout-code-seed94.txt). Predictions 2 of 5. NEXT-RUN: `seed 95 16h widths` (the owner: 7 or
 16 hours; 16 - generation 0's 3 hours of re-measuring, and seed 94's 24 lost generations).
+
+## Iteration 701 - 2026-11-17 - Claude
+
+While seed 95 runs (the owner: proceed in this chat), seed 94's lessons made tools: lab/evolve/outliers.py flags a
+fast-end reading one workload 2x off its parent's and 1.5x off the fast end's median (seed 94: 2806f89619 alone, a12e4b32ef's
+jitloop not; process-seed.sh, run-tests), stopping.py --strike ID --why TEXT (process-records.sh's STRIKE). The
+after-seed-95 batch, batch-check PASS (results/pending/ORDER.md; why32-, remeasure32-, ticker-after-seed95.patch): a 32-bit
+failure's message keeps its end; --remeasure measures the 32-bit fastest tenth again into remeasure32.json (tested on 12
+of seed 94's records: 2806f89619's kernel 0.475 against its parent's 0.455); the progress line says the machine's state.
