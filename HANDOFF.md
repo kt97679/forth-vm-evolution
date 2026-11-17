@@ -142,7 +142,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   here, 1.019 of the parent's time) - struck from the stopping line (results/drafts/stall-seed94.py, ktime-seed94.py;
   the owner: "ensure we don't lose any good designs"), the hypervolume then flat (0.31733); it gains by the least memory
   alone (104 KB: one page, designs carried from seeds 84-90 - the 4 KB threshold is a re-measure's noise, the owner's
-  to change). **Next: seed 95** (14 h assumed - the owner did not say; NEXT-RUN) - processed as seed 94 was; the
+  to change). **Next: seed 95** (16 h - the owner: 7 or 16, 700; NEXT-RUN) - processed as seed 94 was; the
   earliest stop after seed 96.
   (batch-check.sh tests results/pending's patches only - not direct commits.) Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

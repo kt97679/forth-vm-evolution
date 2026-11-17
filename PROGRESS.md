@@ -11710,5 +11710,5 @@ from the stopping line (results/drafts/stall-seed94.py, results/drafts/ktime-see
 lose any good designs") - the hypervolume then 0.31733 (+0.0 %), the 32-bit fastest 0.1496 (-0.6 %); it gains by the
 least memory alone (104 KB, one page on carried designs), the earliest stop after seed 96. rtinline 50 of 362, 18 in
 the fastest tenth (results/drafts/newgenes-seed94.txt); the held-out code's regret +8 B
-(results/drafts/heldout-code-seed94.txt). Predictions 2 of 5. NEXT-RUN: `seed 95 14h widths` (14 hours assumed - the
-owner did not say).
+(results/drafts/heldout-code-seed94.txt). Predictions 2 of 5. NEXT-RUN: `seed 95 16h widths` (the owner: 7 or
+16 hours; 16 - generation 0's 3 hours of re-measuring, and seed 94's 24 lost generations).

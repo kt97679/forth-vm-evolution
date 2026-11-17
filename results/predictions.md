@@ -1500,7 +1500,7 @@ wrong reading in the generation-44 stall, struck - the hypervolume then +0.0 %. 
 all 22 compute right here) beside 9 sod16, 7 cpt16 and the 2 frozen founders. (5) wrong - the regret +8 bytes
 (453a4e995d). Seed 94's: 2 of 5.
 
-## Seed 95, the series' fourth run (14 hours, both widths) - predicted (Iteration 700)
+## Seed 95, the series' fourth run (16 hours, both widths) - predicted (Iteration 700)
 
 Seed 94's setup, the newest four databases carried (seeds 92-94 among them). (1) The stopping rule: seed 95 gains on the
 best of seeds 92-94 by at least one criterion at its last generation (stopping.py's bars: the hypervolume 0.32051,
