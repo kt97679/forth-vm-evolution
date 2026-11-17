@@ -11723,3 +11723,11 @@ results/pending/why32-after-seed95.patch, results/pending/remeasure32-after-seed
 results/pending/ticker-after-seed95.patch): a 32-bit
 failure's message keeps its end; --remeasure measures the 32-bit fastest tenth again into remeasure32.json (tested on 12
 of seed 94's records: 2806f89619's kernel 0.475 against its parent's 0.455); the progress line says the machine's state.
+
+## Iteration 702 - 2026-11-17 - Claude
+
+The least memory's threshold 8 KB from seed 95 (the owner): one page was the noise of a design measured again - of 2,769
+designs with readings in two or more results files 416 differ, 334 by 4 KB, 46 by 8 (results/drafts/memory-noise-702.py);
+the series' least memory 112/108 KB back and forth since seed 74. stopping.py's mem_kb(seed) - runs before 95 keep 4, so
+seed 94's gain and the earliest stop after 96 stand; confirm.py passes its seed; GOALS.md; the self-test 40 checks.
+Seed 95's memory bar 96 KB (predictions.md's line says so).

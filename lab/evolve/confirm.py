@@ -9,7 +9,7 @@ chat's). The confirmation run (`seed N HOURS widths carryall`) against the metho
   2. The run: its true front's hypervolume and its four extremes from every alive design (hv.measure; the series' way
      since 556), at its end - the pooled runs are taken at theirs, no matching by generation.
   3. Confirmed when the hypervolume is not 1% above the pool's and no extreme beats the series' best by its threshold -
-     speed 2%, binary + image 1%, memory 4 KB, the 32-bit speed 2% (stopping.py's bar on the runs' ledger lines - their
+     speed 2%, binary + image 1%, memory 4 KB (8 from seed 95, 702), the 32-bit speed 2% (stopping.py's bar on the runs' ledger lines - their
      strict extremes - with the hypervolume's replaced by the pool's).
   4. What the run added: its front's designs carried in (evolve.py's how, 'carried from' or 'named, carried from')
      against bred; the pool and the run's front together - the front step 3 chooses from - their hypervolume.
@@ -58,9 +58,9 @@ def front_hv(R, E, b):
     return F, hv.hv4([z for z in (hv.norm(R[i], b) for i in F) if z is not None])
 
 
-def judge(run, pool_hv, runs):
+def judge(run, pool_hv, runs, seed=None):
     """run: the hypervolume and the four extremes; runs: the series' ledger lines. -> (the bar, the criteria gained)."""
-    b = stopping.bar([dict(r, hv=pool_hv) for r in runs])
+    b = stopping.bar([dict(r, hv=pool_hv) for r in runs], seed)       # 702: the memory's threshold by the seed
     return b, [k for k in stopping.KEYS if (run[k] >= b[k] if k == 'hv' else run[k] <= b[k])]
 
 
@@ -178,7 +178,7 @@ def main(a):
     PF, ph = front_hv(P, E, b)
     R = hv.load(db, E); m = hv.measure(db, E, b, R=R); x = m['alive']
     run = dict(hv=m['hv'], fastest=x['fastest'], smallest=x['smallest'], memory=x['memory'], fastest32=x['fastest32'])
-    bar, g = judge(run, ph, runs)
+    bar, g = judge(run, ph, runs, N)
     T = hv.true_front(R, E)
     car = [i for i in T if str(R[i].get('how', '')).startswith(CARRIED)]; bred = [i for i in T if i not in car]
     isbred = lambda i: not str(R[i].get('how', '')).startswith(CARRIED)

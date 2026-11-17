@@ -1504,8 +1504,8 @@ all 22 compute right here) beside 9 sod16, 7 cpt16 and the 2 frozen founders. (5
 
 Seed 94's setup, the newest four databases carried (seeds 92-94 among them). (1) The stopping rule: seed 95 gains on the
 best of seeds 92-94 by at least one criterion at its last generation (stopping.py's bars: the hypervolume 0.32051,
-fastest 0.1192, smallest 22,185, memory 100 KB, 32-bit 0.1466) - 30/70 (seed 94 found nothing new; no design has read
-100 KB; the 32-bit needs -2.0 % on 0.1496). (2) 2806f89619, carried, reads 0.160 or slower at 32 bits in generation 0
+fastest 0.1192, smallest 22,185, memory 96 KB - 100 until 702 moved the threshold to 8 KB -, 32-bit 0.1466) - 30/70
+(seed 94 found nothing new; no design has read 100 KB; the 32-bit needs -2.0 % on 0.1496). (2) 2806f89619, carried, reads 0.160 or slower at 32 bits in generation 0
 (its kernel near its parent's 0.36) - 90/10. (3) The deaths only the 16-bit families' reach and the frozen founders -
 80/20 (seed 94's stall the exception). (4) rtinline in the fastest tenth of the true front, 8 designs or more - 80/20
 (8, 11, 18). (5) heldout-code.py's small-end regret at most 8 bytes - 75/25 (0, 0, 8).

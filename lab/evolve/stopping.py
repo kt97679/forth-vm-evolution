@@ -9,7 +9,7 @@ hypervolume alone at first, and the gain its fastest made missed).
 A run's numbers - its true front's fixed-box hypervolume and four extremes, from its own database (hv.py's measure(), the
 box hv-bounds.json) - against the method's earlier runs in the ledger (results/stopping-series.md): the run gains when
 its hypervolume beats the best earlier one by 1% or more, or an extreme beats the best earlier one by its threshold -
-speed 2%, binary + image 1%, memory 4 KB, the 32-bit speed 2% - each criterion against its own best (the pooled
+speed 2%, binary + image 1%, memory 4 KB (8 KB from seed 95 - Iteration 702), the 32-bit speed 2% - each criterion against its own best (the pooled
 reading, as GOALS.md words the confirmation test: "the pooled true front"). Stop when, after at least three runs on the
 method, the last two gain nothing - and no correctness issue is open, which is the chat's to say. The ledger: a
 {"method": ...} line opens a series (a method change restarts the count), then a line a run; the earlier runs are the
@@ -33,10 +33,18 @@ NAME = dict(hv='the hypervolume', fastest='the fastest', smallest='the smallest'
             fastest32='the fastest at 32 bits')
 
 
-def bar(runs):
-    """What a run must reach to gain over these runs, criterion by criterion (GOALS.md's thresholds)."""
+def mem_kb(seed):
+    """The least memory's threshold for seed (Iteration 702, the owner): 4 KB - one page - until seed 94, 8 KB from
+    seed 95. One page was the noise of an unchanged design measured again: of 2,769 designs with readings in two or more
+    results files, 416 differ, 334 of them by 4 KB, 46 by 8 (results/drafts/memory-noise-702.py) - seed 94's one gain
+    was such a page. Earlier runs keep their own threshold: their verdicts and the count do not move. No seed: 4."""
+    return 8 if seed is not None and seed >= 95 else 4
+
+
+def bar(runs, seed=None):
+    """What run seed must reach to gain over these runs, criterion by criterion (GOALS.md's thresholds)."""
     return dict(hv=max(r['hv'] for r in runs) * 1.01, fastest=min(r['fastest'] for r in runs) * 0.98,
-                smallest=min(r['smallest'] for r in runs) * 0.99, memory=min(r['memory'] for r in runs) - 4,
+                smallest=min(r['smallest'] for r in runs) * 0.99, memory=min(r['memory'] for r in runs) - mem_kb(seed),
                 fastest32=min(r['fastest32'] for r in runs) * 0.98)
 
 
@@ -72,7 +80,7 @@ def gains(run, earlier):
     """The criteria a run gains on over the earlier runs; None for a series' first run - nothing to beat. A run with its
     last generation ("gens") meets each earlier run at that generation (at())."""
     if not earlier: return None
-    b = bar([at(k, run.get('gens')) for k in earlier])
+    b = bar([at(k, run.get('gens')) for k in earlier], run.get('seed'))
     return [k for k in KEYS if (run[k] >= b[k] if k == 'hv' else run[k] <= b[k])]
 
 
@@ -131,9 +139,9 @@ def report(run, method, runs):
     if method.get('matched'):                   # 562: the bar moves with the next run's length
         out.append('the next run gains if, by its last generation: ' + '; '.join('%d - %s' % (G, ', '.join('%s %s' % (
             '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS)) for G in (80, 100, 120, 140, 160)
-            for nb in [bar([at(x, G) for x in S])]) + ' (hypervolume, fastest, smallest, memory, 32-bit)')
+            for nb in [bar([at(x, G) for x in S], run['seed'] + 1)]) + ' (hypervolume, fastest, smallest, memory, 32-bit)')
     else:
-        nb = bar(S)
+        nb = bar(S, run['seed'] + 1)
         out.append('the next run gains if: ' + ', '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS))
     return '\n'.join(out)
 
@@ -156,8 +164,13 @@ def self_test():
     checks += [at(k, 120)['hv'] == 0.33, at(k, 155)['hv'] == 0.345, at(k, 160) is k, at(k, None) is k, at(a, 120) is a,
                at(k, 50)['hv'] == 0.33, at(k, 120)['fastest'] == 0.145, at(k, 2)['fastest'] == 0.2, gains(n, [k]) == ['hv'], gains(dict(n, gens=None), [k]) == [],
                gains(dict(n, gens=160), [k]) == [], gains(r(11, hv=0.3534, gens=200), [k]) == [], gains(r(12, hv=0.3536, gens=200), [k]) == ['hv']]
+    m = lambda s, kb: r(s, memory=112 - kb)    # 702: the least memory 4 KB until seed 94, 8 KB from 95
+    checks += [gains(m(94, 4), [a]) == ['memory'], gains(m(95, 4), [a]) == [], gains(m(95, 7), [a]) == [],
+               gains(m(95, 8), [a]) == ['memory'], gains(m(96, 8), [a]) == ['memory'], bar([a], 95)['memory'] == 104,
+               bar([a], 94)['memory'] == 108, bar([a])['memory'] == 108,
+               earliest([a, m(2, 4)]) == 4, stop([a, r(95), m(96, 4), m(97, 4)])]
     ok = all(checks)
-    print('stopping.py self-test: %d checks - the thresholds at their edges, the count, the earliest stop - %s'
+    print('stopping.py self-test: %d checks - the thresholds at their edges (memory 4 KB, 8 from seed 95), the count, the earliest stop - %s'
           % (len(checks), 'pass' if ok else 'FAIL at %s' % [i for i, x in enumerate(checks) if not x]))
     return 0 if ok else 1
 
@@ -169,7 +182,8 @@ if __name__ == '__main__':
     if opt('--bar'):          # 567: what the next run must reach by its last generation GEN - a prediction's numbers, no DB
         method, runs = series(opt('--ledger') or LEDGER)
         for G in [int(x) for x in opt('--bar').split(',')]:
-            b = bar([at(x, G) for x in runs]) if method.get('matched') else bar(runs)
+            nx = runs[-1]['seed'] + 1 if runs else None          # 702: the next run's own threshold
+            b = bar([at(x, G) for x in runs], nx) if method.get('matched') else bar(runs, nx)
             print('the next run gains if, at generation %d: %s' % (G, '; or '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, b[k])) for k in KEYS)))
         sys.exit(0)
     if opt('--seed') is None: sys.exit(__doc__)

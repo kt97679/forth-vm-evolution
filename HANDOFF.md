@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 701.
+- master: Iteration 702.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -141,8 +141,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   fastest at 32 bits (2806f89619, 0.1426) a wrong kernel reading in the stall (0.119 against its parent's 0.362; built
   here, 1.019 of the parent's time) - struck from the stopping line (results/drafts/stall-seed94.py, ktime-seed94.py;
   the owner: "ensure we don't lose any good designs"), the hypervolume then flat (0.31733); it gains by the least memory
-  alone (104 KB: one page, designs carried from seeds 84-90 - the 4 KB threshold is a re-measure's noise, the owner's
-  to change). **Next: seed 95** (16 h - the owner: 7 or 16, 700; NEXT-RUN) - processed as seed 94 was; the
+  alone (104 KB: one page, designs carried from seeds 84-90 - one page the re-measure's noise: the threshold 8 KB from
+  seed 95, 702). **Next: seed 95** (16 h - the owner: 7 or 16, 700; NEXT-RUN) - processed as seed 94 was; the
   earliest stop after seed 96 - after-seed-95 batch applied first (results/pending/ORDER.md; process-run.sh).
   **701 (while seed 95 runs; the owner: "proceed in this chat")**: lab/evolve/outliers.py - a fast-end reading one
   workload 2x off its parent's and 1.5x off the fast end's median, the rest within 10 % (seed 94: 2806f89619 alone; in
@@ -150,7 +150,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   which; process-records.sh's STRIKE; process-finish.sh stops without a stopping line). The after-seed-95 batch
   (batch-check PASS): why32's end kept, fail32 naming a time limit; --remeasure's 32-bit fastest tenth measured again
   into remeasure32.json (it measured the 64-bit front only); the ticker's machine line (load, memory, swap, clock, heat,
-  AC) and a late tick - no gene or measure in the run changed, the method stands.
+  AC) and a late tick - no gene or measure in the run changed, the method stands. **702 (the owner)**: the least
+  memory's threshold 8 KB from seed 95 (stopping.py's mem_kb; GOALS.md) - of 2,769 designs read in two or more results
+  files 416 differ, 334 by one page (results/drafts/memory-noise-702.py); seeds before 95 keep 4 KB, so seed 94's gain
+  and the earliest stop after seed 96 stand; seed 95's memory bar 96 KB.
   (batch-check.sh tests results/pending's patches only - not direct commits.) Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six

@@ -120,7 +120,8 @@ results/drafts/goals-snapshots.md.)
    because the box never moves. With two or three runs no significance test can decide anything (the smallest two-sided
    p of a rank test is 0.100 for three runs against three), so the rule uses **effect sizes decided now**: a run gains
    when its hypervolume beats the best earlier run's on the method by 1% or more, or an extreme does by its threshold -
-   speed 2%, binary + image 1%, memory 4 KB, the 32-bit speed 2%. **Stop when, after at least three runs on an
+   speed 2%, binary + image 1%, memory 4 KB (8 KB from seed 95 - the owner, Iteration 702: one page was the noise of a
+   design measured again, results/drafts/memory-noise-702.py; the runs before keep 4), the 32-bit speed 2%. **Stop when, after at least three runs on an
    unchanged method** (the same workloads, selection, operators, gates and box; the hours too until Iteration 562), **the last two runs gain
    nothing**, with no open correctness issue. A method change restarts the count. Report each run's values and the
    spread; no p-values. The series starts at seed 73, the first run with memory measured right since 70. **From seed 77**
