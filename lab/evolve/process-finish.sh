@@ -57,6 +57,8 @@ C=$(ls results/compare-fronts-*.md 2>/dev/null | head -1)
 [ -z "$C" ] || ! awk '/^## Session /{s=""} {s=s $0 "\n"} END{printf "%s", s}' "$C" | grep -q TODO || T="$T $C (its newest session)"
 [ -z "$T" ] || die "TODO left in: $T"
 sh lab/evolve/process-records.sh "$N" "$I" || die "process-records.sh"                                               # 4.
+PD=/tmp/process; [ -f $PD/random ] || [ -f $PD/portable ] || [ -f $PD/confirmation ] || grep -q "^{\"seed\": $N," results/stopping-series.md ||
+    die "no stopping line for seed $N in results/stopping-series.md - stopping.py refused it (701: a curve and STRIKE apart?)"
 M=""                                                                                                                  # 5.
 grep -q "Scored at seed $N " results/predictions.md || M="$M results/predictions.md (\"Scored at seed $N\");"
 L=$(grep -v '^#' lab/evolve/NEXT-RUN | grep -v '^ *$' | head -n 1)

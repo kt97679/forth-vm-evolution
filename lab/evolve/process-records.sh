@@ -4,7 +4,9 @@
 #   1. the batch: results/pending/ moved to results/applied-after-seedN/ - only when every patch its ORDER.md applies
 #      is applied (git apply -R --check), else it stops - its citations followed in every .md, README.md's line renamed;
 #   2. results/progress-by-run.md (progress-table.py);
-#   3. the gene votes appended to results/gene-votes.md, the stopping line to results/stopping-series.md - each skipped
+#   3. the gene votes appended to results/gene-votes.md, the stopping line to results/stopping-series.md (STRIKE=ID,...
+#      STRIKE_WHY='...' - Iteration 701: the records the chat has shown wrong left out, stopping.py --strike; its curve
+#      computed so first, detached: stopping.py DB --seed N --strike ID --why TEXT --curve /tmp/process/curve.json) - each skipped
 #      when the ledger already has seed N, so a second run adds nothing; the stopping line too for the confirmation run
 #      (process-seed.sh's marker, PROCESS/confirmation - Iteration 573: no series run; confirm.py --append writes its
 #      {"confirmation": N} line, which stopping.py passes over and a later confirmation run pools); the random baseline
@@ -57,7 +59,7 @@ elif [ -f "$PD/portable" ]; then if grep -q "\"portable\": $N," results/stopping
 elif [ -f "$PD/confirmation" ]; then if grep -q "\"confirmation\": $N," results/stopping-series.md; then say "stopping-series.md has confirmation $N already - not appended"   # 573
     else python3 lab/evolve/confirm.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep '^verdict' | sed 's/^/process-records: confirmation line appended, no series line - /'; fi
 elif grep -q "\"seed\": $N," results/stopping-series.md; then say "stopping-series.md has seed $N already - not appended"
-else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md $([ -f /tmp/process/curve.json ] && echo --curve /tmp/process/curve.json) --append | grep -E '^verdict' |
+else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md $([ -f /tmp/process/curve.json ] && echo --curve /tmp/process/curve.json) ${STRIKE:+--strike "$STRIKE" --why "$STRIKE_WHY"} --append 2>&1 | grep -E '^verdict|^stopping.py' |
     sed 's/^/process-records: stopping: /'; fi
 
 if [ -n "${NEXT_METHOD:-}" ]; then                                           # 4.

@@ -271,7 +271,9 @@ Three commands, the judgment between them (Iteration 560; each step's detail and
    A detached job dies when the turn ends (the sandbox suspends; /tmp stays - 561): start it early, see it to DONE in
    the same turn; cut off, `FROM=checks` resumes it at the checks.
 3. At DONE: `sh lab/evolve/process-finish.sh N ITERATION` - it stops naming anything wrong or missing (a check, a TODO, a
-   record); fixed, run it again. It writes the chain line, runs process-records.sh (`NEXT_METHOD='why'` when the next
+   record); fixed, run it again. A reading shown wrong (outliers.py in summary.md - 701): its curve again, detached,
+   `stopping.py DB --seed N --strike ID --why TEXT --curve /tmp/process/curve.json`, then `STRIKE=ID STRIKE_WHY='...'`
+   before process-finish.sh. It writes the chain line, runs process-records.sh (`NEXT_METHOD='why'` when the next
    run changes the method), commits and makes the bundle: present it.
 
 ## The owner's standing decisions - the ones every session uses

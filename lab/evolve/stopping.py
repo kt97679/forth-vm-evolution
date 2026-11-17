@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""lab/evolve/stopping.py DB --seed N [--ledger LEDGER] [--append] | --bar GEN[,GEN] | --self-test - GOALS.md's stopping rule, mechanical
+"""lab/evolve/stopping.py DB --seed N [--ledger LEDGER] [--strike ID,... --why TEXT] [--append] | --bar GEN[,GEN] | --self-test - GOALS.md's stopping rule, mechanical
+--strike (Iteration 701): the run judged without the named designs' records - a reading the chat has shown wrong
+(seed 94's 2806f89619, outliers.py); the ledger's line says which and why ("struck"), the curve file too, and --append
+refuses a curve computed with another set (compute it again: DB --seed N --strike ID --why TEXT --curve FILE, minutes).
 (Iteration 554; prompts/21, item 9: the rule's arithmetic a script, the judgment the chat's - seed 75 was judged by its
 hypervolume alone at first, and the gain its fastest made missed).
 
@@ -21,7 +24,7 @@ its earlier one. An earlier run shorter than this one is taken at its end. Both 
 phase rather than ends it. --curve FILE computes the curve alone (minutes - process-run.sh does it, detached); --append
 takes it from FILE when it is this seed's, else computes it. "the next run gains if" depends on how far the next run goes.
 """
-import json, os, sys
+import json, os, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LEDGER = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'results', 'stopping-series.md')
@@ -171,7 +174,19 @@ if __name__ == '__main__':
         sys.exit(0)
     if opt('--seed') is None: sys.exit(__doc__)
     seed, led = int(opt('--seed')), opt('--ledger') or LEDGER
-    db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger'), opt('--curve')))
+    db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger'), opt('--curve'),
+                                                                     opt('--strike'), opt('--why')))
+    strike = sorted(set(x for x in (opt('--strike') or '').split(',') if x))     # 701: the records the chat has struck
+    if strike:
+        if not opt('--why'): sys.exit('stopping.py: --strike needs --why TEXT - the ledger says why')
+        found, fd = set(), tempfile.NamedTemporaryFile('w', suffix='.jsonl', delete=False)
+        with fd:
+            for l in open(db, errors='replace'):
+                i = l.find('"id": "'); i = l[i + 7:i + 17] if i >= 0 else None
+                if i in strike: found.add(i); continue
+                fd.write(l)
+        if set(strike) - found: os.unlink(fd.name); sys.exit('stopping.py: --strike %s - not in %s' % (','.join(sorted(set(strike) - found)), db))
+        import atexit; atexit.register(os.unlink, fd.name); db = fd.name
     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E, hv
     method, runs = series(led); R = hv.load(db, E); m = hv.measure(db, E, R=R)
     pick = lambda m: m['alive'] if method.get('extremes') == 'alive' else m      # 556: the series says whose extremes
@@ -186,13 +201,19 @@ if __name__ == '__main__':
     run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(x['fastest'], 6), smallest=x['smallest'],
                memory=x['memory'], fastest32=round(x['fastest32'], 6))
     if new: run['app'] = len(appsize.SELECTION)  # 679: the ledger's line says its size (686: how many applications)
+    if strike: run['struck'] = dict(ids=strike, why=opt('--why'))
     if method.get('matched') or opt('--curve'):  # 562: its last generation; its curve for --append, or alone
         run['gens'] = max((r.get('gen') or 0) for r in R.values()); cf = opt('--curve')
         if opt('--curve') and '--append' not in a:
-            json.dump(dict(seed=seed, gens=run['gens'], curve=curve(db, E, hv, R, run['gens'])), open(cf, 'w'))
-            sys.exit(print('stopping: seed %d\'s curve, generations 0-%d, in %s' % (seed, run['gens'], cf)))
+            json.dump(dict(seed=seed, gens=run['gens'], struck=strike, curve=curve(db, E, hv, R, run['gens'])), open(cf, 'w'))
+            sys.exit(print('stopping: seed %d\'s curve, generations 0-%d%s, in %s' % (seed, run['gens'],
+                           ', without ' + ','.join(strike) if strike else '', cf)))
         if '--append' in a:
             k = json.load(open(cf)) if cf and os.path.exists(cf) else {}
+            if k.get('seed') == seed and k.get('struck', []) != strike:      # 701: the curve and the line, one set
+                sys.exit('stopping.py: %s was computed %s - compute it again, detached: stopping.py DB --seed %d%s --curve %s'
+                         % (cf, 'without ' + ','.join(k['struck']) if k.get('struck') else 'with every record', seed,
+                            ' --strike %s --why TEXT' % ','.join(strike) if strike else '', cf))
             run['curve'] = k['curve'] if k.get('seed') == seed and k.get('gens') == run['gens'] else curve(db, E, hv, R, run['gens'])
     print(report(run, method, runs))
     if '--append' in a:

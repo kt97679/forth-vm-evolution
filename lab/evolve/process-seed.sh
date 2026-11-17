@@ -33,6 +33,8 @@ if [ -n "$SP" ]; then
     p ""; p "## review-checks.py progress (progress.txt) - the last generation and the gains"; p '```'; tail -4 progress.txt >> "$S"; p '```'
     python3 "$EV/review-checks.py" curse "$SP/report.md" > curse.txt 2>&1        # Iteration 427: done by hand until seed 61
     p ""; p "## review-checks.py curse (curse.txt) - the fast end's optimism, re-measured / in-run"; p '```'; head -3 curse.txt >> "$S"; p '```'
+    python3 "$EV/outliers.py" "$SP/db.jsonl" --remeasure32 "$SP/remeasure32.json" > outliers.txt 2>&1   # 701: seed 94's 2806f89619
+    p ""; p "## outliers.py (outliers.txt) - one workload off its parent's and the fast end's, near an extreme (stopping.py --strike)"; p '```'; head -8 outliers.txt >> "$S"; p '```'
     python3 "$EV/review-checks.py" fail32 "$SP/db.jsonl" > fail32.txt 2>&1
     p ""; p "## review-checks.py fail32 (fail32.txt) - the 32-bit failures by cause"; p '```'; head -8 fail32.txt >> "$S"; p '```'
     VN=$(echo "$SP" | sed -n 's|.*-seed\([0-9][0-9]*\)-[^/]*/pack$|\1|p')   # 576: the seed pack's name - the line can start with another step (seed 85's: "experiment ... then seed 85")
