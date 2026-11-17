@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 699.
+- master: Iteration 700.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -135,8 +135,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the fastest (0.1218, -2.2 %) and the fastest at 32 bits (0.1506, -2.3 %), both in-run and just past 2 % (the curse
   1.085; the front re-measured, its fastest 0.130 against seed 92's 0.1277); the hypervolume 0.31632 (+0.8 %), the
   smallest 22,411 B. Step 3's genes on 67 of 401 (rtinline 53, 11 in the fastest tenth; lab/evolve/newgenes.py, seed
-  92's draft made a tool); the held-out code's regret 0 B again. **Next: seed 94** (14 h, the owner, 699; NEXT-RUN) -
-  processed as seed 93 was (newgenes.py beside heldout-code.py); the stopping rule's earliest stop after seed 95.
+  92's draft made a tool); the held-out code's regret 0 B again. **700: seed 94 processed**
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed94.md): 43,109 designs, 136 generations - a stall at generation 44 (93
+  minutes; 18 runs timed out, 4 compiles past cc's 60 s CPU limit, one 32-bit build) cost 24; nothing new found. Its
+  fastest at 32 bits (2806f89619, 0.1426) a wrong kernel reading in the stall (0.119 against its parent's 0.362; built
+  here, 1.019 of the parent's time) - struck from the stopping line (results/drafts/stall-seed94.py, ktime-seed94.py;
+  the owner: "ensure we don't lose any good designs"), the hypervolume then flat (0.31733); it gains by the least memory
+  alone (104 KB: one page, designs carried from seeds 84-90 - the 4 KB threshold is a re-measure's noise, the owner's
+  to change). **Next: seed 95** (14 h assumed - the owner did not say; NEXT-RUN) - processed as seed 94 was; the
+  earliest stop after seed 96.
   (batch-check.sh tests results/pending's patches only - not direct commits.) Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six

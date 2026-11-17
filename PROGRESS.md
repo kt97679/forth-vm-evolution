@@ -11699,3 +11699,16 @@ results/drafts/newgenes-seed93.txt. The held-out code: Spearman 0.808, the small
 (results/drafts/heldout-code-seed93.txt). Deaths only the 16-bit families' reach (10 sod16, 12 cpt16) and the frozen
 founders. Predictions 3 of 4. The archive's name ended .tar.gz, not _tar.gz: process-run.sh and process-followup.sh's globs now take both. NEXT-RUN:
 `seed 94 14h widths` (the owner: 14 hours).
+
+## Iteration 700 - 2026-11-17 - Claude
+
+Seed 94 processed (results/evolve-amd-ryzen-7-pro-8840hs-seed94.md): 14 hours, 43,109 designs, 136 generations - a
+stall at generation 44 (93 minutes; 18 runs timed out, 4 compiles past cc's CPU limit, one 32-bit build - all 22 compute
+right here) cost 24; the checks clean (the gate 451 of 451, ans-check 0 of 93). Its fastest at 32 bits, 2806f89619
+0.1426, a wrong kernel reading in the stall (0.119, its parent 0.362; built here, 1.019 of the parent's time): struck
+from the stopping line (results/drafts/stall-seed94.py, results/drafts/ktime-seed94.py; the owner: "ensure we don't
+lose any good designs") - the hypervolume then 0.31733 (+0.0 %), the 32-bit fastest 0.1496 (-0.6 %); it gains by the
+least memory alone (104 KB, one page on carried designs), the earliest stop after seed 96. rtinline 50 of 362, 18 in
+the fastest tenth (results/drafts/newgenes-seed94.txt); the held-out code's regret +8 B
+(results/drafts/heldout-code-seed94.txt). Predictions 2 of 5. NEXT-RUN: `seed 95 14h widths` (14 hours assumed - the
+owner did not say).
