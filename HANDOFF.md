@@ -15,7 +15,7 @@ An evolutionary search over the design of a Forth system: the engine (`engine/vm
 byte-coded CV8 / tag-2 image), and the evolver (`lab/evolve/evolve.py`: NSGA-II over genes; objectives - speed against
 the hand-made s6 over the selection workloads, engine plus image bytes, memory, and the speed at 32-bit cells). The
 owner, Kirill Timofeev, runs the seeds on his laptop (AMD Ryzen 7 PRO 8840HS, "fury") per `lab/evolve/NEXT-RUN` and
-sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<time>_tar.gz`). Commits are authored
+sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<time>_tar.gz`, or `.tar.gz` - 699). Commits are authored
 `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The environment
@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 698.
+- master: Iteration 699.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -130,8 +130,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the fastest tenth; rtconst 17, rtvar 2): speed-for-bytes trades (pairs: rtinline 0.959 for +673 B) - newgenes-seed92.
   The held-out code (lab/evolve/heldout-code.py, new): Spearman 0.813 with the selection's, the small end's regret 0 B.
   Found and fixed: since 678 the report's records begin `{"app"`, and eleven readers keyed on `{"bin"` saw no front
-  (seed-facts.py, gate.py among them) - fixed before the gate ran. **Next: seed 93** (14 h, the owner, 698;
-  NEXT-RUN) - processed as seed 92 was, heldout-code.py beside it; the stopping rule's earliest stop after seed 94.
+  (seed-facts.py, gate.py among them) - fixed before the gate ran. **699: seed 93 processed**
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed93.md): 49,137 designs, 160 generations, the checks clean; it **gains** by
+  the fastest (0.1218, -2.2 %) and the fastest at 32 bits (0.1506, -2.3 %), both in-run and just past 2 % (the curse
+  1.085; the front re-measured, its fastest 0.130 against seed 92's 0.1277); the hypervolume 0.31632 (+0.8 %), the
+  smallest 22,411 B. Step 3's genes on 67 of 401 (rtinline 53, 11 in the fastest tenth; lab/evolve/newgenes.py, seed
+  92's draft made a tool); the held-out code's regret 0 B again. **Next: seed 94** (14 h, the owner, 699; NEXT-RUN) -
+  processed as seed 93 was (newgenes.py beside heldout-code.py); the stopping rule's earliest stop after seed 95.
   (batch-check.sh tests results/pending's patches only - not direct commits.) Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six

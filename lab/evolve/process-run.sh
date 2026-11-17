@@ -20,7 +20,7 @@
 # its run-tests). Start it early in a turn and see it to DONE; cut off: FROM=checks resumes at step 4 - /tmp/process and
 # the drafts kept, the chat's edits to them too - and with the batch already applied.
 set -u
-I=${1:?ITERATION}; A=${2:-$(ls -t /mnt/user-data/uploads/*forth-vm-evolution-chain-*_tar.gz 2>/dev/null | head -n 1)}   # 675: any prefix, the newest
+I=${1:?ITERATION}; A=${2:-$(ls -t /mnt/user-data/uploads/*forth-vm-evolution-chain-*[_.]tar.gz 2>/dev/null | head -n 1)}   # 675: any prefix, the newest; 699: _tar.gz or .tar.gz
 cd "$(dirname "$0")/../.." || exit 1
 O=/tmp/process-run; mkdir -p "$O"; S=$O/status; : > "$S"
 st() { echo "$* $(date +%T)" >> "$S"; }
@@ -30,7 +30,7 @@ if [ "${FROM:-}" = checks ]; then                                 # 561: a cut-o
     [ ! -d results/pending ] || [ -n "$(git log --format=%h -1 --grep='batch applied')" ] || die "FROM=checks: a batch waits unapplied"
     st "START again from the checks at $(git rev-parse --short HEAD)"
 else
-[ -f "$A" ] || die "no chain archive (ARCHIVE, or forth-vm-evolution-chain-*_tar.gz in /mnt/user-data/uploads)"
+[ -f "$A" ] || die "no chain archive (ARCHIVE, or forth-vm-evolution-chain-*_tar.gz or .tar.gz in /mnt/user-data/uploads)"
 [ -z "$(git status --porcelain -- engine forth tools lab results)" ] || die "the tree has changes - commit or stash them first (cut off after its drafts: FROM=checks)"
 st "START $(basename "$A") at $(git rev-parse --short HEAD)"
 sh lab/evolve/process-seed.sh "$A" > "$O/process-seed.log" 2>&1 || die "process-seed.sh (process-seed.log)"

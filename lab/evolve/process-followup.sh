@@ -20,11 +20,11 @@
 # results/followup-roles-seedN.md, the package and designs/ when a role changes (pack-designs.py, export-designs.py).
 set -u
 N=${1:?N}; I=${2:?ITERATION}; ROLES=${3:?ROLES}
-A=${4:-$(ls -t /mnt/user-data/uploads/*forth-vm-evolution-chain-*_tar.gz 2>/dev/null | head -n 1)}   # 675: any prefix
+A=${4:-$(ls -t /mnt/user-data/uploads/*forth-vm-evolution-chain-*[_.]tar.gz 2>/dev/null | head -n 1)}   # 675: any prefix
 cd "$(dirname "$0")/../.." || exit 1
 O=${OUT:-/tmp/followup}; D=${DEST:-results}; C=results/followup-seed$N.md; K=$D/chain-followup$N; F=$D/followup-pick-seed$N.md
 die() { echo "process-followup: STOP - $*"; exit 1; }
-[ -f "$A" ] || die "no chain archive (ARCHIVE, or forth-vm-evolution-chain-*_tar.gz in /mnt/user-data/uploads)"
+[ -f "$A" ] || die "no chain archive (ARCHIVE, or forth-vm-evolution-chain-*_tar.gz or .tar.gz in /mnt/user-data/uploads)"
 [ -f "$C" ] || die "no $C"
 [ ! -e "$K" ] || die "$K there already - remove it to lay the readings out again"
 case $A in /*) ;; *) A=$PWD/$A ;; esac

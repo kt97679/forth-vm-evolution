@@ -11686,3 +11686,16 @@ checked none) - fixed before the gate ran. The deaths, all the 16-bit families r
 shellmix, cpt16's call reach in gc16 - results/drafts/deaths-verify-698.py and .txt): deaths-check.py taught both and 678's
 "died: application size" (it had run it as a workload); process-checks.sh runs heldout-code.py before the jail. NEXT-RUN:
 `seed 93 14h widths` (the owner: 14 hours).
+
+## Iteration 699 - 2026-11-16 - Claude
+
+Seed 93 processed (results/evolve-amd-ryzen-7-pro-8840hs-seed93.md): 14 hours, 49,137 designs, 160 generations, the
+checks clean (the gate 472 of 472, ans-check 0 of 103). It gains on seed 92 by the fastest (0.1218, -2.2 %) and the
+fastest at 32 bits (0.1506, -2.3 %) - in-run extremes just past 2 %, the curse 1.085 (re-measured, the front's fastest
+0.130 against seed 92's 0.1277); the hypervolume 0.31632 (+0.8 %), the smallest 22,411 B (-6). Step 3's genes on 67
+of 401 front designs (rtinline 53, 11 in the fastest tenth; rtconst 14, rtvar 4), the pairs speed-for-bytes as in seed
+92 (rtinline 0.950 for +674 B): lab/evolve/newgenes.py (seed 92's draft made a tool), its output
+results/drafts/newgenes-seed93.txt. The held-out code: Spearman 0.808, the small end's regret 0 B
+(results/drafts/heldout-code-seed93.txt). Deaths only the 16-bit families' reach (10 sod16, 12 cpt16) and the frozen
+founders. Predictions 3 of 4. The archive's name ended .tar.gz, not _tar.gz: process-run.sh and process-followup.sh's globs now take both. NEXT-RUN:
+`seed 94 14h widths` (the owner: 14 hours).

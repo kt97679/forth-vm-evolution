@@ -1474,3 +1474,21 @@ genes - rtvar, rtconst, rtinline - together on more of the true front than seed 
 below its children's share in seed 92, a trade the size end refuses; the carried front starts with few). (3) The deaths
 only the 16-bit families' reach (sod16 on apps, cpt16's gc16) and the frozen founders - 85/15. (4) heldout-code.py's
 small-end regret 0 bytes again - 80/20 (seed 92's 0; the score against the score with the held-out code 0.992).
+
+**Scored at seed 93 (Iteration 699)**, results/evolve-amd-ryzen-7-pro-8840hs-seed93.md: (1) right - seed 93 gains, by the fastest
+(0.1218, -2.2 %) and the fastest at 32 bits (0.1506, -2.3 %), both in-run; the hypervolume +0.8 %. (2) wrong - the
+three on 71 (17.7 %, counted as seed 92's 51 was; 67 designs with any), rtinline 32 -> 53 the whole rise. (3) right - 10
+sod16 on apps (shellmix's DOES> reach), 12 cpt16 (gc16's call reach), the 2 frozen founders. (4) right - the regret 0
+bytes (4b3d8a2eee). Seed 93's: 3 of 4.
+
+## Seed 94, the series' third run (14 hours, both widths) - predicted (Iteration 699)
+
+Seed 93's setup, the newest four databases carried (seeds 92 and 93 among them). (1) The stopping rule: seed 94 gains
+on the best of seeds 92-93 by at least one criterion at its last generation (stopping.py's bars: the hypervolume
+0.31948, fastest 0.1193, smallest 22,187, memory 104 KB, 32-bit 0.1476) - 45/55 (seed 93's two gains were in-run
+extremes just past 2 %, the fast end's curse at 1.085; the hypervolume rose 0.8 %, short of its 1 %). (2) The smallest
+gains by its 1 % (22,187 B or less) - 10/90 (6 bytes in two runs, seed 93's one gain at generation 130). (3) rtinline in
+the fastest tenth of the true front again, 8 designs or more - 75/25 (seed 92 8, seed 93 11; its pairs 0.95-0.96 of the
+speed). (4) The deaths only the 16-bit families' reach and the frozen founders - 85/15 (seeds 92 and 93 both). (5)
+heldout-code.py's small-end regret 0 bytes - 80/20 (seeds 92 and 93 both; the score against the score with the
+held-out code 0.992, 0.997).
