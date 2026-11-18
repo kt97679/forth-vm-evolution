@@ -11740,5 +11740,6 @@ checks clean (the gate 462 of 462, ans-check 0 of 101, the 19 deaths all expecte
 the smallest 22,409 B unmoved, the memory 108 KB - seed 94's 104 KB designs re-read 108-112 (702's noise); 2806f89619's
 strike confirmed (0.1733 at 32 bits; results/drafts/carried-seed95.py). rtinline 36 of 390, 11 in the fastest tenth
 (results/drafts/newgenes-seed95.txt); the held-out code's regret +8 B, its Spearman 0.687
-(results/drafts/heldout-code-seed95.txt). Predictions 5 of 5. NEXT-RUN: `seed 96 16h widths` (16 assumed); the series
-stops after it if it gains nothing.
+(results/drafts/heldout-code-seed95.txt). Predictions 5 of 5. NEXT-RUN: `seed 96 21h widths` (the owner: 12 or 21 - 21,
+about 17 hours of search after generation 0's re-measure, ~290 generations, against ~140 at 12); the series stops after
+it if it gains nothing.

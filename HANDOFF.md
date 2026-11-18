@@ -159,9 +159,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   0.1485 (-0.7 %), each about 1.3 % in-run; the hypervolume 0.31512 (-0.7 %; 0.3148-0.3192 all run); the smallest
   22,409 B unmoved from generation 0; the memory 108 KB (seed 94's 104 KB designs re-read 108-112 here: 702's noise).
   2806f89619's strike confirmed (0.1733 at 32 bits). The after-seed-95 batch applied (dc3dcac). Predictions 5 of 5.
-  **Next: seed 96** (16 h assumed - the owner did not say; NEXT-RUN) - processed as seed 95 was; **the series stops
-  after it if it gains nothing** (`stopping.py --bar GEN`). Then the plan's step 6 (results/drafts/search-reopen-plan-677.md):
-  the new roles, self-hosting phase 6 on them, the article.
+  **Next: seed 96** (21 h - the owner: 12 or 21; ~290 generations, the series' longest; NEXT-RUN) - processed as seed
+  95 was; **the series stops after it if it gains nothing** (`stopping.py --bar GEN`). Then the plan's step 6
+  (results/drafts/search-reopen-plan-677.md): the new roles, self-hosting phase 6 on them, the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts

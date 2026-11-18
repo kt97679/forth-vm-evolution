@@ -1516,7 +1516,7 @@ same; the memory 108 KB). (2) right - 2806f89619 0.1733 at 32 bits in generation
 0.357). (3) right - 10 sod16, 7 cpt16, the 2 frozen founders, nothing else. (4) right - rtinline 11 in the fastest tenth.
 (5) right - the regret +8 bytes (ef87bfddfc). Seed 95's: 5 of 5.
 
-## Seed 96, the series' fifth run (16 hours assumed, both widths) - predicted (Iteration 703)
+## Seed 96, the series' fifth run (21 hours - the owner: 12 or 21; both widths) - predicted (Iteration 703)
 
 Seed 95's setup, the newest four databases carried (seeds 93-95 among them); the after-seed-95 batch's measures beside
 the run (remeasure32.json, why32, the ticker). (1) The stopping rule: seed 96 gains on the best of seeds 92-95 by at
