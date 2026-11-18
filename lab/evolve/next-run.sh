@@ -578,6 +578,7 @@ step "packed to send back"
 K=$RUN/pack; rm -rf "$K"; mkdir -p "$K"
 cp build/evolve/report.md build/evolve/db.jsonl evolve.log "$K/"
 [ ! -f build/evolve/remeasure.json ] || cp build/evolve/remeasure.json "$K/"
+[ ! -f build/evolve/remeasure32.json ] || cp build/evolve/remeasure32.json "$K/"     # Iteration 701: the 32-bit fastest, measured again
 for f in build tests validate jail; do [ ! -f "$RUN/$f.log" ] || cp "$RUN/$f.log" "$K/"; done
 lscpu > "$K/lscpu.txt" 2>&1 || true
 { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT, $MODE"; } > "$K/machine.txt"

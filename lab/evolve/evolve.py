@@ -811,7 +811,8 @@ def eval32(g, rounds):
         out['appby32'] = ab; out['app32'] = sum(ab)
         out['speed32'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL)); out['t32'] = t
     except (RuntimeError, subprocess.TimeoutExpired) as e:
-        out['speed32'] = None; out['why32'] = str(e)[:200]
+        s = str(e); out['speed32'] = None     # 701: the end says why - cut at 200, seed 94's 3b5bdaebbc lost its cause
+        out['why32'] = s if len(s) <= 600 else s[:150] + ' ... ' + s[-400:]
     shutil.rmtree(d32, ignore_errors=True)
     return out
 
@@ -2330,6 +2331,9 @@ def main(argv):
         DB = os.path.abspath(argv[argv.index('--db') + 1])
     def opt(name, default):
         return type(default)(argv[argv.index(name) + 1]) if name in argv else default
+    if '--remeasure' in argv and not TWO_WIDTHS[0]:      # Iteration 701: a two-width run's 32-bit fastest measured again too
+        ok0 = [r for r in load().values() if r.get('status') == 'ok' and r.get('speed')]
+        TWO_WIDTHS[0] = sum(1 for r in ok0 if r.get('speed32')) * 2 > len(ok0)
     setup_widths()                         # Iteration 336: setup() itself, unless --widths 8,4
     if '--validate' in argv:
         ok = True
@@ -2365,6 +2369,7 @@ def main(argv):
         # In the VM rehearsal they came out 3-6% slower when re-measured.
         R = load(); ok = [i for i in R if R[i]['status'] == 'ok']
         if not ok: nothing_alive(R); sys.exit(1)
+        w2, TWO_WIDTHS[0] = TWO_WIDTHS[0], False         # 701: the 64-bit pass as before - its front, its measure, one width
         F = first_front(ok, R); n = opt('--remeasure', 6); out = {}
         path = os.path.join(EV, 'remeasure.json')
         if os.path.exists(path): out = json.load(open(path))
@@ -2373,6 +2378,19 @@ def main(argv):
             if r['status'] == 'ok': out[i] = {'speed': r['speed'], 't': r['t'], 'rounds': n}
             print('  %s: in the run %.3f, re-measured %s' % (i, R[i]['speed'], ('%.3f' % r['speed']) if r['status'] == 'ok' else r['status']), flush=True)
             json.dump(out, open(path, 'w'))
+        if w2:
+            # Iteration 701: the 32-bit fastest tenth of the two-width front (at least 10), measured again at 32 bits alone
+            # - seed 94's fastest at 32 bits, 2806f89619, was one wrong kernel reading, never measured again (the pass
+            # above is the 64-bit front's). remeasure32.json, its own file: remeasure.json's readers see no new shape.
+            TWO_WIDTHS[0] = True; p32 = os.path.join(EV, 'remeasure32.json')
+            o32 = json.load(open(p32)) if os.path.exists(p32) else {}
+            F2 = sorted(first_front([i for i in ok if R[i].get('speed32')], R), key=lambda i: R[i]['speed32'])
+            for i in F2[:max(10, len(F2) // 10)]:
+                r = eval32(canon(R[i]['genome']), n + 1)          # eval32 measures max(1, rounds - 1) rounds: n
+                if r.get('speed32'): o32[i] = {'speed32': r['speed32'], 't32': r['t32'], 'rounds': n}
+                print('  %s at 32 bits: in the run %.4f, re-measured %s' % (i, R[i]['speed32'], ('%.4f' % r['speed32'])
+                      if r.get('speed32') else r.get('why32', '?')[-80:]), flush=True)
+                json.dump(o32, open(p32, 'w'))
         report(R); return
     N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
     prebuild_dumps()                       # Iteration 697: every dump checked before the workers fork

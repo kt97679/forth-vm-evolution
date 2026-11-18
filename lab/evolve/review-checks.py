@@ -341,6 +341,8 @@ elif check == 'fail32':
         if 'corpus' in w and e.get('bfind') and not e.get('tos'): k = 'bfind without tos'
         elif 'compile' in w and e.get('tail'): k = 'tail, %s%s' % ('clang' if g.get('compiler') else 'GCC', ' with preserve_none' if e.get('tailpn') else '')
         elif expected32(w, g): k = 'expected - cpt16 past its 16-bit call reach at 4-byte cells, refused out loud (Iteration 517)'
+        elif 'timed out after' in w or 'CPU time limit' in w:          # 701: the machine, or a hang - build it here to say
+            k = 'a time limit, the machine or a hang - lab/evolve/design.py %s --db DB --width 4 kernel apps fib (701)' % r.get('id')
         c[(w, k or 'not a known cause - look')] += 1
     print('at 32 bits: %d designs measured, %d failed' % (ok, n))
     for (w, k), m in sorted(c.items(), key=lambda kv: -kv[1]): print('  %6d  %s - %s' % (m, w, k))
