@@ -13,6 +13,11 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 703 (16 hours assumed - the owner did not say; as seed 95): the series' fifth run - the method unchanged
+#   (the after-seed-95 batch adds measures beside the run: remeasure32.json, why32, the ticker's machine line); the
+#   newest four fronts carried, seed 95's among them. Seed 95 gained nothing, so the series stops after seed 96 if it
+#   gains nothing too (stopping.py's bars: the hypervolume 0.32051, fastest 0.1175, smallest 22,185, memory 96 KB,
+#   32-bit 0.1455).
 # Iteration 700 (the owner: "either 7 hours or 16 hours"): 16 - generation 0 re-measures the carried fronts (about 3
 #   hours at seed 94: 8,327 designs), so 7 would leave about 4 hours of search, and a short run that gains nothing
 #   counts toward the stop; 16 makes up seed 94's 24 lost generations. stopping.py meets a longer run with each
@@ -323,4 +328,4 @@
 # (ran from 652's bundle at c8c423671f - its archive the rage check, PASS:) experiment rage-designs.py
 # Iteration 654 (the rage check processed - PASS, results/rage-designs-654.md): none - the freeze is the sandbox's; a
 # pull of this bundle must not run the rage check again.
-seed 95 16h widths
+seed 96 16h widths

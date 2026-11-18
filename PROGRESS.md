@@ -11718,9 +11718,9 @@ the fastest tenth (results/drafts/newgenes-seed94.txt); the held-out code's regr
 While seed 95 runs (the owner: proceed in this chat), seed 94's lessons made tools: lab/evolve/outliers.py flags a
 fast-end reading one workload 2x off its parent's and 1.5x off the fast end's median (seed 94: 2806f89619 alone, a12e4b32ef's
 jitloop not; process-seed.sh, run-tests), stopping.py --strike ID --why TEXT (process-records.sh's STRIKE). The
-after-seed-95 batch, batch-check PASS (results/pending/ORDER.md;
-results/pending/why32-after-seed95.patch, results/pending/remeasure32-after-seed95.patch,
-results/pending/ticker-after-seed95.patch): a 32-bit
+after-seed-95 batch, batch-check PASS (results/applied-after-seed95/ORDER.md;
+results/applied-after-seed95/why32-after-seed95.patch, results/applied-after-seed95/remeasure32-after-seed95.patch,
+results/applied-after-seed95/ticker-after-seed95.patch): a 32-bit
 failure's message keeps its end; --remeasure measures the 32-bit fastest tenth again into remeasure32.json (tested on 12
 of seed 94's records: 2806f89619's kernel 0.475 against its parent's 0.455); the progress line says the machine's state.
 
@@ -11731,3 +11731,14 @@ designs with readings in two or more results files 416 differ, 334 by 4 KB, 46 b
 the series' least memory 112/108 KB back and forth since seed 74. stopping.py's mem_kb(seed) - runs before 95 keep 4, so
 seed 94's gain and the earliest stop after 96 stand; confirm.py passes its seed; GOALS.md; the self-test 40 checks.
 Seed 95's memory bar 96 KB (predictions.md's line says so).
+
+## Iteration 703 - 2026-11-18 - Claude
+
+Seed 95 processed (results/evolve-amd-ryzen-7-pro-8840hs-seed95.md): 16 hours, 60,264 designs, 205 generations, the
+checks clean (the gate 462 of 462, ans-check 0 of 101, the 19 deaths all expected); the after-seed-95 batch applied
+(dc3dcac). It gains nothing: the fastest 0.1199 (-1.4 %), at 32 bits 0.1485 (-0.7 %), the hypervolume 0.31512 (-0.7 %),
+the smallest 22,409 B unmoved, the memory 108 KB - seed 94's 104 KB designs re-read 108-112 (702's noise); 2806f89619's
+strike confirmed (0.1733 at 32 bits; results/drafts/carried-seed95.py). rtinline 36 of 390, 11 in the fastest tenth
+(results/drafts/newgenes-seed95.txt); the held-out code's regret +8 B, its Spearman 0.687
+(results/drafts/heldout-code-seed95.txt). Predictions 5 of 5. NEXT-RUN: `seed 96 16h widths` (16 assumed); the series
+stops after it if it gains nothing.

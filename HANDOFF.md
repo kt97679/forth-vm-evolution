@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 702.
+- master: Iteration 703.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -142,8 +142,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   here, 1.019 of the parent's time) - struck from the stopping line (results/drafts/stall-seed94.py, ktime-seed94.py;
   the owner: "ensure we don't lose any good designs"), the hypervolume then flat (0.31733); it gains by the least memory
   alone (104 KB: one page, designs carried from seeds 84-90 - one page the re-measure's noise: the threshold 8 KB from
-  seed 95, 702). **Next: seed 95** (16 h - the owner: 7 or 16, 700; NEXT-RUN) - processed as seed 94 was; the
-  earliest stop after seed 96 - after-seed-95 batch applied first (results/pending/ORDER.md; process-run.sh).
+  seed 95, 702).
   **701 (while seed 95 runs; the owner: "proceed in this chat")**: lab/evolve/outliers.py - a fast-end reading one
   workload 2x off its parent's and 1.5x off the fast end's median, the rest within 10 % (seed 94: 2806f89619 alone; in
   summary.md, run-tests' self-test) - and stopping.py --strike ID --why TEXT (the ledger's line and the curve file say
@@ -154,7 +153,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   memory's threshold 8 KB from seed 95 (stopping.py's mem_kb; GOALS.md) - of 2,769 designs read in two or more results
   files 416 differ, 334 by one page (results/drafts/memory-noise-702.py); seeds before 95 keep 4 KB, so seed 94's gain
   and the earliest stop after seed 96 stand; seed 95's memory bar 96 KB.
-  (batch-check.sh tests results/pending's patches only - not direct commits.) Self-hosting phase 6 waits.
+  (batch-check.sh tests results/pending's patches only - not direct commits.) **703: seed 95 processed**
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed95.md): 60,264 designs, 205 generations, the checks clean (the gate 462 of
+  462, ans-check 0 of 101, the deaths all expected); **it gains nothing** - the fastest 0.1199 (-1.4 %), at 32 bits
+  0.1485 (-0.7 %), each about 1.3 % in-run; the hypervolume 0.31512 (-0.7 %; 0.3148-0.3192 all run); the smallest
+  22,409 B unmoved from generation 0; the memory 108 KB (seed 94's 104 KB designs re-read 108-112 here: 702's noise).
+  2806f89619's strike confirmed (0.1733 at 32 bits). The after-seed-95 batch applied (dc3dcac). Predictions 5 of 5.
+  **Next: seed 96** (16 h assumed - the owner did not say; NEXT-RUN) - processed as seed 95 was; **the series stops
+  after it if it gains nothing** (`stopping.py --bar GEN`). Then the plan's step 6 (results/drafts/search-reopen-plan-677.md):
+  the new roles, self-hosting phase 6 on them, the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts

@@ -1,0 +1,23 @@
+seed 95: 35586 alive (27682 children, generation 1 on), the true front 390 (tenths of 39)
+
+| gene | children with it | the front with it | enrichment | fastest tenth | smallest tenth | leanest tenth | fastest tenth at 32 bits |
+|---|---|---|---|---|---|---|---|
+| rtvar | 3.3% | 3 (0.8%) | 0.24 | 0 | 0 | 0 | 0 |
+| rtconst | 15.2% | 22 (5.6%) | 0.37 | 0 | 0 | 0 | 0 |
+| rtinline | 25.9% | 36 (9.2%) | 0.36 | 11 | 0 | 0 | 11 |
+| jitvar | 13.9% | 15 (3.8%) | 0.28 | 14 | 0 | 0 | 14 |
+| jitdoes | 3.4% | 0 (0.0%) | 0.00 | 0 | 0 | 0 | 0 |
+| varslot | 40.1% | 152 (39.0%) | 0.97 | 8 | 17 | 25 | 9 |
+| rtimm | 10.9% | 14 (3.6%) | 0.33 | 0 | 0 | 0 | 0 |
+
+The pairs - the same expressed genome but for the gene, both alive (on / off; below 1 the gene faster; size on - off, bytes):
+
+| gene | pairs | speed, geometric mean | at 32 bits | of them faster with it | binary + image + app, median | of which app | per workload (median on / off) |
+|---|---|---|---|---|---|---|---|
+| rtvar | 70 | 0.981 | 0.980 | 62 of 70 | +579 | -92 | ackermann 1.005, apps 0.899, bubble 1.011, corpus 1.011, fib 0.995, kernel 0.950, loop 0.996, parse 1.004, sieve 1.001 |
+| rtconst | 359 | 0.982 | 0.981 | 251 of 359 | +339 | +100 | ackermann 1.008, apps 0.996, bubble 0.818, corpus 1.014, fib 1.011, kernel 1.009, loop 1.007, parse 1.003, sieve 0.924 |
+| rtinline | 338 | 0.948 | 0.955 | 284 of 338 | +669 | +49 | ackermann 0.881, apps 0.965, bubble 0.841, corpus 1.045, fib 1.000, kernel 0.978, loop 1.010, parse 1.002, sieve 0.920 |
+| jitvar | 242 | 0.991 | 0.988 | 148 of 242 | +192 | +0 | ackermann 1.001, apps 0.994, bubble 1.006, corpus 0.969, fib 1.013, kernel 0.975, loop 1.002, parse 1.009, sieve 1.002 |
+| jitdoes | 186 | 0.998 | 1.000 | 103 of 186 | +356 | +0 | ackermann 1.002, apps 0.962, bubble 1.000, corpus 1.000, fib 1.000, kernel 1.007, loop 1.005, parse 1.000, sieve 1.002 |
+| varslot | 1276 | 0.997 | 0.999 | 659 of 1276 | +0 | +0 | ackermann 1.001, apps 1.001, bubble 1.001, corpus 0.998, fib 0.999, kernel 0.997, loop 1.000, parse 1.004, sieve 1.001 |
+| rtimm | 266 | 0.981 | 0.977 | 174 of 266 | +493 | +3 | ackermann 1.005, apps 1.008, bubble 1.002, corpus 1.023, fib 0.817, kernel 1.016, loop 1.002, parse 0.999, sieve 0.995 |

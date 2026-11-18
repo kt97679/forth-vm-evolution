@@ -1509,3 +1509,23 @@ fastest 0.1192, smallest 22,185, memory 96 KB - 100 until 702 moved the threshol
 (its kernel near its parent's 0.36) - 90/10. (3) The deaths only the 16-bit families' reach and the frozen founders -
 80/20 (seed 94's stall the exception). (4) rtinline in the fastest tenth of the true front, 8 designs or more - 80/20
 (8, 11, 18). (5) heldout-code.py's small-end regret at most 8 bytes - 75/25 (0, 0, 8).
+
+**Scored at seed 95 (Iteration 703)**, results/evolve-amd-ryzen-7-pro-8840hs-seed95.md: (1) right - seed 95 gains nothing
+(the fastest 0.1199, -1.4 %; at 32 bits 0.1485, -0.7 %; the hypervolume 0.31512, -0.7 %; the smallest 22,409 B, the
+same; the memory 108 KB). (2) right - 2806f89619 0.1733 at 32 bits in generation 0, its kernel 0.363 (the parent's
+0.357). (3) right - 10 sod16, 7 cpt16, the 2 frozen founders, nothing else. (4) right - rtinline 11 in the fastest tenth.
+(5) right - the regret +8 bytes (ef87bfddfc). Seed 95's: 5 of 5.
+
+## Seed 96, the series' fifth run (16 hours assumed, both widths) - predicted (Iteration 703)
+
+Seed 95's setup, the newest four databases carried (seeds 93-95 among them); the after-seed-95 batch's measures beside
+the run (remeasure32.json, why32, the ticker). (1) The stopping rule: seed 96 gains on the best of seeds 92-95 by at
+least one criterion at its last generation (stopping.py's bars from generation 140: the hypervolume 0.32051, fastest
+0.1175, smallest 22,185, memory 96 KB, 32-bit 0.1455) - 15/85 (seed 95 found nothing in 205 generations, each extreme
+about 1.3 % in-run; nothing alive under 108 KB; the smallest unmoved since seed 94's generation 4) - so the series stops
+after seed 96. (2) The smallest below 22,409 B at all - 20/80 (2 bytes at seed 94, none at seed 95). (3) The fastest,
+from every alive design, below 0.1199 - 50/50 (0.1218, 0.1216, 0.1199: each run's in-run extreme has edged down, the
+curse 1.085-1.097). (4) remeasure32.json, its first run: the 32-bit fastest tenth re-measured / in-run, the median 1.05
+or more - 75/25 (the 64-bit curse 1.085-1.097 on seeds 93-95). (5) The deaths only the 16-bit families' reach and the
+frozen founders - 85/15 (seeds 92, 93, 95; seed 94's stall the exception). (6) rtinline in the fastest tenth of the true
+front, 8 designs or more - 80/20 (8, 11, 18, 11).

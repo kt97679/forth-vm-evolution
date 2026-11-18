@@ -4,9 +4,9 @@ process-run.sh checks and applies it. Seed 94's stall (Iteration 700) left three
 record - each patch adds a record and changes no gene, objective, selection or in-run measurement, so the series'
 method stands (no NEXT_METHOD) and seed 96 is judged against seeds 92-95 as before.
 
-    git apply results/pending/why32-after-seed95.patch
-    git apply results/pending/remeasure32-after-seed95.patch
-    git apply results/pending/ticker-after-seed95.patch
+    git apply results/applied-after-seed95/why32-after-seed95.patch
+    git apply results/applied-after-seed95/remeasure32-after-seed95.patch
+    git apply results/applied-after-seed95/ticker-after-seed95.patch
 
 batch-check (701, on 01f7c7f - 3 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
