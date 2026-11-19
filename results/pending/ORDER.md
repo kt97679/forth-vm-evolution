@@ -9,6 +9,9 @@ touched by it (x86 engines byte-identical); chain B and the export measure and s
     git apply results/pending/arm2at-after-seed96.patch
     git apply results/pending/armcheck-after-seed96.patch
 
+batch-check (706, on 9d115fa - 2 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
+the jail PASS.
+
 **arm2at-after-seed96.patch** (engine/vm-lab.c, tools/gen-msc.py, tools/gen-tos.py) - 2@ and 2! read and write the cell
 pair through a one-byte-aligned type (CELLU, `aligned(1), may_alias`), in the engine's handlers and in the two stack
 rewrites that restate them (gen-tos.py for tos=1, gen-msc.py for msc). Why: at tos=1 the two cell loads are adjacent with
