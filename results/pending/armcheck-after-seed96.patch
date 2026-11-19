@@ -1,0 +1,32 @@
+diff --git a/tools/arm-cross-check.py b/tools/arm-cross-check.py
+index 287a1af..c58ed10 100644
+--- a/tools/arm-cross-check.py
++++ b/tools/arm-cross-check.py
+@@ -21,7 +21,7 @@ alive, identical, the engines' sizes; exit 0 only if every design passed.
+ not convert at 4-byte cells and s2-cpt16 runs out of reach on apps, at either width's build (570) - known, listed apart.
+ Needs, on x86-64, `CROSS=1 sh tools/setup-sandbox.sh` (lld, qemu-user, libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross).
+ """
+-import json, os, shutil, subprocess, sys
++import json, os, re, shutil, subprocess, sys
+ A = sys.argv[1:]
+ def opt(name, default=None):
+     if name not in A: return default
+@@ -66,6 +66,9 @@ if n and len(pick) > n: pick = [pick[int(j * (len(pick) - 1) / max(1, n - 1))] f
+ how = 'the host\'s cc, natively' if NATIVE else 'GCC, by %s, under qemu-arm' % gcc if gcc else 'cv8, clang, no JIT, under qemu-arm'
+ print('arm-cross-check: %d designs of %d (%s); the reference build/s6-cv8b-32 (the C library)' % (len(pick), len(recs), how), flush=True)
+ tot = dict(built=0, alive=0, same=0); sizes = []; known = []
++# Iteration 706: the output as evolve.py compares it (run()'s OUT_LAST) - 'Redefining: X' differs with the kernel (cell
++# designs have no LIT, or CALL, for shellmix and sim16 to redefine: s0-cell DIFFERED on apps), not the output
++out_ = lambda b: re.sub(rb'(?m)^Redefining:[^\n]*\n', b'', b.replace(b'\r', b''))
+ for k, r in enumerate(pick, 1):
+     g = E.canon(r['genome']); i = r['id']; da = os.path.join(E.EV, 'arm-' + i)
+     if not gcc and not NATIVE: os.environ['EVOLVE_TARGET'] = 'armv7'
+@@ -77,7 +80,7 @@ for k, r in enumerate(pick, 1):
+     tot['built'] += 1; pa = E.private_work(da); sizes.append(os.path.getsize(ea))
+     try: E.alive(ea, ia, pa); tot['alive'] += 1; v = 'alive'
+     except Exception as ex_: v = 'DEAD (%s)' % str(ex_)[:60]
+-    same = [w for w in ('fib', 'apps') if E.sh([ea, ia], cwd=pa, inp=E.program(w), timeout=120).stdout == ref[w]]
++    same = [w for w in ('fib', 'apps') if out_(E.sh([ea, ia], cwd=pa, inp=E.program(w), timeout=120).stdout) == out_(ref[w])]
+     if len(same) < 2 and i in KNOWN and v == 'alive': known.append(i); tot['built'] -= 1; tot['alive'] -= 1; sizes.pop()
+     else: tot['same'] += len(same) == 2
+     print('%3d %s %-5s speed %.3f: ARM %d bytes, %s, fib+apps %s' % (k, i, g['enc'], r.get('speed') or 0, os.path.getsize(ea), v,
