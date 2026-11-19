@@ -7,7 +7,7 @@ fastest (the best mean over the three classes), arm (the fastest on ARMv7), knee
 fast on ARMv7), memory (least memory), smallest; each holder must be in CANDIDATES. FILE names the handoff in the roles'
 heading (default results/handoff-relf-657.md, the final one - 657). Prints each line's completeness; the noise (a design's session-to-session
 SD, a paired difference's SE); each role against its holder by the rule fixed before seed 87 (results/drafts/
-portable-plan-602.md: speed 2%, binary + image 1%, memory 4 KB) - the designs that beat a holder listed, the trades the
+portable-plan-602.md: speed 2%, binary + image 1%, memory 8 KB - 4 until 708) - the designs that beat a holder listed, the trades the
 chat's and the owner's; the predictions of iteration N (610: seed 87's follow-up, 614: seed 88's); dream against the laptop
 by (factor, compiler). Pooled as final-pick.py pools: each source's geometric mean over its sessions; x86-64 and x86-32
 the geometric mean of the laptop alone and dream, ARMv7 the Tegra; the mean of the three; errors paired by session (the
@@ -15,7 +15,7 @@ sessions both designs have). A design missing a class is left out of the classes
 --gain (Iteration 616): instead, the rule fixed before seed 88's follow-up returned (results/drafts/portable-plan-602.md,
 "After the follow-up") - the run's designs against the best of those found before, re-measured: the laptop alone at each
 width, each class and the mean of the three (2%, the paired difference 2 SE or more), binary + image (1%) and memory
-(4 KB), exact; the run's designs beating a role's holder; the verdict - another portable run, or the search stops.
+(8 KB), exact; the run's designs beating a role's holder; the verdict - another portable run, or the search stops.
 --screen (Iteration 617): instead, the screen the next portable run's remote lines measured (portable-followup.py --rest):
 each of the run's designs against each speed role's holder on that role's lines, paired by session, flagged by the role's
 own rule with dream standing in for the laptop - the fastest portable: the mean over dream at both widths and the Tegra
@@ -47,7 +47,9 @@ HOSTFILE = {'dream64': 'dream.lan-prebuilt64.out.json', 'dream32': 'dream.lan-pr
             'rage': 'rage.lan-prebuiltarm.out.json'}
 LAPKEY = {'laptop64': 'idle', 'laptop32': 'idle32', 'laptop64-loaded': 'loaded', 'laptop32-loaded': 'loaded32'}
 PARTS = {'x86-64': ('laptop64', 'dream64'), 'x86-32': ('laptop32', 'dream32'), 'ARMv7': ('rage',)}
-T, B, M = 0.02, 0.01, 4                      # speed 2%, binary + image 1%, memory 4 KB
+# The owner, Iteration 708: memory 8 KB (4 until then) - one page is a design's own noise (seed 95's 374 front designs
+# read again in seed 96: 36 % one page off, 4 % two), and the evolver ties within 8 (MEM_TOL, 77), the stopping rule too (702)
+T, B, M = 0.02, 0.01, 8                      # speed 2%, binary + image 1%, memory 8 KB
 gm = lambda v: math.exp(sum(math.log(t) for t in v) / len(v))
 pct = lambda x: '%+.2f%%' % ((math.exp(x) - 1) * 100)
 
@@ -171,7 +173,7 @@ for s in SOURCES:
           'third to last %+.2f%%' % (s, n, raw * 100, adj * 100, adj * math.sqrt(2 / n) * 100, (max(sh) - min(sh)) * 100,
                                      (statistics.fmean(sh[-t3:]) - statistics.fmean(sh[:t3])) * 100))
 
-print('\n## The roles (%s) - speed 2%%, binary + image 1%%, memory 4 KB' % HAND)
+print('\n## The roles (%s) - speed 2%%, binary + image 1%%, memory %d KB' % (HAND, M))
 inc = R['fastest']; bm = min(PD, key=lambda i: CL[i]['mean']); m, se = mdiff(bm, inc)
 print('  fastest portable (the best mean): %s %.4f against %s %.4f: %s +/- %.2f%%' % (bm, CL[bm]['mean'], inc,
                                                                                      CL[inc]['mean'], pct(m), se * 100))

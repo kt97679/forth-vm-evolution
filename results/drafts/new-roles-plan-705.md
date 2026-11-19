@@ -49,8 +49,9 @@ database, build/evolve/db.jsonl there - an experiment chain archives nothing).
    smallest=d180351903; and the x86 ones, fast64=c7c35f9c97,fast32=ee34931cd7,allround=06b188f45b,smalljit=c6f1c1331b)
    - before it, the holders' records in results/followup-seed96-roles.md replaced by the measure-ids pack's (the laptop's
    memory; final-pick.py keeps the candidates' size and memory). The readings by session, final-pick.py over them, each
-   role against its holder (followup-roles.py's rule: speed 2 % at 2 SE, binary + image 1 %, memory 4 KB - the 8 KB of
-   702 for the stopping rule is the owner's to extend here).
+   role against its holder (followup-roles.py's rule: speed 2 % at 2 SE, binary + image 1 %, memory 8 KB - the owner,
+   708: one page is a design's own noise; a close call within 8 KB at the lean end has its contenders' memory read
+   five times, the medians compared).
 2. The shortlist: final-pick.py's shortlist() (580) per role - the set alone and loaded, the additions across machines,
    each width's fastest, each role's leaders on its own lines (the Tegra's for the ARM roles) - about 60 designs.
 3. **Chain B**: the shortlist at 10 rounds on the three machines, several sessions each (the owner's hours); its
@@ -61,3 +62,8 @@ database, build/evolve/db.jsonl there - an experiment chain archives nothing).
 designs/ and the package made again for every role that changed (results/drafts/freeze-build-645.sh); self-hosting
 phase 6 on the new roles (results/drafts/selfhost-plan-666.md: the cross compiler learns any new way of laying the
 kernel - VAR-OPS and INL-OPS are zeros in self-built images today, 697); relf told how to fetch them; the article.
+
+**Then the search reopens** (the owner, 708): the image's names in their chains by use (chainorder - zero bytes, the
+lookup's walk 43-49 % shorter on parse; results/drafts/chain-order-707.txt) and the JIT header's field in the translated
+word's dead bytecode (mechanism 9's V1' - -700 B of the five programs' code on JIT designs; results/drafts/triz-706.md)
+built as genes, the step-3 pattern of 687-695; then a new series - a method change restarts the stopping rule's count.

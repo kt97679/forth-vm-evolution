@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 707.
+- master: Iteration 708.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -199,11 +199,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   their chains by use - zero bytes, the lookup's walk 43-49 % shorter on parse (results/drafts/chain-order-707.txt); with
   706's mechanism 9, the two candidate genes for a next search (the owner's call, after the roles). **Closed**: a size
   superoptimizer (at most 11 bytes), gene-interaction mining (no synergy), a perfect hash of names (too many bytes).
+  **708 (the owner)**: the roles' memory rule 8 KB, not 4 (followup-roles.py; HANDOFF-REFERENCE.md's standing decisions
+  give the data); **the search reopens after the roles** - chainorder and mechanism 9's V1' built as genes, then a new
+  series.
   **Next: chain A's processing** - first the batch (four patches now), by hand (ORDER.md: batch-check, git apply, the move to
   results/applied-after-seed96); then the plan's "Its processing": process-followup.sh 96-roles with the ten roles (the
   holders' records from the measure-ids pack first), the shortlist (final-pick.py's shortlist, about 60), chain B at 10
   rounds on the three machines (the owner's hours); then the roles, designs/ and the package, self-hosting phase 6 on
-  them, the article.
+  them; then the two genes and the reopened search's series; the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -341,6 +344,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 - Every patch tested, then verified to apply in order on a fresh clone; batches wait in results/pending/ with ORDER.md;
   `tools/batch-check.sh` runs that test.
 - Run lengths are the owner's - ask for each run's hours.
+- The roles' memory rule 8 KB (708; 4 before - one page is a design's own noise).
+- The search reopens after the new roles: chainorder and mechanism 9's V1' built as genes, then a new series (708).
 - Noisy timing questions go to the laptop; here decide by deterministic counts (the profiler's dispatches, cachegrind).
 - Offer trade-offs to evolution as genes rather than deciding; size savings are exact - take them.
 - Every iteration has a PROGRESS entry, naming every file it adds under results/ (the article is written from it).

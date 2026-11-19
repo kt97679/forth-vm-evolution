@@ -11791,3 +11791,11 @@ results/drafts/rtsc-707.py). Priced, not built: the image's names in their chain
 43-49 % shorter (results/drafts/chain-order-707.py, results/drafts/chain-order-707.txt). Closed: a size superoptimizer, at
 most 11 bytes (results/drafts/superopt-707.py, results/drafts/superopt-707.txt); gene interactions, none
 (results/drafts/epistasis-707.py, results/drafts/epistasis-707.txt). GOALS.md's register: four rows.
+
+## Iteration 708 - 2026-11-19 - Claude
+
+The owner's two decisions recorded. The roles' memory rule 8 KB, not 4 (lab/evolve/followup-roles.py; the data in
+HANDOFF-REFERENCE.md's standing decisions: seed 95's 374 front designs read again in seed 96, 136 one page off, 16 two -
+one page is a design's own noise; the evolver ties within 8 since 77, the stopping rule since 702); a close call at the
+lean end gets five readings and the medians. The search reopens after the new roles: chainorder and mechanism 9's V1'
+built as genes, then a new series (results/drafts/new-roles-plan-705.md, GOALS.md's register, the card).

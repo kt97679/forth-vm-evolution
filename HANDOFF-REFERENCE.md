@@ -83,6 +83,15 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
 - Every patch: tested, then verified to apply in order on a fresh clone and to
   reproduce the tested files; batches wait in `results/pending/` with ORDER.md. `tools/batch-check.sh` runs that test (Iteration 394).
 - Run lengths are the owner's - ask for each run's hours (seed 48: 6).
+- **The roles' memory rule: 8 KB** (Iteration 708; 4 since 602): a role taken by memory, or a memory gain, needs 8 KB
+  or more. One page is the noise of one design's own reading - seed 95's 374 front designs read again in seed 96: 136
+  one page off, 16 two, 1 three - and a role's memory is one in-run reading; the evolver ties within 8 (MEM_TOL, 77),
+  the stopping rule since 702. The price: a true 4-7 KB gain unseen - so a close call at the lean end (within 8 KB) has
+  its contenders' memory read five times and the medians compared.
+- **The search reopens after the new roles** (Iteration 708): the two priced candidates built as genes - the image's
+  names in their chains by use (results/drafts/chain-order-707.txt) and the JIT header's field in the translated word's
+  dead bytecode (mechanism 9's V1', results/drafts/triz-706.md) - then a new series on the method (a method change
+  restarts the stopping rule's count).
 
 - **Superinstructions kept for now** (Iteration 389), though they buy nearly nothing: 0.27% of dispatches with the
   JIT off, 0.9% with it on, bytes either way (results/supers-knockout-seed58.md).
