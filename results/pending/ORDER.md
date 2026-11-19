@@ -9,6 +9,7 @@ touched by it (x86 engines byte-identical); chain B and the export measure and s
     git apply results/pending/arm2at-after-seed96.patch
     git apply results/pending/armcheck-after-seed96.patch
     git apply results/pending/ticker-after-seed96.patch
+    git apply results/pending/rtsc-after-seed96.patch
 
 batch-check (706, on 8204a5a - 3 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -41,3 +42,5 @@ seed run had the ticker - next-run.sh's experiment mode exits before it - so a s
 follow-up chain's laptop sessions would be pooled unseen; chain A has none. Tested: `sh -n`; the ticker beside a
 sleeping process, TICK_EVERY=2, with TICK_LABEL ("lab/evolve/loadtest.py running; the machine: ...") and without (the
 seed run's line, unchanged); batch-check below.
+
+**rtsc-after-seed96.patch** (engine/rt-linux-x86_64.c, engine/vm-lab.c) - TODO: what it does, why, how it was tested.

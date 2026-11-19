@@ -1,0 +1,44 @@
+diff --git a/engine/rt-linux-x86_64.c b/engine/rt-linux-x86_64.c
+index c736ffc..c268ece 100644
+--- a/engine/rt-linux-x86_64.c
++++ b/engine/rt-linux-x86_64.c
+@@ -75,6 +75,9 @@ int mprotect(void *a, size_t n, int p)        { return (int)S(10, a, n, p); }
+    library it keeps a few pages resident, so the peak memory it reports
+    for a child is the child's, not the copy fork made of cputime. */
+ int getrusage(__rusage_who_t w, struct rusage *u) { return (int)S(98, w, u, 0); }
++/* Iteration 707: the engine's system calls (vm-lab.c's SYSCALL6) - six arguments, no va_list, as rt_open; the variadic
++ * syscall below stays for any other caller, and --gc-sections drops it when there is none. */
++long rt_syscall6(long n, long a, long b, long c, long d, long e, long f) { return ok(sc(n, a, b, c, d, e, f)); }
+ long syscall(long n, ...)
+ {
+     va_list ap; long a[6]; int i;
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 92e49a4..c71e0ff 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -737,6 +737,16 @@ int rt_open(const char *p, int flags, int mode);
+ #define OPEN3(p, f, m) open((p), (f), (m))
+ #endif
+ 
++/*  Iteration 707 (the ideation pilot, results/drafts/ideation-707.md): the engine's system calls through rt_syscall6
++ *  where the runtime is linked - six arguments, no va_list, as rt_open (257): the variadic syscall made the runtime save
++ *  every argument register - 241 bytes of the smallest design's 4,784 bytes of code. Errors as syscall's: -1, errno. */
++#if RTLIB && defined(__x86_64__)   /* i386's and ARMv7's runtimes keep their variadic syscall for their own calls: there +16 */
++long rt_syscall6(long n, long a, long b, long c, long d, long e, long f);
++#define SYSCALL6(n, a, b, c, d, e, f) rt_syscall6((n), (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
++#else
++#define SYSCALL6(n, a, b, c, d, e, f) syscall((n), (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
++#endif
++
+ static void stack_fault(int which) {
+     write_str(2, which ? "relf: return stack overflow\n"
+                        : "relf: data stack overflow\n");
+@@ -2525,7 +2535,7 @@ L_syscall: {
+         } else if ((num = sysc_i386(num)) < 0) r = -38;        /* sysc_done for a handler. ENOSYS */
+         else
+ #endif
+-        r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
++        r = SYSCALL6(num, a[0], a[1], a[2], a[3], a[4], a[5]);
+         if (r == -1) r = -(long)errno;
+     }
+     DS1 = (UNS64)(INT64)r;
