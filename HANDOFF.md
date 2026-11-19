@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 703.
+- master: Iteration 704.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -159,9 +159,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   0.1485 (-0.7 %), each about 1.3 % in-run; the hypervolume 0.31512 (-0.7 %; 0.3148-0.3192 all run); the smallest
   22,409 B unmoved from generation 0; the memory 108 KB (seed 94's 104 KB designs re-read 108-112 here: 702's noise).
   2806f89619's strike confirmed (0.1733 at 32 bits). The after-seed-95 batch applied (dc3dcac). Predictions 5 of 5.
-  **Next: seed 96** (21 h - the owner: 12 or 21; ~290 generations, the series' longest; NEXT-RUN) - processed as seed
-  95 was; **the series stops after it if it gains nothing** (`stopping.py --bar GEN`). Then the plan's step 6
-  (results/drafts/search-reopen-plan-677.md): the new roles, self-hosting phase 6 on them, the article.
+  **704: seed 96 processed** (results/evolve-amd-ryzen-7-pro-8840hs-seed96.md): 79,690 designs, 279 generations (21 h),
+  the checks clean (the gate 504 of 504, ans-check 0 of 115, deaths-check 16 of 16 right here); **it gains nothing** -
+  the fastest 0.1190 (-0.8 %), at 32 bits 0.1470 (-1.0 %), neither moving after generation 84; the hypervolume 0.31378
+  (-1.1 %); the smallest 22,409 B, the memory 108 KB. **The stopping rule stops: the reopened search's series ends at
+  seed 96** (seeds 92-96; the fastest 0.1245 to 0.1190, 4.4 % over five runs). A stall in generation 0 (the ticker's
+  first catch: load 27-32, 21:56-22:25) killed 16 carried designs, each right here, one on seed 95's front
+  (b25c984a48) - restored, nothing moves (results/drafts/stall-seed96.py). Predictions 5 of 6. NEXT-RUN none.
+  **Next: the plan's step 6** (results/drafts/search-reopen-plan-677.md) - the owner's choice first: GOALS.md's
+  confirmation run ("When the improvements are done", step 2 - as seed 84 after 572) or the new roles straight from the
+  pooled fronts of seeds 92-96 (final-pick.py, a re-measure chain on the three machines); then self-hosting phase 6 on
+  them, the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts

@@ -11743,3 +11743,15 @@ strike confirmed (0.1733 at 32 bits; results/drafts/carried-seed95.py). rtinline
 (results/drafts/heldout-code-seed95.txt). Predictions 5 of 5. NEXT-RUN: `seed 96 21h widths` (the owner: 12 or 21 - 21,
 about 17 hours of search after generation 0's re-measure, ~290 generations, against ~140 at 12); the series stops after
 it if it gains nothing.
+
+## Iteration 704 - 2026-11-19 - Claude
+
+Seed 96 processed (results/evolve-amd-ryzen-7-pro-8840hs-seed96.md): 21 hours, 79,690 designs, 279 generations, the
+checks clean (the gate 504 of 504, ans-check 0 of 115, deaths-check 16 of 16 right here). It gains nothing: the fastest
+0.1190 (-0.8 %), at 32 bits 0.1470 (-1.0 %), neither moving after generation 84; the hypervolume 0.31378 (-1.1 %); the
+smallest 22,409 B, the memory 108 KB - **the stopping rule stops: the reopened search's series ends at seed 96**
+(seeds 92-96). A stall in generation 0, the ticker's first catch (load 27-32, 21:56-22:25), killed 16 carried designs,
+all right here; one was on seed 95's front (b25c984a48), restored it moves nothing (results/drafts/stall-seed96.py).
+rtinline 32 of 445, 8 in the fastest tenth (results/drafts/newgenes-seed96.txt); the held-out code's regret +8 B, its
+Spearman 0.686 (results/drafts/heldout-code-seed96.txt). Predictions 5 of 6. NEXT-RUN none: step 6 next, the owner
+choosing between a confirmation run and the new roles from the pooled fronts.

@@ -1529,3 +1529,12 @@ curse 1.085-1.097). (4) remeasure32.json, its first run: the 32-bit fastest tent
 or more - 75/25 (the 64-bit curse 1.085-1.097 on seeds 93-95). (5) The deaths only the 16-bit families' reach and the
 frozen founders - 85/15 (seeds 92, 93, 95; seed 94's stall the exception). (6) rtinline in the fastest tenth of the true
 front, 8 designs or more - 80/20 (8, 11, 18, 11).
+
+**Scored at seed 96 (Iteration 704)**, results/evolve-amd-ryzen-7-pro-8840hs-seed96.md: (1) right - seed 96 gains nothing
+at generation 279 (the hypervolume 0.31378, -1.1 %; the fastest 0.1190, -0.8 %; at 32 bits 0.1470, -1.0 %; the smallest
+22,409 B, the same; the memory 108 KB) - the series stops. (2) right - the smallest 22,409 B from generation 0. (3) right,
+the coin - 0.1190 (923951e8ab, generation 84), 0.8 % under 0.1199. (4) right - the median 1.074 (44 designs, 1.029-1.121).
+(5) wrong - besides 12 sod16, 16 cpt16 and the 2 frozen founders, a stall in generation 0 (the ticker: load 27-32,
+21:56-22:25) killed 16 carried designs (11 timed out, 4 past cc's CPU limit, 1 clang crash) - seed 94's exception again.
+(6) right - 8 exactly (rtinline 32 of 445). Seed 96's: 5 of 6. No prediction for a next run: NEXT-RUN none (the series
+ended; the next step the owner's).
