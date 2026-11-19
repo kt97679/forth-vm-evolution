@@ -1,4 +1,4 @@
-# The after-seed-96 batch - to apply at chain A's processing, before chain B's lists (Iteration 706)
+# The after-seed-96 batch - to apply at chain A's processing, before chain B's lists (Iterations 706-707)
 
 Seed 96 is processed (704) and no seed run is planned: process-followup.sh applies no batch, so the chat processing chain
 A (the new roles' screen - results/drafts/new-roles-plan-705.md) applies it by hand on master, first: `sh
@@ -8,6 +8,7 @@ touched by it (x86 engines byte-identical); chain B and the export measure and s
 
     git apply results/pending/arm2at-after-seed96.patch
     git apply results/pending/armcheck-after-seed96.patch
+    git apply results/pending/ticker-after-seed96.patch
 
 batch-check (706, on 9d115fa - 2 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -29,3 +30,12 @@ apps, the engines 0-4 bytes larger; 14 more spread by speed with the hand-made s
 OUT_LAST): the "Redefining: X" lines dropped first. Why: s0-cell DIFFERED on apps by two such warnings and nothing else -
 a cell design's kernel has no LIT, or CALL, for shellmix (and sim16) to redefine, which evolve.py already allows for.
 Tested: s0-cell IDENTICAL after (DIFFER before, on master too), d3496fcc6c beside it the same.
+
+**ticker-after-seed96.patch** (lab/evolve/chainctl.py, lab/evolve/next-run.sh) - the machine's line (701: load, memory,
+swap, clock, heat, AC, a late tick) every 5 minutes beside an experiment step too: next-run.sh starts chainctl.py's ticker
+before the step's tool with TICK_LABEL=lab/evolve/TOOL and stops it after (on a failure too); the ticker prints "TOOL
+running" in place of the evolution's progress when TICK_LABEL is set. Why (results/drafts/premortem-roles-707.md): only a
+seed run had the ticker - next-run.sh's experiment mode exits before it - so a stall like seed 96's generation 0 under a
+follow-up chain's laptop sessions would be pooled unseen; chain A has none. Tested: `sh -n`; the ticker beside a
+sleeping process, TICK_EVERY=2, with TICK_LABEL ("lab/evolve/loadtest.py running; the machine: ...") and without (the
+seed run's line, unchanged); batch-check below.

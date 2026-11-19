@@ -1,0 +1,43 @@
+diff --git a/lab/evolve/chainctl.py b/lab/evolve/chainctl.py
+index 7118546..313d9fb 100644
+--- a/lab/evolve/chainctl.py
++++ b/lab/evolve/chainctl.py
+@@ -273,15 +273,16 @@ def cmd_ticker(pid, until, every=300):
+             time.sleep(1)
+             if not os.path.exists('/proc/%d' % pid): return 0
+         late = time.monotonic() - t0 - every       # 701: a tick late by a tenth or more - the machine stalled
+-        gen, n = evolution_progress(repo)
++        label = os.environ.get('TICK_LABEL')      # 707: an experiment step's - no evolution to report
++        gen, n = (None, 0) if label else evolution_progress(repo)
+         left = ''
+         if until > 0:
+             m = max(0, int((until - time.time()) / 60))
+             left = ', the evolution stops in %d h %02d min' % (m // 60, m % 60)
+         mc = machine()
+-        print('%sprogress %s - %s, %d designs in the database%s%s%s' % (STEP_PREFIX, time.strftime('%H:%M:%S', time.gmtime()),
+-              gen or 'no generation yet', n, left, '; the machine: ' + mc if mc else '',
+-              '; the tick %d s late' % late if late > every / 10 else ''), flush=True)
++        what = '%s running' % label if label else '%s, %d designs in the database' % (gen or 'no generation yet', n)
++        print('%sprogress %s - %s%s%s%s' % (STEP_PREFIX, time.strftime('%H:%M:%S', time.gmtime()), what, left,
++              '; the machine: ' + mc if mc else '', '; the tick %d s late' % late if late > every / 10 else ''), flush=True)
+ 
+ 
+ def cmd_recover(runs, repo):
+diff --git a/lab/evolve/next-run.sh b/lab/evolve/next-run.sh
+index 474dd17..c96ba94 100755
+--- a/lab/evolve/next-run.sh
++++ b/lab/evolve/next-run.sh
+@@ -464,7 +464,12 @@ if [ "$MODE" = experiment ]; then
+     step "lab/evolve/$TOOL $TARGS"
+     T0=$(date +%s)
+     STEP_T0=$T0                                                   # 591: a session's length, for a repeat (then_next)
+-    python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { tail -20 "$RUN/$NAME.log"; exit 1; }
++    # Iteration 707 (the pre-mortem of the new roles, results/drafts/premortem-roles-707.md): the machine's line every 5 minutes
++    # beside an experiment too - only a seed run had it (701), so a stall under chain A's laptop sessions would pool unseen
++    TICK_LABEL="lab/evolve/$TOOL" python3 lab/evolve/chainctl.py ticker $$ 0 &
++    TICKX=$!
++    python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { kill $TICKX 2>/dev/null || true; tail -20 "$RUN/$NAME.log"; exit 1; }
++    kill $TICKX 2>/dev/null || true
+     if [ "$TOOL" = compare-fronts.py ]; then                      # Iteration 152: the next chain's reserve
+         cr_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); cr_=${cr_:-10}
+         cc_=$(ncpus "$TARGS")
