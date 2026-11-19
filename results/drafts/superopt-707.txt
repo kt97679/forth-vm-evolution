@@ -1,0 +1,10 @@
+the five programs: 115 distinct runs of 2-3 modelled words, 183 instances; 39 occur twice or more
+
+| run | shorter, the same on 3000 stacks | instances | bytes at most | note |
+|---|---|---:|---:|---|
+| DROP 0 | DUP - | 7 | 7 |  |
+| 0 + | CHARS | 2 | 4 | rtimm folds it already (684, mechanism 5) |
+| = 0= | <> | 2 | 2 |  |
+| 2DROP 0 | = 0> | 2 | 2 |  |
+
+at most 11 bytes of the five programs' code (not counting the rows rtimm folds), before a peephole's own cost in the overlays

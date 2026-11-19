@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 706.
+- master: Iteration 707.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -187,7 +187,19 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   2@ and 2! through a byte-aligned cell, so GCC no longer joins a tos=1 design's two loads into ARMv7's LDRD (x86
   engines byte-identical, 48 of 48; the GCC ARMv7 builds alive under qemu - results/drafts/arm2at-706.md); armcheck -
   arm-cross-check.py compares as evolve.py does ("Redefining:" lines out; s0-cell's false DIFFER).
-  **Next: chain A's processing** - first the batch, by hand (ORDER.md: batch-check, git apply, the move to
+  **707 (the owner: "use anything that can help think out of the box and find new nontrivial designs")**:
+  results/drafts/ideation-707.md - each method run, its result. **The pre-mortem** of the new roles (prompt 16, late;
+  results/drafts/premortem-roles-707.md): chain A's laptop sessions carry no load record (the ticker ran for seed runs
+  only - ticker-after-seed96.patch for chain B; chain A's sessions checked against each other on the holders), and the
+  self-built images ship without the run-time fusions - **a gate**: a role ships when its self-built image's speed is
+  the translator's, else its translator-built image, named. **lab/evolve/fuzz-designs.py** (new): x86 clean at both
+  widths (2,240 runs); ARMv7 under qemu found the misaligned 2@ and 2! in clang's builds too (3 tos=1 designs; 0 with
+  the batch's arm2at). **The engine read by symbol size**: the variadic syscall, 241 bytes - rtsc-after-seed96.patch,
+  -192 to -304 bytes on every x86-64 design (results/drafts/rtsc-707.md). **Priced, not built**: the image's names in
+  their chains by use - zero bytes, the lookup's walk 43-49 % shorter on parse (results/drafts/chain-order-707.txt); with
+  706's mechanism 9, the two candidate genes for a next search (the owner's call, after the roles). **Closed**: a size
+  superoptimizer (at most 11 bytes), gene-interaction mining (no synergy), a perfect hash of names (too many bytes).
+  **Next: chain A's processing** - first the batch (four patches now), by hand (ORDER.md: batch-check, git apply, the move to
   results/applied-after-seed96); then the plan's "Its processing": process-followup.sh 96-roles with the ten roles (the
   holders' records from the measure-ids pack first), the shortlist (final-pick.py's shortlist, about 60), chain B at 10
   rounds on the three machines (the owner's hours); then the roles, designs/ and the package, self-hosting phase 6 on

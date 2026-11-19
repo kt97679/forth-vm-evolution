@@ -11778,3 +11778,16 @@ results/drafts/jit-header-table-706.c) or none of memory (the dead bytecode reus
 byte-identical, 48 of 48 - results/drafts/arm2at-bytes-706.py; ARMv7 alive under qemu - results/drafts/arm2at-706.md);
 armcheck - arm-cross-check.py compares as evolve.py does (results/pending/arm2at-after-seed96.patch,
 results/pending/armcheck-after-seed96.patch; batch-check PASS). To apply at chain A's processing.
+
+## Iteration 707 - 2026-11-19 - Claude
+
+Idea-generation methods beyond TRIZ, applied (the owner: "use anything that can help think out of the box") -
+results/drafts/ideation-707.md. The new roles' pre-mortem (results/drafts/premortem-roles-707.md): the ticker beside
+experiment steps (results/pending/ticker-after-seed96.patch) and a self-hosting gate before the export. Differential
+fuzzing, lab/evolve/fuzz-designs.py: x86 clean (2,240 runs), ARMv7 under qemu found clang's misaligned 2@ and 2! (fixed
+by arm2at; results/drafts/fuzz-707.md). The smallest engine read by symbol size: the variadic syscall's 241 bytes -
+results/pending/rtsc-after-seed96.patch, -192 to -304 bytes on every x86-64 design (results/drafts/rtsc-707.md,
+results/drafts/rtsc-707.py). Priced, not built: the image's names in their chains by use, zero bytes, the parse walk
+43-49 % shorter (results/drafts/chain-order-707.py, results/drafts/chain-order-707.txt). Closed: a size superoptimizer, at
+most 11 bytes (results/drafts/superopt-707.py, results/drafts/superopt-707.txt); gene interactions, none
+(results/drafts/epistasis-707.py, results/drafts/epistasis-707.txt). GOALS.md's register: four rows.

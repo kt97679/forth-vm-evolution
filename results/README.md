@@ -82,7 +82,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed86/ORDER.md` - the after-seed-86 batch, consolidation's retirements (queued 583-596, applied 599 at 1b53e88): fsys45, freeze, lean, scale, varcall, doesfar, bytehdr, rtloop (ORDER.md says what each does; msc's deleted at 598, KEEP).
 - `applied-after-seed91/ORDER.md` - the after-seed-91 batch, the freeze's retirements (queued 642-643 in queued-freeze/, applied 656 on e8c6e51): rtloop and rtimmlean - two run-time overlays no pooled-front design uses; no shipped byte changes.
 - `applied-after-seed95/` - the after-seed-95 batch, applied at seed 95's processing (Iteration 703): why32, remeasure32, ticker (ORDER.md says what each does).
-- `pending/ORDER.md` - the batch to apply first at seed 96's processing: arm2at, armcheck, ticker, rtsc (ORDER.md says what each does).
+- `pending/ORDER.md` - the batch to apply at chain A's processing, before chain B's lists (by hand - process-followup.sh applies none): arm2at, armcheck, ticker, rtsc (ORDER.md says what each does).
 
 ### The processing checklists
 
@@ -278,6 +278,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/selfhost-plan-666.md` - The ten designs self-hosting, relf's way (Iteration 666, the owner): today's image path, each design's overlays and translator options, the target, the pieces, six phases, the checks.
 - `drafts/search-reopen-plan-677.md` - The search reopened (Iteration 677, the owner): application code - the selection's four apps - counted in the size, relf's run-time compiler mechanisms priced, then genes; the order, what stays, the risks.
 - `drafts/new-roles-plan-705.md` - The new roles (Iteration 705, the owner: straight to the new designs, no confirmation run): the series' pool, the screen's two lists, chain A and its processing, chain B.
+- `drafts/ideation-707.md` - Idea-generation methods beyond TRIZ, applied (Iteration 707): a pre-mortem, differential fuzzing, a superoptimizer, gene interactions, a morphological box, the evaluator in the loop, a bound - what each found.
+- `drafts/premortem-roles-707.md` - The new roles' plan's pre-mortem (prompt 16, Iteration 707): the ticker absent from chain A's laptop sessions, the self-hosting gate before the export.
+- `drafts/fuzz-707.md` - fuzz-designs.py's runs (Iteration 707): x86 clean at both widths; ARMv7 under qemu, clang's misaligned 2@ and 2! - fixed by the after-seed-96 batch.
+- `drafts/rtsc-707.md` - The system-call wrapper patch's tests (Iteration 707): -192 to -304 bytes on every x86-64 design, 32-bit x86 identical.
 - `drafts/triz-706.md` - TRIZ applied to the search (Iteration 706, the owner: "use whatever is useful"): the contradiction inventory's method and seed 96's five, mechanism 9 (the JIT header) priced in three variants.
 - `drafts/arm2at-706.md` - The 2@ and 2! patch's tests (Iteration 706): x86 engines byte-identical at both widths, the GCC ARMv7 builds alive under qemu.
 - `drafts/arm-preflight-705.md` - The ARMv7 pre-flight for the new roles' screen (Iteration 705): step 3's genes build and run under qemu; GCC's tos=1 deaths there a qemu artifact (2@ at a misaligned cell).

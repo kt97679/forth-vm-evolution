@@ -1,0 +1,39 @@
+46999 alive designs; 58 genes on in 5-95 % of them: abortif align1 alignfn alignhot bfind compiler d256 dskew escape factor fbuf gotodup guard hotcalls hotinl ipaclone jit jitcfa jitexec jitfuse jitimg jitinl jitk jitloop jitmul jitos jitrp jittail jitvar jitx kinput klookup knumber lto nocet nogcse noinls noreorder opcall opinline peel regpin rtconst rtfuse rtimm rtinline rtiplus spec supers swapi t2hot t2wide tag2 tfind threads tos tracer varslot
+62 pairs with every cell at 300 or more
+
+quartets - the same design but for a and b, all four cells - 5 pairs with 5 or more:
+| gene a | gene b | quartets | speed interaction, median (%%) | size interaction, median (bytes) | its range |
+|---|---|---:|---:|---:|---|
+| supers | varslot | 7 | +4.4 | +0 | -112 to +16 |
+| varslot | align1 | 9 | -0.4 | +0 | +0 to +0 |
+| supers | nocet | 5 | -0.4 | +0 | -761 to +18 |
+| varslot | nocet | 76 | +0.1 | +0 | +0 to +0 |
+| varslot | escape | 9 | -0.0 | +0 | -16 to +12 |
+
+the strongest interactions on speed (x100 of the log: about % - below 0 the pair together better than its parts):
+| gene a | gene b | interaction, speed | interaction, size | smallest cell |
+|---|---|---:|---:|---:|
+| guard | tos | +92.4 | -35.1 | 4342 |
+| escape | spec | +73.0 | -43.9 | 3440 |
+| guard | spec | +71.1 | -32.7 | 3618 |
+| escape | tos | +69.8 | -29.1 | 4798 |
+| escape | rtfuse | +67.9 | -23.1 | 4875 |
+| d256 | tos | +65.9 | -17.4 | 4110 |
+| d256 | rtfuse | +55.4 | -23.0 | 3265 |
+| d256 | spec | +53.6 | -14.4 | 3438 |
+| supers | tos | -53.0 | +17.0 | 3603 |
+| guard | rtfuse | +48.3 | -19.1 | 4172 |
+
+the strongest interactions on size (x100 of the log: about % - below 0 the pair together better than its parts):
+| gene a | gene b | interaction, speed | interaction, size | smallest cell |
+|---|---|---:|---:|---:|
+| escape | spec | +73.0 | -43.9 | 3440 |
+| guard | tos | +92.4 | -35.1 | 4342 |
+| guard | spec | +71.1 | -32.7 | 3618 |
+| escape | tos | +69.8 | -29.1 | 4798 |
+| escape | rtfuse | +67.9 | -23.1 | 4875 |
+| d256 | rtfuse | +55.4 | -23.0 | 3265 |
+| rtfuse | supers | -46.5 | +20.2 | 2694 |
+| nocet | tos | +46.3 | -19.5 | 7318 |
+| escape | supers | -47.6 | +19.5 | 3764 |
+| guard | rtfuse | +48.3 | -19.1 | 4172 |
