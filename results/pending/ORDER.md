@@ -18,7 +18,9 @@ pair through a one-byte-aligned type (CELLU, `aligned(1), may_alias`), in the en
 rewrites that restate them (gen-tos.py for tos=1, gen-msc.py for msc). Why: at tos=1 the two cell loads are adjacent with
 nothing between, and GCC joins them into ARMv7's LDRD (2! into STRD), which traps on an address not word aligned - the
 corpus's `HERE 1 ALLOT  HERE 1 ,  ... 1ST 2@` (Forth 2012 leaves an unaligned `,` ambiguous; the Hayes test does it).
-Linux on the Tegra fixes the access up, so its readings stood (88 such designs measured in the final check); qemu-user
+Clang does the same (Iteration 707's fuzzer, lab/evolve/fuzz-designs.py --arm: 3 clang tos=1 designs with 2@ and 2!
+as primitives - 022d7fd86e, b575c8d1ff, cb03515bc4 - each died on 10 of 30 programs under qemu at a cell pair 2 bytes
+past alignment; 0 of 90 with the patch - results/drafts/fuzz-707.md). Linux on the Tegra fixes the access up, so its readings stood (88 such designs measured in the final check); qemu-user
 does not, nor a kernel set to signal - the ARMv7 pre-flight's 4 false deaths (results/drafts/arm-preflight-705.md).
 Tested (results/drafts/arm2at-706.md): x86 - 24 designs expressing 2@ (tos 0 and 1, GCC and clang, the JIT and not)
 built by master and by the patched tree at both widths, every engine and image byte-identical (48 of 48;
