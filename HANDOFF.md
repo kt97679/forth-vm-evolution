@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 704.
+- master: Iteration 705.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -166,10 +166,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   seed 96** (seeds 92-96; the fastest 0.1245 to 0.1190, 4.4 % over five runs). A stall in generation 0 (the ticker's
   first catch: load 27-32, 21:56-22:25) killed 16 carried designs, each right here, one on seed 95's front
   (b25c984a48) - restored, nothing moves (results/drafts/stall-seed96.py). Predictions 5 of 6. NEXT-RUN none.
-  **Next: the plan's step 6** (results/drafts/search-reopen-plan-677.md) - the owner's choice first: GOALS.md's
-  confirmation run ("When the improvements are done", step 2 - as seed 84 after 572) or the new roles straight from the
-  pooled fronts of seeds 92-96 (final-pick.py, a re-measure chain on the three machines); then self-hosting phase 6 on
-  them, the article.
+  **705: the plan's step 6 begun - the new roles** (the owner: "let's go straight to the new designs" - no confirmation
+  run; the 573 rule's 5 % band in two chains; the first 21 hours, dream and the Tegra): results/drafts/new-roles-plan-705.md.
+  The series' pool (46,971 alive: seed 96's database and seeds 92-95's fronts; results/drafts/new-roles-705.py) gives
+  **the screen's lists** - results/followup-seed96-roles.md, 944 for the laptop and dream (the whole pool and its JIT-free
+  designs by final-set.py, within 5 % of the fastest at either width, the JIT-free front, the holders), and its -arm
+  list, 437 for the Tegra; the ten holders under today's measure in results/roles-holders-705.md (none of the eight the
+  pool lacks on its fronts; the smallest holder 22,837 B against the pool's 22,409). lab/evolve/measure-ids.py (new):
+  the chain's first step measures the holders on the laptop (this sandbox's memory reads 12-16 KB high). The ARMv7
+  pre-flight (results/drafts/arm-preflight-705.md): clang's new-gene builds alive under qemu; GCC's tos=1 designs die
+  there on the corpus's misaligned 2@ - a qemu artifact (7fb40ff7ba, measured on the Tegra in the final check, dies the
+  same). **Chain A is NEXT-RUN and REMOTES** (about 21.5 hours). **Next: its processing** - the plan's "Its
+  processing": process-followup.sh 96-roles with the ten roles (the holders' records from the measure-ids pack first),
+  the shortlist (final-pick.py's shortlist, about 60), chain B at 10 rounds on the three machines (the owner's hours);
+  then the roles, designs/ and the package, self-hosting phase 6 on them, the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -272,12 +282,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): none. Scored: the rage check's (654) 1 of 1; the final check's (648-649)
+- **Predictions due** (results/predictions.md): the new roles' screen, chain A (705) - six. Scored: the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first
   run); remote hosts cleaned after every chain (628: `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
-- **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle and chain A's archive (forth-vm-evolution-chain-*_tar.gz). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

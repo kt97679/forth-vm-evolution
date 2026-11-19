@@ -11755,3 +11755,14 @@ all right here; one was on seed 95's front (b25c984a48), restored it moves nothi
 rtinline 32 of 445, 8 in the fastest tenth (results/drafts/newgenes-seed96.txt); the held-out code's regret +8 B, its
 Spearman 0.686 (results/drafts/heldout-code-seed96.txt). Predictions 5 of 6. NEXT-RUN none: step 6 next, the owner
 choosing between a confirmation run and the new roles from the pooled fronts.
+
+## Iteration 705 - 2026-11-19 - Claude
+
+The new roles begun (the plan's step 6; the owner: straight to the new designs, the 5 % band in two chains, the first 21
+hours, dream and the Tegra) - results/drafts/new-roles-plan-705.md. The series' pool, 46,971 alive designs
+(results/drafts/new-roles-705.py, its output results/drafts/new-roles-705.txt), gives the screen's lists:
+results/followup-seed96-roles.md (944, the laptop and dream) and results/followup-seed96-roles-arm.md (437, the Tegra);
+the ten holders under today's measure, results/roles-holders-705.md (results/drafts/holders-705.py - the smallest holder
+22,837 B against the pool's 22,409); lab/evolve/measure-ids.py, the chain's first step, measures them on the laptop. The
+ARMv7 pre-flight (results/drafts/arm-preflight-705.md): the new genes build and run under qemu; GCC's tos=1 deaths there
+a qemu artifact. NEXT-RUN and REMOTES: chain A, about 21.5 hours; six predictions.

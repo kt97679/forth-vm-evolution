@@ -1,0 +1,33 @@
+The pool: 46971 alive designs (46565 from seed96-db.jsonl, 122 from evolve-amd-ryzen-7-pro-8840hs-seed93.md, 103 from evolve-amd-ryzen-7-pro-8840hs-seed92.md, 93 from evolve-amd-ryzen-7-pro-8840hs-seed94.md, 88 from evolve-amd-ryzen-7-pro-8840hs-seed95.md); sizes by the programs counted: {5: 46971}
+all: 46971 designs, the true front 483 (182 after merging), the set 30 (99.0% of the front's hypervolume), candidates 549, the knee bee5d0daa2
+JIT-free: 26915 designs, the true front 383 (105 after merging), the set 30 (99.8% of the front's hypervolume), candidates 338, the knee bee5d0daa2
+
+The list: 944 designs (JIT 526, JIT-free 418); the ARM list 437 (JIT 19)
+    40  JIT-free: merged
+     5  JIT-free: the 5 leanest
+     5  JIT-free: the 5 smallest
+     1  JIT-free: the knee
+    26  JIT-free: the set: adds the most
+     1  JIT-free: the set: fastest
+     1  JIT-free: the set: fastest at 32 bits
+     1  JIT-free: the set: least memory
+     1  JIT-free: the set: smallest
+   105  JIT-free: the true front, merged
+   170  JIT-free: within 5% of the fastest
+    96  JIT-free: within 5% of the fastest at 32 bits
+    10  a holder
+    16  all: merged
+     5  all: the 5 leanest
+     5  all: the 5 smallest
+     1  all: the knee
+    26  all: the set: adds the most
+     1  all: the set: fastest
+     1  all: the set: fastest at 32 bits
+     1  all: the set: least memory
+     1  all: the set: smallest
+   239  all: within 5% of the fastest
+   264  all: within 5% of the fastest at 32 bits
+     5  the 5 smallest JIT designs
+In-run, all: fastest 923951e8ab 0.1190, at 32 bits 0fed6b2276 0.1470, smallest 21768033b7 22,409 B, least memory 16560cb51f 108 KB
+In-run, JIT-free: fastest a4e502f224 0.2665, at 32 bits 3dc6d09801 0.2782, smallest 21768033b7 22,409 B, least memory 16560cb51f 108 KB
+In-run, JIT: fastest 923951e8ab 0.1190, at 32 bits 0fed6b2276 0.1470, smallest d8f72aa60f 32,661 B, least memory 1f7a2646cd 172 KB

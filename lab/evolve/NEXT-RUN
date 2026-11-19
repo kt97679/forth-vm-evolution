@@ -13,6 +13,12 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 705 (the owner: "let's go straight to the new designs" - 5 %, two chains, 21 hours, dream and the Tegra):
+#   the new roles' screen (results/drafts/new-roles-plan-705.md). First the ten holders measured here as a run measures
+#   them (measure-ids.py - today's size, the laptop's memory), then the 944 of results/followup-seed96-roles.md, alone and
+#   loaded at both widths, 3 rounds a session (about 4 hours at the final check's rate), repeated while another ends by
+#   the remote lines' deadline (repeat-fits.sh: 4 or 5 of the 6). REMOTES: the Tegra and dream beside it. The chain about
+#   21.5 hours. Then the shortlist (final-pick.py) and the second chain at 10 rounds on the three machines.
 # Iteration 704 (seed 96 processed - it gains nothing, the second run in a row: the stopping rule stops the reopened
 #   search's series, seeds 92-96): none - the plan's step 6 (results/drafts/search-reopen-plan-677.md) comes next, and
 #   which way is the owner's: the confirmation run GOALS.md's end-of-improvements step 2 names (as seed 84 after 572), or
@@ -336,4 +342,4 @@
 # (ran from 652's bundle at c8c423671f - its archive the rage check, PASS:) experiment rage-designs.py
 # Iteration 654 (the rage check processed - PASS, results/rage-designs-654.md): none - the freeze is the sandbox's; a
 # pull of this bundle must not run the rage check again.
-none
+experiment measure-ids.py --ids results/roles-holders-705.md --rounds 3 then experiment loadtest.py --ids results/followup-seed96-roles.md --rounds 3 then experiment loadtest.py --ids results/followup-seed96-roles.md --rounds 3 then experiment loadtest.py --ids results/followup-seed96-roles.md --rounds 3 then experiment loadtest.py --ids results/followup-seed96-roles.md --rounds 3 then experiment loadtest.py --ids results/followup-seed96-roles.md --rounds 3 then experiment loadtest.py --ids results/followup-seed96-roles.md --rounds 3

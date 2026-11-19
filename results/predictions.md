@@ -1538,3 +1538,15 @@ the coin - 0.1190 (923951e8ab, generation 84), 0.8 % under 0.1199. (4) right - t
 21:56-22:25) killed 16 carried designs (11 timed out, 4 past cc's CPU limit, 1 clang crash) - seed 94's exception again.
 (6) right - 8 exactly (rtinline 32 of 445). Seed 96's: 5 of 6. No prediction for a next run: NEXT-RUN none (the series
 ended; the next step the owner's).
+
+## The new roles' screen - chain A (21 hours; the laptop, dream and the Tegra) - predicted (Iteration 705)
+
+The 944 of results/followup-seed96-roles.md (the Tegra the 437 of its -arm list), 3 rounds; the ten holders first by
+measure-ids.py (results/drafts/new-roles-plan-705.md). (1) Every line returns at least one whole session and none fails:
+the laptop 4 or more, dream 4 or more a width, the Tegra 1 or more - 70/30 (the final check's rates; the workloads grew
+with shellmix since). (2) The fast end's optimism: the in-run fastest tenth of the 944 re-measured alone on the laptop,
+the median re-measured / in-run 1.04 or more at 8-byte cells - 80/20 (seed 96's curse 1.056). (3) A new design beats
+c7c35f9c97 (fastest-x86-64) on the laptop alone at 8-byte cells by 2 % or more - 85/15. (4) A JIT-free new design beats
+782f3ad7ff (portable-fastest) there by 2 % or more - 80/20 (in-run 0.2665 against its 0.2985 in seed 96). (5) The holders
+on the laptop (measure-ids.py): fb0d57c8a2, least-memory, at 108 KB or less - 60/40 (120 here; the sandbox reads 12-16 KB
+high). (6) No listed design dies on any line - 85/15 (the ARMv7 pre-flight: results/drafts/arm-preflight-705.md).

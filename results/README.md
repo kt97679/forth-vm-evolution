@@ -276,6 +276,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/jit-run-plan-620.md` - The last JIT run before the freeze, planned (Iteration 620): 21 hours carrying every front, judged against every earlier front by what it bred, its follow-up, the tools to prepare.
 - `drafts/selfhost-plan-666.md` - The ten designs self-hosting, relf's way (Iteration 666, the owner): today's image path, each design's overlays and translator options, the target, the pieces, six phases, the checks.
 - `drafts/search-reopen-plan-677.md` - The search reopened (Iteration 677, the owner): application code - the selection's four apps - counted in the size, relf's run-time compiler mechanisms priced, then genes; the order, what stays, the risks.
+- `drafts/new-roles-plan-705.md` - The new roles (Iteration 705, the owner: straight to the new designs, no confirmation run): the series' pool, the screen's two lists, chain A and its processing, chain B.
+- `drafts/arm-preflight-705.md` - The ARMv7 pre-flight for the new roles' screen (Iteration 705): step 3's genes build and run under qemu; GCC's tos=1 deaths there a qemu artifact (2@ at a misaligned cell).
 - `drafts/forthhub-read-661.md` - The drafts read as a ForthHub member would (Iteration 661): what was fixed - the figures aligned, abbreviations explained before use - and eight suggestions for the owner, not made.
 - `drafts/originality-605.md` - Are the winning designs original (Iteration 605): each mechanism of the nine and where it was described - every technique known; two details and the combinations not found; the readers asked.
 - `drafts/resume-610.md` - The resume that forked (Iteration 610): seed 87's restart replayed second readings early and forked at generation 3; the fix, its test and the two attempts compared.
@@ -340,6 +342,9 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed91.json` - followup-pick-seed91.md's set as JSON (final-pick.py --json, Iteration 640).
 - `followup-roles-seed91.md` - The portable roles after seed 91's follow-up (Iteration 640): none changed but the smallest's trade (the owner's); no gain against the whole pool - the search stops.
 - results/followup-roles-seed91-final.md - the final check before the freeze (648): 435 on three machines, no extreme gained, the smallest's one trade-free candidate d180351903 the owner's call.
+- `followup-seed96-roles.md` - The new roles' screen (Iteration 705): 944 designs of the series' pool (seeds 92-96) - the whole and its JIT-free designs by final-set.py at the 5 % band, the JIT-free front, the holders - for the laptop and dream (results/drafts/new-roles-plan-705.md).
+- `followup-seed96-roles-arm.md` - The new roles' screen on the Tegra (Iteration 705): its 437 - the JIT-free ones, the pool's set as JIT-off builds, the holders.
+- `roles-holders-705.md` - The ten roles' holders under today's measure (Iteration 705): the five programs' code counted, built here; the chain's measure-ids.py step gives the laptop's memory.
 - `followup-seed91-final.md` - The final check before the freeze (Iteration 641): 435 designs - the 72 pooled-front designs never measured across machines, seed 91's rest, the holders and the best re-measured before.
 - `audit-nonportable-619.md` - The audit of the results so far and whether a JIT run is worth it (Iteration 619): converged, nothing new since, the portable gains out of its reach - not now.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
