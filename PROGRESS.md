@@ -11766,3 +11766,15 @@ the ten holders under today's measure, results/roles-holders-705.md (results/dra
 22,837 B against the pool's 22,409); lab/evolve/measure-ids.py, the chain's first step, measures them on the laptop. The
 ARMv7 pre-flight (results/drafts/arm-preflight-705.md): the new genes build and run under qemu; GCC's tos=1 deaths there
 a qemu artifact. NEXT-RUN and REMOTES: chain A, about 21.5 hours; six predictions.
+
+## Iteration 706 - 2026-11-19 - Claude
+
+TRIZ applied while chain A runs (the owner: "use whatever is useful from TRIZ, proceed") - results/drafts/triz-706.md:
+the contradiction inventory's method and seed 96's five (GOALS.md's register: three rows). Mechanism 9, the JIT's 5-byte
+header, priced: the field's length and offset elsewhere save 700 B of the five programs' code (175 definitions; 2,732
+held-out), about 1.8 % of the smallest JIT design, for 95-152 engine bytes (a side table - the prototype
+results/drafts/jit-header-table-706.c) or none of memory (the dead bytecode reused); not built. The after-seed-96 batch
+(results/pending/ORDER.md): arm2at - 2@ and 2! through a byte-aligned cell, GCC's LDRD gone from tos=1 ARMv7 engines (x86
+byte-identical, 48 of 48 - results/drafts/arm2at-bytes-706.py; ARMv7 alive under qemu - results/drafts/arm2at-706.md);
+armcheck - arm-cross-check.py compares as evolve.py does (results/pending/arm2at-after-seed96.patch,
+results/pending/armcheck-after-seed96.patch; batch-check PASS). To apply at chain A's processing.

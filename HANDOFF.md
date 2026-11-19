@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 705.
+- master: Iteration 706.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -176,10 +176,22 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the chain's first step measures the holders on the laptop (this sandbox's memory reads 12-16 KB high). The ARMv7
   pre-flight (results/drafts/arm-preflight-705.md): clang's new-gene builds alive under qemu; GCC's tos=1 designs die
   there on the corpus's misaligned 2@ - a qemu artifact (7fb40ff7ba, measured on the Tegra in the final check, dies the
-  same). **Chain A is NEXT-RUN and REMOTES** (about 21.5 hours). **Next: its processing** - the plan's "Its
-  processing": process-followup.sh 96-roles with the ten roles (the holders' records from the measure-ids pack first),
-  the shortlist (final-pick.py's shortlist, about 60), chain B at 10 rounds on the three machines (the owner's hours);
-  then the roles, designs/ and the package, self-hosting phase 6 on them, the article.
+  same). **Chain A is NEXT-RUN and REMOTES** (about 21.5 hours).
+  **706 (while chain A runs; the owner: "use whatever is useful from TRIZ, proceed")**: results/drafts/triz-706.md - TRIZ
+  proposes, measurement decides; the contradiction inventory's method (a gene's pairs, the element's physical
+  contradiction, the separations, the register, the price) and seed 96's five. **Mechanism 9 (the JIT header) priced**:
+  its 4-byte field's two jobs elsewhere - the length at an end-EXIT, the offset in a side table (V1: +95-152 engine
+  bytes, up to +8 KB) or in the translated word's dead bytecode (V1': separation in time, no table) - -700 B of the five
+  programs' code, about -1.8 % on the smallest JIT design; the trigger byte stays; not built (after the roles, the
+  owner's call; GOALS.md's register). **The after-seed-96 batch** (results/pending/ORDER.md; batch-check PASS): arm2at -
+  2@ and 2! through a byte-aligned cell, so GCC no longer joins a tos=1 design's two loads into ARMv7's LDRD (x86
+  engines byte-identical, 48 of 48; the GCC ARMv7 builds alive under qemu - results/drafts/arm2at-706.md); armcheck -
+  arm-cross-check.py compares as evolve.py does ("Redefining:" lines out; s0-cell's false DIFFER).
+  **Next: chain A's processing** - first the batch, by hand (ORDER.md: batch-check, git apply, the move to
+  results/applied-after-seed96); then the plan's "Its processing": process-followup.sh 96-roles with the ten roles (the
+  holders' records from the measure-ids pack first), the shortlist (final-pick.py's shortlist, about 60), chain B at 10
+  rounds on the three machines (the owner's hours); then the roles, designs/ and the package, self-hosting phase 6 on
+  them, the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
