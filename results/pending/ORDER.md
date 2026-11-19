@@ -43,4 +43,12 @@ follow-up chain's laptop sessions would be pooled unseen; chain A has none. Test
 sleeping process, TICK_EVERY=2, with TICK_LABEL ("lab/evolve/loadtest.py running; the machine: ...") and without (the
 seed run's line, unchanged); batch-check below.
 
-**rtsc-after-seed96.patch** (engine/rt-linux-x86_64.c, engine/vm-lab.c) - TODO: what it does, why, how it was tested.
+**rtsc-after-seed96.patch** (engine/rt-linux-x86_64.c, engine/vm-lab.c) - the engine's one system call (the SYSCALL
+operation) through SYSCALL6: rt_syscall6, six arguments and the same errors (-1, errno), where the runtime is linked at
+x86-64; elsewhere the variadic syscall as before. Why: the runtime's variadic syscall made the compiler save every
+argument register - 241 of the smallest engine's 4,784 bytes of code (nm -S); 257 gave open the same fix, not syscall.
+Tested (results/drafts/rtsc-707.md, results/drafts/rtsc-707.py): 20 designs - the 8 smallest, 12 spread over tos, GCC,
+clang and the JIT - by master and by the patched tree: at 8-byte cells -192 to -304 bytes each, at 4-byte cells
+byte-identical, all 40 builds alive with fib and apps as s6. It changes every x86-64 engine's bytes, so chain B's sizes
+are 192-304 bytes below chain A's for the same designs; their speeds it should not touch (a system call is rare - the
+I/O is buffered).
