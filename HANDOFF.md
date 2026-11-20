@@ -242,7 +242,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **Next: chain B's processing** - `HANDOFF=results/handoff-relf-657.md sh lab/evolve/process-followup.sh 96-roles-b
   ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command), the list's records first from
   the measure-ids packs (lab/evolve/ids-records.py LIST PACK ..., oldest first: the lean 14's memory the
-  median of five), then the roles; pool-sizes.md - a design it names gets a short chain - the owner's trades, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
+  median of five), then the roles (process-followup.sh does the packs itself now and prints pool-sizes.md's findings - rehearsed:
+  results/drafts/chainB-rehearsal-713.sh PASS); then **chain C** - results/drafts/chainC-candidates-713.md (e51c01ba10
+  and 4acee9a48e for small-and-fast-on-ARMv7, moved onto the front by the batch, off chain A's list; three small-end
+  trades), pool-sizes.py's finds, and anchors, a few hours on the three machines - the roles the owner's trades, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
   them; then results/queued-genes (jitdead) applied, chainorder if its prototype pays, and the reopened search's series;
   the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

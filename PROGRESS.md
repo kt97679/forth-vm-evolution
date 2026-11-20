@@ -11881,3 +11881,9 @@ missing) - added; the results files' 503 small JIT-free designs off chain A's li
 lab/evolve/pool-sizes.py (new) builds seed 96's database's small end in chain B; lab/evolve/ids-records.py (was
 results/drafts/holders-laptop-713.py) takes several packs (the median of the reads). The checks: results/drafts/outliers-chainA-713.py, results/drafts/neartie-chainA-713.py;
 the ARMv7 pre-flight on the -arm 61: 39 of 39 clang builds alive and identical.
+While chain B ran: its processing rehearsed on a stand-in archive (results/drafts/chainB-rehearsal-713.py,
+results/drafts/chainB-rehearsal-713.sh: PASS) - process-followup.sh now applies the measure-ids packs itself
+(lab/evolve/ids-records.py) and prints pool-sizes.py's findings; the front before and after the batch compared over chain
+A's list and the results files' 1,238 JIT-free designs up to 27,400 B (results/drafts/front-after-batch-713.py,
+results/drafts/sizes-knee-713.json): 6 moved onto it, all off chain A's list - 219878ec89 (in chain B) and 5 for chain C
+(results/drafts/chainC-candidates-713.md: e51c01ba10 and 4acee9a48e for small-and-fast-on-ARMv7).
