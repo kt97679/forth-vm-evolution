@@ -10,6 +10,8 @@ touched by it (x86 engines byte-identical); chain B and the export measure and s
     git apply results/pending/armcheck-after-seed96.patch
     git apply results/pending/ticker-after-seed96.patch
     git apply results/pending/rtsc-after-seed96.patch
+    git apply results/pending/sysstubs-after-seed96.patch
+    git apply results/pending/imagemsg-after-seed96.patch
 
 batch-check (707, on 041d54e - 4 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -52,3 +54,7 @@ clang and the JIT - by master and by the patched tree: at 8-byte cells -192 to -
 byte-identical, all 40 builds alive with fib and apps as s6. It changes every x86-64 engine's bytes, so chain B's sizes
 are 192-304 bytes below chain A's for the same designs; their speeds it should not touch (a system call is rare - the
 I/O is buffered).
+
+**sysstubs-after-seed96.patch** (engine/rt-linux-x86_64.c) - TODO: what it does, why, how it was tested.
+
+**imagemsg-after-seed96.patch** (engine/vm-lab.c) - TODO: what it does, why, how it was tested.

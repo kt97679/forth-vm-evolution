@@ -82,7 +82,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed86/ORDER.md` - the after-seed-86 batch, consolidation's retirements (queued 583-596, applied 599 at 1b53e88): fsys45, freeze, lean, scale, varcall, doesfar, bytehdr, rtloop (ORDER.md says what each does; msc's deleted at 598, KEEP).
 - `applied-after-seed91/ORDER.md` - the after-seed-91 batch, the freeze's retirements (queued 642-643 in queued-freeze/, applied 656 on e8c6e51): rtloop and rtimmlean - two run-time overlays no pooled-front design uses; no shipped byte changes.
 - `applied-after-seed95/` - the after-seed-95 batch, applied at seed 95's processing (Iteration 703): why32, remeasure32, ticker (ORDER.md says what each does).
-- `pending/ORDER.md` - the batch to apply at chain A's processing, before chain B's lists (by hand - process-followup.sh applies none): arm2at, armcheck, ticker, rtsc (ORDER.md says what each does).
+- `pending/ORDER.md` - the batch to apply first at seed 96's processing: arm2at, armcheck, ticker, rtsc, sysstubs, imagemsg (ORDER.md says what each does).
 
 ### The processing checklists
 

@@ -1,0 +1,108 @@
+diff --git a/engine/rt-linux-x86_64.c b/engine/rt-linux-x86_64.c
+index c268ece..b834821 100644
+--- a/engine/rt-linux-x86_64.c
++++ b/engine/rt-linux-x86_64.c
+@@ -46,7 +46,13 @@
+ 
+ #ifndef RT_PORTABLE_ONLY   /* Iteration 140: rt-linux-i386.c includes the portable part below */
+ char **environ;
++#if defined(__clang__)     /* Iteration 709: the system-call stubs below - clang's engines only */
++#define RT_STUBS 1
++__attribute__((used)) int rt_errno;   /* the stubs write it by name - not static */
++#else
++#define RT_STUBS 0
+ static int rt_errno;
++#endif
+ int *__errno_location(void) { return &rt_errno; }
+ 
+ /* ---- system calls ---------------------------------------------------- */
+@@ -67,7 +73,33 @@ static long ok(long r)       /* the kernel's -errno to the library's -1 */
+     return r;
+ }
+ #define S(n, a, b, c) ok(sc((n), (long)(a), (long)(b), (long)(c), 0, 0, 0))
++#if RT_STUBS
++/* Iteration 709 (the sweep, results/drafts/sweep-709.md): the calls whose C arguments are the kernel's own - rdi, rsi,
++ * rdx, the fourth from rcx to r10 - as dietlibc's unified syscall: each only puts its number in rax and jumps to one stub
++ * that calls and turns -errno into -1 and errno. Each in a section of its own, so --gc-sections keeps only those called.
++ * Was: every wrapper inlined sc() and ok() - 34-48 bytes each, about 300 of the smallest engine's. Not here, kept in C:
++ * those the kernel reads more arguments of than C passes, or whose result differs (isatty, waitpid, getcwd, abort).
++ * Clang's engines only: GCC's are all LTO builds but four, and its LTO inlines the C wrappers into their callers - an
++ * inline syscall clobbers rcx and r11, a call every caller-saved register - so the stubs grew its large -O2 engines by
++ * 64-192 bytes (rt_main, t_write, virtual_machine). GCC keeps the C wrappers (#if !RT_STUBS below): its engines unchanged. */
++__asm__("  .section .text.rt_sys4,\"ax\",@progbits\n  .globl rt_sys4\n  .globl rt_sys0\n  .type rt_sys4,@function\n"
++        "rt_sys4: mov %rcx, %r10\n"
++        "rt_sys0: syscall\n  cmp $-4095, %rax\n  jae 1f\n  ret\n"
++        "1: neg %eax\n  mov %eax, rt_errno(%rip)\n  or $-1, %rax\n  ret\n  .size rt_sys4, .-rt_sys4\n"
++        "  .section .text.rt_syscall6,\"ax\",@progbits\n  .globl rt_syscall6\n  .type rt_syscall6,@function\n"
++        "rt_syscall6: mov %rdi, %rax\n  mov %rsi, %rdi\n  mov %rdx, %rsi\n  mov %rcx, %rdx\n  mov %r8, %r10\n"
++        "  mov %r9, %r8\n  mov 8(%rsp), %r9\n  jmp rt_sys0\n  .size rt_syscall6, .-rt_syscall6\n");
++#define RT_SYS(name, nr) __asm__("  .section .text." #name ",\"ax\",@progbits\n  .globl " #name "\n  .type " #name \
++    ",@function\n" #name ": " "push $" #nr "\n  pop %rax\n  jmp rt_sys4\n  .size " #name ", .-" #name "\n")
++#define RT_SYSW(name, nr) __asm__("  .section .text." #name ",\"ax\",@progbits\n  .globl " #name "\n  .type " #name \
++    ",@function\n" #name ": mov $" #nr ", %eax\n  jmp rt_sys4\n  .size " #name ", .-" #name "\n")
++RT_SYS(read, 0); RT_SYS(write, 1); RT_SYS(rt_open, 2); RT_SYS(close, 3); RT_SYS(lseek, 8); RT_SYS(mmap, 9);
++RT_SYS(mprotect, 10); RT_SYS(munmap, 11); RT_SYS(pipe, 22); RT_SYS(dup2, 33); RT_SYS(getpid, 39); RT_SYS(fork, 57);
++RT_SYS(execve, 59); RT_SYS(chdir, 80); RT_SYS(unlink, 87); RT_SYS(getrlimit, 97); RT_SYS(getrusage, 98);
++RT_SYSW(setrlimit, 160); RT_SYSW(_exit, 231);
++#endif
+ 
++#if !RT_STUBS
+ ssize_t read(int fd, void *b, size_t n)        { return S(0, fd, b, n); }
+ ssize_t write(int fd, const void *b, size_t n) { return S(1, fd, b, n); }
+ int mprotect(void *a, size_t n, int p)        { return (int)S(10, a, n, p); }   /* the guard pages: Iteration 75 */
+@@ -78,30 +110,39 @@ int getrusage(__rusage_who_t w, struct rusage *u) { return (int)S(98, w, u, 0);
+ /* Iteration 707: the engine's system calls (vm-lab.c's SYSCALL6) - six arguments, no va_list, as rt_open; the variadic
+  * syscall below stays for any other caller, and --gc-sections drops it when there is none. */
+ long rt_syscall6(long n, long a, long b, long c, long d, long e, long f) { return ok(sc(n, a, b, c, d, e, f)); }
++#endif
+ long syscall(long n, ...)
+ {
+     va_list ap; long a[6]; int i;
+     va_start(ap, n); for (i = 0; i < 6; i++) a[i] = va_arg(ap, long); va_end(ap);
+     return ok(sc(n, a[0], a[1], a[2], a[3], a[4], a[5]));
+ }
++#if !RT_STUBS
+ int close(int fd)                              { return (int)S(3, fd, 0, 0); }
++#endif
+ int isatty(int fd) { long t[8]; return S(16, fd, 0x5401, t) == 0; }   /* ioctl TCGETS: Iteration 231, a terminal unbuffered */
++#if !RT_STUBS
+ off_t lseek(int fd, off_t o, int w)            { return S(8, fd, o, w); }
+ int pipe(int fd[2])                            { return (int)S(22, fd, 0, 0); }
+ int dup2(int a, int b)                         { return (int)S(33, a, b, 0); }
+ pid_t getpid(void)                             { return (pid_t)S(39, 0, 0, 0); }
+ pid_t fork(void)                               { return (pid_t)S(57, 0, 0, 0); }
+ int execve(const char *p, char *const a[], char *const e[]) { return (int)S(59, p, a, e); }
++#endif
+ pid_t waitpid(pid_t p, int *s, int o)          { return (pid_t)ok(sc(61, p, (long)s, o, 0, 0, 0)); }
+ char *getcwd(char *b, size_t n)                { return S(79, b, n, 0) < 0 ? NULL : b; }
++#if !RT_STUBS
+ int chdir(const char *p)                       { return (int)S(80, p, 0, 0); }
+ int unlink(const char *p)                      { return (int)S(87, p, 0, 0); }
+ int getrlimit(__rlimit_resource_t r, struct rlimit *l)       { return (int)S(97, r, l, 0); }
+ int setrlimit(__rlimit_resource_t r, const struct rlimit *l) { return (int)S(160, r, l, 0); }
++#endif
+ /* Iteration 257: the engine's open (vm-lab.c's OPEN3) - three arguments, so no
+  * va_list and no register save area; the variadic open below stays for any
+  * other caller, and --gc-sections drops it when there is none. */
++#if !RT_STUBS
+ int rt_open(const char *p, int flags, int mode) { return (int)S(2, p, flags, mode); }
++#endif
+ int open(const char *p, int flags, ...)
+ {
+     int mode = 0;
+@@ -113,6 +154,7 @@ int open(const char *p, int flags, ...)
+     }
+     return (int)S(2, p, flags, mode);
+ }
++#if !RT_STUBS
+ void *mmap(void *a, size_t n, int prot, int flags, int fd, off_t o)
+ {
+     long r = sc(9, (long)a, (long)n, prot, flags, fd, o);
+@@ -121,6 +163,7 @@ void *mmap(void *a, size_t n, int prot, int flags, int fd, off_t o)
+ }
+ int munmap(void *a, size_t n)                  { return (int)S(11, a, n, 0); }
+ void _exit(int s)                              { for (;;) sc(231, s, 0, 0, 0, 0, 0); }
++#endif
+ void exit(int s)                               { _exit(s); }   /* no stdio to flush */
+ void abort(void)
+ {
