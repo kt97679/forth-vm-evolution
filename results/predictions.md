@@ -1550,3 +1550,22 @@ c7c35f9c97 (fastest-x86-64) on the laptop alone at 8-byte cells by 2 % or more -
 782f3ad7ff (portable-fastest) there by 2 % or more - 80/20 (in-run 0.2665 against its 0.2985 in seed 96). (5) The holders
 on the laptop (measure-ids.py): fb0d57c8a2, least-memory, at 108 KB or less - 60/40 (120 here; the sandbox reads 12-16 KB
 high). (6) No listed design dies on any line - 85/15 (the ARMv7 pre-flight: results/drafts/arm-preflight-705.md).
+
+**Scored at chain A (Iteration 713)**, results/followup-roles-seed96-roles.md: (1) right - the laptop 5 sessions (a sixth
+ended by hand), dream 8 a width, the Tegra 3, none failed. (2) right - 1.113 (1.074 at 4-byte cells). (3) right -
+9b15ba26f7 -12.4 % +/- 1.4 %. (4) right - 89988b4c1f -8.1 % +/- 0.3 %. (5) right - 108 KB. (6) right - none died. 6 of 6.
+
+## The new roles' shortlist - chain B (19 hours; the laptop, dream and the Tegra) - predicted (Iteration 713)
+
+The 76 of results/followup-seed96-roles-b.md at 10 rounds (the Tegra the 42 of -arm), master with the after-seed-96 batch;
+measure-ids.py first, the lean 13 read five times. (1) Every line returns whole sessions and none fails: the laptop 15 or
+more, dream 40 a width, the Tegra 7 or more - 70/30 (chain A's rates; 8 fit the Tegra's 1,110 minutes with about 5 % to spare).
+(2) The smallest role: one of the six at 21,679 B beats d180351903 by the rule (1 % smaller, no class 2 % slower) - 90/10
+(chain A: 24.6-29.4 % faster in every class). (3) A JIT-free design beats 782f3ad7ff's mean by 2 % at 2 SE - 85/15
+(chain A: d7fb9683c2 -5.07 % +/- 0.33 %). (4) A design beats 3eb59b271d on the Tegra by 2 % at 2 SE - 65/35 (chain A:
+a8d35bdccc -3.37 % +/- 0.27 %; the Tegra's readings swing 4-5 % a pair between chains - 648). (5) No design's median
+memory of five reads 8 KB below fb0d57c8a2's - 90/10 (108 KB the floor since seed 95). (6) Each x86 holder (c7c35f9c97,
+ee34931cd7, 06b188f45b) beaten by 2 % at 2 SE on its class - 80/20 (chain A: -10.9 %, -7.9 %, -5.9 %). (7) If the counts are
+recorded (paranoid 2 set by hand - results/followup-roles-seed96-roles.md), countfit.py on them, the laptop alone at 8-byte cells: the time fitted to the four counts within 5 % median error held out by
+design - 55/45 (its self-test 1.5 % on a known model; Frostbite's Arcmodel 5 % to RTL). (8) No listed design dies on any
+line - 85/15 (the ARMv7 pre-flight: 21 of 21 clang builds alive and identical under qemu).

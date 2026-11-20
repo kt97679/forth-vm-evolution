@@ -7,6 +7,15 @@
 # "run": all the time the evolution leaves (Iteration 429, remote-checks.sh), so the chain never waits on a host.
 #
 # host       how       designs  rounds  minutes  sample options
+#   Iteration 713 (chain B - the new roles' shortlist; the owner: 19 hours): the Tegra the 42 of
+#   results/followup-seed96-roles-b-arm.md (the shortlist's JIT-free designs and the JIT designs leading across machines -
+#   their JIT-off builds - with the all-round holder), 10 rounds - chain A's rate (17.2 s a design-round) about 2.2 hours a
+#   session: 8 in 1,110 minutes; dream the 76 of results/followup-seed96-roles-b.md at both widths, 10 rounds, about 12 minutes
+#   a session a width, 40 a width, stacked: 555 + 555 minutes. Master with the after-seed-96 batch: the ARMv7 engines with
+#   arm2at and imagemsg, the x86-64 ones 418-1,864 bytes smaller (sysstubs, rtsc, imagemsg, wends16).
+rage.lan     prebuiltarm 4       10      1110     --cell 4 --rejected 4 --sessions 8 --also @results/followup-seed96-roles-b-arm.md
+dream.lan    prebuilt32  4       10      555      --cell 4 --rejected 6 --sessions 40 --also @results/followup-seed96-roles-b.md
+dream.lan    prebuilt64  4       10      555      --from prebuilt32 --sessions 40
 #   Iteration 705 (the new roles' screen - the owner: "let's go straight to the new designs", 5 %, two chains, 21 hours,
 #   both hosts): the Tegra the 437 of results/followup-seed96-roles-arm.md (the JIT-free candidates, the JIT-free front, the
 #   pool's set - a JIT design as its JIT-off build - and the ten holders), at 3 rounds - the final check's 438 took 9.3
@@ -16,9 +25,9 @@
 #   chain archives nothing). ARMv7 pre-flight here (results/drafts/arm-preflight-705.md): clang's cross builds of the new
 #   genes alive; GCC's tos=1 designs die under qemu only (2@ on the corpus's misaligned cell - the Tegra's kernel fixes
 #   it up: 7fb40ff7ba, measured there in the final check, dies the same under qemu).
-rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed96-roles-arm.md
-dream.lan    prebuilt32  4       3       625      --cell 4 --rejected 6 --sessions 8 --also @results/followup-seed96-roles.md
-dream.lan    prebuilt64  4       3       625      --from prebuilt32 --sessions 8
+# rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed96-roles-arm.md
+# dream.lan    prebuilt32  4       3       625      --cell 4 --rejected 6 --sessions 8 --also @results/followup-seed96-roles.md
+# dream.lan    prebuilt64  4       3       625      --from prebuilt32 --sessions 8
 #   Iteration 587 (chain C, the owner's 8 hours): retire-plan-583's 8 msc designs first, by id (their records in the
 #   clone's own database, seed 86's - read since 586), then the shortlist's 40 again at 10 rounds: a second ARMv7
 #   session (chain B's at 2). About 3 hours (chain B: 35 s a design at 2 rounds, its stages 16 minutes); the deadline

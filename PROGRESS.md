@@ -11857,3 +11857,16 @@ built: countfit with the machine's penalties shared (the interval model's form),
 metrics, the roles' build-level spread before they are named (Kalibera and Jones), Gforth 1.0 for the comparisons
 (gforth-fast 0.7.3 now). Checked, nothing for us: Pulley's dispatch data, identical code folding, header overlays,
 Zen 4's branch targets.
+
+## Iteration 713 - 2026-11-20 - Claude
+
+Chain A processed (results/followup-roles-seed96-roles.md): the laptop 5 sessions (a sixth ended by hand), dream 8 a
+width, the Tegra 3, none died; predictions 6 of 6; the fast end's re-measure 1.113 of in-run. The after-seed-96 batch
+applied first (7081f96; batch-check PASS) - every engine 482-2,224 bytes smaller, the small end's order unchanged
+(results/drafts/sizes-713.py, sizes-713.json). Found and fixed: followup-roles.py took JIT designs for the portable roles
+(the list had no "jit" mark - now the JIT expressed). On the screen seven of the ten holders are beaten by the rule (the
+smallest to one of six at 21,679 B, 25-29 % faster; least memory tied at 108 KB; small-and-fast-on-ARMv7 kept; the
+smallest JIT design's contenders all trades). Chain B set, the owner's 19 hours: results/followup-seed96-roles-b.md (76),
+-arm (42), -lean (13) by results/drafts/shortlist-713.py; the ARMv7 pre-flight 21 of 21. Found: the counts need
+paranoid 2 by hand on the laptop. Also results/chain-followup96-roles/, results/followup-pick-seed96-roles.md (.json),
+results/drafts/holders-laptop-713.py, results/drafts/chainA-713.py.

@@ -359,6 +359,13 @@ Each subject oldest first; a script or patch beside the document it made.
 - results/followup-roles-seed91-final.md - the final check before the freeze (648): 435 on three machines, no extreme gained, the smallest's one trade-free candidate d180351903 the owner's call.
 - `followup-seed96-roles.md` - The new roles' screen (Iteration 705): 944 designs of the series' pool (seeds 92-96) - the whole and its JIT-free designs by final-set.py at the 5 % band, the JIT-free front, the holders - for the laptop and dream (results/drafts/new-roles-plan-705.md).
 - `followup-seed96-roles-arm.md` - The new roles' screen on the Tegra (Iteration 705): its 437 - the JIT-free ones, the pool's set as JIT-off builds, the holders.
+- `chain-followup96-roles/README.md` - Chain A's readings by session (Iteration 713): the laptop s1-s5, dream s1-s8 a width, the Tegra s1-s3.
+- `followup-pick-seed96-roles.md` - Chain A's pooled pick (713): the 944 on three machines, every session (its set: followup-pick-seed96-roles.json).
+- `followup-pick-seed96-roles.json` - followup-pick-seed96-roles.md's set as JSON (final-pick.py --json, Iteration 713).
+- `followup-roles-seed96-roles.md` - The new roles' screen processed (Iteration 713): seven of the ten holders beaten by the rule, the smallest to one of six at 21,679 B; the after-seed-96 batch's sizes; chain B's shortlist.
+- `followup-seed96-roles-b.md` - Chain B's 76 (Iteration 713, results/drafts/shortlist-713.py): final-pick.py's 40, the holders, each role's leaders - master's sizes after the batch; one record a line.
+- `followup-seed96-roles-b-arm.md` - Chain B on the Tegra (713): the shortlist's 35 JIT-free designs, the JIT designs leading across machines and the all-round holder - 42.
+- `followup-seed96-roles-b-lean.md` - Chain B's lean end (713): the 13 within 8 KB of 108 KB, their memory read five times (measure-ids.py).
 - `roles-holders-705.md` - The ten roles' holders under today's measure (Iteration 705): the five programs' code counted, built here; the chain's measure-ids.py step gives the laptop's memory.
 - `followup-seed91-final.md` - The final check before the freeze (Iteration 641): 435 designs - the 72 pooled-front designs never measured across machines, seed 91's rest, the holders and the best re-measured before.
 - `audit-nonportable-619.md` - The audit of the results so far and whether a JIT run is worth it (Iteration 619): converged, nothing new since, the portable gains out of its reach - not now.

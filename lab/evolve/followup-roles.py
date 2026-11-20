@@ -27,7 +27,8 @@ portable-followup.py --also), where the role's rule decides. On 611's readings w
 JIT run's rest, screened for the portable roles).
 --roles also takes the x86 roles (Iteration 622, the JIT run's follow-up - results/drafts/jit-run-plan-620.md): fast64 (the
 fastest on x86-64), fast32 (on x86-32), allround (the best mean), smalljit (the smallest JIT design), over every design with
-the class; the six portable roles then over the JIT-free designs alone (a record's "jit", portable-followup.py --jit), a
+the class; the six portable roles then over the JIT-free designs alone (a record's "jit", portable-followup.py --jit; without
+the mark - 713, new-roles-705.py's list - the JIT expressed), a
 design missing a class kept in the classes it has; a screened design (why: flagged by the screen) a portable role's
 candidate as the run's are. Rehearsed: results/drafts/jit-rehearsal-622.py.
 611's run again: followup-roles.py results/followup-seed87.md results/chain-followup87 --handoff results/handoff-relf-601.md
@@ -57,7 +58,13 @@ C = {r['id']: r for r in (json.loads(l) for l in open(CAND) if l.startswith('{')
 miss = sorted(set(i for i in R.values() if i not in C))
 if miss: sys.exit('followup-roles: holders not in %s: %s' % (CAND, ' '.join(miss)))
 NC = len(C)
-jit = lambda i: bool(C[i].get('jit'))                # 622: the JIT run's follow-up marks its JIT designs
+JX = {}
+def jit(i):                                           # 622: the JIT run's follow-up marks its JIT designs; 713: a list
+    if 'jit' in C[i]: return bool(C[i]['jit'])        # without the mark (new-roles-705.py's) - the JIT expressed, as the
+    if i not in JX:                                   # screen (630) reads it; else the portable roles took JIT designs
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); sys.argv = ['x']; import evolve as E
+        JX[i] = bool(E.express(E.canon(C[i]['genome'])).get('jit'))
+    return JX[i]
 XK = {'fast64': 'x86-64', 'fast32': 'x86-32', 'allround': 'mean'}
 S = {s: {i: {} for i in C} for s in SOURCES}            # source -> design -> {session: reading}, in session order
 done = {s: [] for s in SOURCES}
