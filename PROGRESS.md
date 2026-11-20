@@ -11895,3 +11895,10 @@ And the two stale follow-up rehearsals made good: results/drafts/jit-rehearsal-6
 portable-followup.py --jit on a series' first run called stopping.bar with no earlier runs (max() of nothing); now it lists
 no gain there (stopping.gains' None), and stopping.bar says why it refuses; results/drafts/followup-rehearsal-615.sh
 accepts 708's memory heading (8 KB), the one line it changed. Both PASS; stopping.py and confirm.py self-tests pass.
+Then the owner's idea - what early games lend the search (results/drafts/early-games-713.md): the reverse-engineering
+write-ups (Starflight, Another World, Elite, SWEET16, p-code, the Z-machine, Pitfall!, Wolfenstein 3D) against the genes
+and the register - nearly all here already. New, measured: memory is pages faulted, and the data's order moves it 1-4
+pages either way (results/drafts/layout-faults-713.py; results/drafts/bss-pages-713.py: a start-up's 4 BSS pages - two
+stack tops, small variables split by t_obuf) - a fixed layout proposed for the reopened search; the reading carries the
+environment's pages (results/drafts/env-pages-713.py; results/drafts/resident-peak-713.py beside the faults); short
+branches priced, not proposed (results/drafts/branch-census-713.py). Four register rows.
