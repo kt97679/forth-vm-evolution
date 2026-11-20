@@ -8,6 +8,7 @@ BASE since 713). Then, from the repository's top:
 
     git apply results/queued-genes/jitdead-after-seed96.patch
     git apply results/queued-genes/fixenv-after-seed96.patch
+    git apply results/queued-genes/jitfew-after-seed96.patch
 
 batch-check (713, on ec09a65 - 2 patches): PASS - run-tests PASS (the generators: 113 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -39,3 +40,14 @@ apart on the laptop). Tested (results/drafts/fixenv-713.md): fb0d57c8a2 medians 
 kernel workload 27 with the parent's environment as it is or 20 KB larger (before: 19 and 31, 24 and 36); the outputs
 alike; 27 the laptop's record. All of the search's measuring goes through sh() (measure-ids.py, loadtest.py, xcheck.py:
 E.measure); lucky.py and run-spread.py, studies of the run's spread, keep their own.
+
+**jitfew-after-seed96.patch** (engine/jit.c, lab/evolve/GENES.md, lab/evolve/engines-check.py, lab/evolve/evolve.py;
+Iteration 713, from the early computers' working sets - results/drafts/early-computers-713.md) - the gene jitfew, 0/1,
+with the JIT: jit_body's arrays (at, arg, nat, opl, tl) 128 operations long in its own frame, and 1,024 long
+(jit_body_big, cold) only for a word with more operations - its decoding answers JIT_ROOM before anything is emitted or a
+callee translated, and the word is translated again from its start. Off, the engine is as before (the old declarations
+under #else). Why: the arrays' heads were a page each at every depth of the callees' translation (a 23,752-byte frame,
+up to 16 deep) - 10-19 of a JIT design's pages on a workload. Tested on top of jitdead and fixenv (results/drafts/
+jitfew-test-713.py, five interleaved rounds): eight JIT designs - memory -5 to -16 pages (-11 to -23 %), apps -7 to -27,
+the engine +224 to +544 bytes, the outputs alike on every workload, the time within the rounds' noise; engines-check.py
+gains three variants (jitfew; without jitx; with jitdead, jitexec, jitmul, jitcfa).

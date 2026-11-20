@@ -250,8 +250,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle; the
   results files' gave 4 of 381), then loadtest.py - the roles the owner's trades. From the early games (results/drafts/early-games-713.md): a fixed layout of the engine's
   writable data, a prototype for the reopened search (memory's layout luck, 1-4 pages); memory with a fixed environment -
-  built and queued (results/queued-genes/fixenv-after-seed96.patch, the owner's yes; results/drafts/fixenv-713.md), as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
-  them; then results/queued-genes (jitdead) applied, chainorder if its prototype pays, and the reopened search's series;
+  built and queued (results/queued-genes/fixenv-after-seed96.patch, the owner's yes; results/drafts/fixenv-713.md), as at 611 and 649; from the early
+  computers (results/drafts/early-computers-713.md): the gene jitfew queued (jitfew-after-seed96.patch - JIT designs' memory -11 to -23 %,
+  engines +224 to +544 bytes); then designs/ and the package, self-hosting phase 6 on
+  them; then results/queued-genes (jitdead, fixenv, jitfew) applied, chainorder if its prototype pays, and the reopened search's series;
   the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six

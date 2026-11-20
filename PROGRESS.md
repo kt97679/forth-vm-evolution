@@ -11906,3 +11906,15 @@ Then the owner's yes to a fixed environment: results/queued-genes/fixenv-after-s
 CPUTIME_JAIL and a pad to 1,024 bytes with the arguments, for every engine run through sh()) - tested
 (results/drafts/fixenv-713.md, results/drafts/fixenv-test-713.py): fb0d57c8a2 15 / 27 pages whatever the caller's
 environment, outputs alike; queued with the reopened search's series.
+Then the owner's second idea - what the early computers lend the search (results/drafts/early-computers-713.md): the
+period's discipline of memory as pages touched (Denning's working set, Hatfield and Gerald's restructuring, the overlay
+linkers' shared areas, VAX/VMS's demand zeroing) priced against our memory objective by reading a run's mappings at its
+end. Found: the JIT translator's frame - jit_body's arrays, 23,752 bytes a depth, their heads a page each - is 10-19 of a
+JIT design's pages; the gene jitfew built and queued (results/queued-genes/jitfew-after-seed96.patch, after jitdead and
+fixenv): the arrays 128 operations long first, 1,024 only for a longer word, translated again. Tested
+(results/drafts/jitfew-test-713.py; results/drafts/stack-pages-713.py for the pricing): eight JIT designs - memory -5 to
+-16 pages (-11 to -23 %), engines +224 to +544 bytes, outputs alike, the time in the noise. Priced, not proposed: a lower
+cap (the same pages, the long words bytecode again), FILL 0 by demand-zero pages (cross.4's IMAGE FILL is 2-3 pages),
+the image mapped from its file (1-2 pages), -fno-stack-clash-protection (no probes here). The rest of the period's
+tricks (Mesa, Smalltalk-80, the Transputer, BCPL, the B5000, SOAP, the AGC) here already. Six register rows. A trap noted:
+a scratch clone sharing build/ copies its overlays through build/work's links into the sandbox's forth/.

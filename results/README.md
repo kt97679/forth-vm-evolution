@@ -283,6 +283,9 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/chainC-candidates-713.md` - Chain C's candidates so far (Iteration 713): 5 designs off chain A's list the batch moved onto the JIT-free front - e51c01ba10 and 4acee9a48e (long shots, small-and-fast-on-ARMv7), 4 for the smallest JIT design; chain C adds pool-sizes.py's finds.
 - `drafts/early-games-713.md` - What early games lend the search (Iteration 713, the owner's idea): most of their tricks are here; memory's layout luck measured (1-4 pages by data order alone) - a fixed layout proposed; the environment's pages; short branches priced.
 - `drafts/fixenv-713.md` - The fixed environment for engine runs, tested (Iteration 713): memory the same whatever the caller's environment; queued with the reopened search (queued-genes/fixenv-after-seed96.patch).
+- `drafts/early-computers-713.md` - What the early computers lend the search (Iteration 713, the owner's idea): working sets - the JIT translator's frame, 10-19 pages, the gene jitfew built and queued; demand-zero FILL and more priced.
+- `drafts/jitfew-test-713.py` - The gene jitfew off and on, interleaved: time, pages, outputs, bytes (Iteration 713).
+- `drafts/stack-pages-713.py` - Pages per selection workload from a root, outputs hashed (Iteration 713).
 - `drafts/heldout-711.py` - The search set against the held-out pair on the screen's pool (Iteration 711), by family; `.txt` its output.
 - `drafts/literature-712.md` - More from the literature, checked against what is here (Iteration 712): the stack header's premise wrong on x86-64 since Linux 5.8 (measured), the interval model for countfit, Zen 4's top-down metrics, Kalibera and Jones, Gforth 1.0; `.txt` its measurements.
 - `drafts/jitdead-710.md` - The gene jitdead built (Iteration 710, mechanism 9's V1'): the JIT's header the code alone; -700 bytes of the programs' code, the total -0.3 to -2.9 % on ten JIT designs; wends16 found; chainorder mispriced.

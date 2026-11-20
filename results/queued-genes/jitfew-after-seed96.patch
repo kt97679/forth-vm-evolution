@@ -1,0 +1,148 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 9f7d81a..e318513 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -643,7 +643,9 @@ static int jit_inl1(UNS64 a, unsigned short *op, UNS64 *v) {
+     *op = (unsigned short)L; *v = x; return 1;
+ }
+ #endif
+-#if JITX
++#if JITX && JITFEW
++static __attribute__((noinline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);   /* 713 */
++#elif JITX
+ static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
+ #else       /* without jitx, called once: inlined, the engine as it was */
+ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
+@@ -859,6 +861,25 @@ static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, co
+ 
+ /* The operations from a to end - end 0: find it, a word without a header
+    (jitx) - of the word w: a call to w is a call to this code itself. */
++#if JITFEW
++/*  Iteration 713, the gene jitfew (results/drafts/early-computers-713.md): the translator's arrays - at, arg, nat, opl
++ *  (the logical operation; 0xFFFF a call to w, 0xFFFE a call resolved, 0xFFFD a literal) and tl (Iteration 246: this
++ *  call is a tail call - a jump) - JIT_FEWOPS long first, in jit_body's frame, and JIT_MAXOPS long only for a word
++ *  with more operations (jit_body_big). Their heads were a page each at every depth of the callees' translation:
++ *  10-19 of a JIT design's pages on a workload, none of them used past a word's few operations.  */
++#define JIT_FEWOPS 128
++#define JIT_ROOM 0xFFFFFFFFu            /* jit_body_'s answer when its cap was too few */
++#define JIT_CAP cap
++#define JIT_LONG (cap < JIT_MAXOPS ? JIT_ROOM : 0)
++static __attribute__((noinline)) uint32_t jit_body_(UNS64 w, UNS64 a, UNS64 end, int depth, int cap, UNS64 *at, UNS64 *arg,
++                                                  uint32_t *nat, unsigned short *opl, unsigned char *tl) {
++    UNS64 far = 0; uint32_t size = 0, off;
++#if !JITTAIL
++    (void)tl;
++#endif
++#else
++#define JIT_CAP JIT_MAXOPS
++#define JIT_LONG 0
+ #if JITX
+ static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
+ #else
+@@ -869,6 +890,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+     unsigned short opl[JIT_MAXOPS];     /* the logical operation; 0xFFFF a call to w, 0xFFFE a call resolved, 0xFFFD a literal */
+ #if JITTAIL
+     unsigned char tl[JIT_MAXOPS];       /* Iteration 246: this call is a tail call - a jump */
++#endif
+ #endif
+     int n = 0, i, j;
+     (void)far;
+@@ -921,9 +943,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         }
+ #endif
+ #if JITLOG
+-        if (n >= JIT_MAXOPS) { jitlog_why = 6; return 0; }           /* 471: too long, told apart */
++        if (n >= JIT_CAP) { jitlog_why = 6; return JIT_LONG; }           /* 471: too long, told apart */
+ #else
+-        if (n >= JIT_MAXOPS) return 0;
++        if (n >= JIT_CAP) return JIT_LONG;
+ #endif
+         at[n] = a;
+         if (T2_CALL(b)) {               /* a call of 2, 3 or 4 bytes (2 or 4: t2wide) */
+@@ -954,7 +976,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+ #if JITDEAD
+                 if (s_ < w + 5 && !(v_ = jit_keep(s_, c_ + 1))) return 0;   /* 710: native code reads it - a copy */
+ #endif
+-                if (n + 4 >= JIT_MAXOPS) return 0;
++                if (n + 4 >= JIT_CAP) return JIT_LONG;
+                 opl[n] = 0xFFFD; arg[n] = v_ + 1;
+                 n++; at[n] = ((UNS64)1 << 63) | (s_ + 1); opl[n] = 0xFFFD; arg[n] = c_;
+                 if (dq_) { n++; at[n] = ((UNS64)1 << 63) | (s_ + 2); opl[n] = 0xFFFD; arg[n] = jit_cbase + (UNS64)JIT_W_TYPE;
+@@ -1247,6 +1269,31 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+     jit_used = off + size;
+     return off;
+ }
++#if JITFEW
++static __attribute__((noinline, cold)) uint32_t jit_body_big(UNS64 w, UNS64 a, UNS64 end, int depth) {
++    UNS64 at[JIT_MAXOPS + 1], arg[JIT_MAXOPS]; uint32_t nat[JIT_MAXOPS + 1]; unsigned short opl[JIT_MAXOPS];
++#if JITTAIL
++    unsigned char tl[JIT_MAXOPS];
++#else
++    unsigned char tl[1];
++#endif
++    return jit_body_(w, a, end, depth, JIT_MAXOPS, at, arg, nat, opl, tl);
++}
++#if JITX
++static __attribute__((noinline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
++#else
++static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
++#endif
++    UNS64 at[JIT_FEWOPS + 1], arg[JIT_FEWOPS]; uint32_t nat[JIT_FEWOPS + 1], f; unsigned short opl[JIT_FEWOPS];
++#if JITTAIL
++    unsigned char tl[JIT_FEWOPS];
++#else
++    unsigned char tl[1];
++#endif
++    f = jit_body_(w, a, end, depth, JIT_FEWOPS, at, arg, nat, opl, tl);
++    return f == JIT_ROOM ? jit_body_big(w, a, end, depth) : f;
++}
++#endif
+ #endif
+ 
+ #ifdef JIT_SCAN_MAIN
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 0b0fdcc..5949104 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -79,6 +79,7 @@ as the record of what each does.
+ | pairs as one stencil on the JIT (`jitfuse`: 0, 1; Iteration 507; JIT with jitx; enabled for seed 72 by the owner, 508): a literal into +, <, >, =, XOR, AND or OR, and I into + or 2@, copied as one stencil, never where the second is a branch target (results/drafts/jit-pairs-506.md); -3.8% of instructions over the seven workloads (fib -16.3%), +2.4% bytes. |
+ | the return-stack pointer in a register on the JIT (`jitrp`: 0, 1; Iterations 465, 494; GCC, 64-bit, JIT with jitx; enabled for seed 71 by the owner, 495): a global register variable across the stencils (r15; rbx under regpin 2, r13 under 3); loop -19% of instructions on a GCC JIT design. |
+ | the JIT's header the code alone (`jitdead`: 0, 1; Iteration 710; JIT designs - mechanism 9's V1', results/drafts/triz-706.md): [JIT], not [JIT][four bytes] - the body's end found by the converter's rule (the jitimg words' from jit_wends), the native offset written over the translated word's dead first four bytes and its trigger then JITN (a code of its own, pinned); left bytecode, a NOOP; what native code reads there at run time (S", .", (ABORT")'s resume point) copied first; bodies padded to four bytes (forth/cv8t-jitd.4, layout.py --jit-dead). -693 to -741 bytes of the five programs' code, the image -24 to -80, the engine -592 to +640; the total -0.3 to -2.9 % on ten JIT designs at both widths, instructions the same or fewer on every workload; not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/jitdead-710.md |
++| the translator's arrays short first (`jitfew`: 0, 1; Iteration 713; JIT designs): engine/jit.c - jit_body's arrays (at, arg, nat, opl, tl) 128 operations long in its frame, and 1,024 (jit_body_big) only for a word with more, translated again from its start; their heads were a page each at every depth of the callees' translation (~24 KB a frame). On eight JIT designs: memory (the selection's workloads but apps) -5 to -16 pages (-11 to -23 %), apps -7 to -27 pages, the engine +224 to +544 bytes, the outputs alike, the time in the noise | results/drafts/early-computers-713.md |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 8d93902..df703e6 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -76,6 +76,9 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
+     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
+     ('the JIT, jitdead', dict(JIT, jitdead=1), ['jit', 'jitdead']),        # Iteration 710: the header the code alone
++    ('the JIT, jitfew', dict(JIT, jitfew=1), ['jit', 'jitfew']),           # Iteration 713: the translator's arrays short first
++    ('the JIT, jitfew without jitx', dict(JIT, jitx=0, jitloop=0, jitinl=0, jitfew=1), ['jit', 'jitfew']),
++    ('the JIT, jitfew with jitdead, jitexec, jitmul, jitcfa', dict(JIT, jitfew=1, jitdead=1, jitexec=1, jitmul=1, jitcfa=1), ['jitfew', 'jitdead']),
+     ('the JIT, jitdead without jitx', dict(JIT, jitx=0, jitloop=0, jitinl=0, jitdead=1), ['jit', 'jitdead']),
+     ('the JIT, jitdead with jitexec, jitmul, jitcfa, jitimg', dict(JIT, jitdead=1, jitexec=1, jitmul=1, jitcfa=1, jitimg=1), ['jitdead', 'jitexec', 'jitimg']),
+     ('the JIT, jitdead on the wide tag', dict(JIT, jitdead=1, t2wide=1, jitexec=1, jitmul=1), ['jitdead', 't2wide']),
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 8d40929..c32c386 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -215,6 +215,7 @@ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGN
+      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
+ gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
++gene('jitfew', values=range(2), needs=lambda g, e: jit_on(g))    # Iteration 713: the translator's arrays 128 operations long first, 1,024 only for a longer word - their pages (results/drafts/early-computers-713.md)
+ gene('jitdead', values=range(2), needs=lambda g, e: jit_on(g))   # Iteration 710: mechanism 9's V1' - the JIT's header the code alone, the offset in the dead body (results/drafts/triz-706.md)
+ gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
+ gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
+@@ -1114,6 +1115,7 @@ def _build(g, d):
+     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
+     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
++    if jit_on(g) and express(g).get('jitfew'): flags.append('-DJITFEW=1')   # Iteration 713: the translator's arrays short first (engine/jit.c)
+     if jitdead_on(g): flags.append('-DJITDEAD=1')               # Iteration 710: the header the code alone (engine/jit.c)
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
