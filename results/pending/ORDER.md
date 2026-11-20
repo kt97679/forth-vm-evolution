@@ -1,4 +1,4 @@
-# The after-seed-96 batch - to apply at chain A's processing, before chain B's lists (Iterations 706-707)
+# The after-seed-96 batch - to apply at chain A's processing, before chain B's lists (Iterations 706-709)
 
 Seed 96 is processed (704) and no seed run is planned: process-followup.sh applies no batch, so the chat processing chain
 A (the new roles' screen - results/drafts/new-roles-plan-705.md) applies it by hand on master, first: `sh
@@ -55,6 +55,29 @@ byte-identical, all 40 builds alive with fib and apps as s6. It changes every x8
 are 192-304 bytes below chain A's for the same designs; their speeds it should not touch (a system call is rare - the
 I/O is buffered).
 
-**sysstubs-after-seed96.patch** (engine/rt-linux-x86_64.c) - TODO: what it does, why, how it was tested.
+**sysstubs-after-seed96.patch** (engine/rt-linux-x86_64.c) - at x86-64 with clang, the runtime's 19 system calls whose C
+arguments are the kernel's own registers (rdi, rsi, rdx; the fourth moved rcx to r10) are 4-5 byte assembler stubs: the
+number into rax, a jump to one shared tail (syscall; -errno to -1 and errno), as dietlibc's unified syscall; rt_syscall6
+(rtsc above) shuffles into the same tail. Each stub in its own section, so --gc-sections keeps only those called. GCC
+keeps the C wrappers (`#if defined(__clang__)`): its LTO builds - 99 of the front's 103 GCC designs - inline them, an
+inline syscall clobbering two registers where a call clobbers every caller-saved one, and the stubs grew its large -O2
+engines by 64-192 bytes. Why: Iteration 709's sweep (results/drafts/sweep-709.md) - every wrapper inlined sc() and
+ok(), about 300 of the smallest engine's bytes. Tested: 20 designs (the 8 smallest, 12 spread by speed) and 14 GCC ones,
+built with the batch before it and after (rtsc-707.py): clang -176 to -400 bytes (the smallest 4,768 to 4,576), every
+GCC engine +0 - GCC's preprocessed runtime is byte-identical to before (`gcc -E -P`), and the i386 runtime's too
+(RT_PORTABLE_ONLY), so the 4-byte engines are unchanged by construction; all 34 alive, fib and apps as s6.
 
-**imagemsg-after-seed96.patch** (engine/vm-lab.c) - TODO: what it does, why, how it was tested.
+**imagemsg-after-seed96.patch** (engine/vm-lab.c) - every refusal of an image's contents is one message from one
+function, bad_image: `not a RelF image (N)`, N a check digit (1 the magic - another encoding or cell width, 2 a newer
+CV8 format, 3 CV8 features not built in, 4 the header truncated, 5 an impossible thread count, 6 too many DOES> tails,
+7 the escaped band, 8 and 9 SOD16's byte-granular headers and a DOES> tail outside the chain; the list in the comment
+above bad_image). Kept: the file not opened or not read, memory, usage, the stack and fault messages. A user-visible
+change: the seven texts become the digit (the owner told, 709). "not a RelF image" starts the message because relf's
+crash fuzzer matches the phrase; nothing else in the tree reads these texts. Not `cold`: GCC then moved L_esc's call
+in virtual_machine to .text.unlikely and the dispatch table's label differences did not assemble. Why: the sweep - the
+seven messages were 374 of the smallest engine's 1,072 bytes of rodata. Tested (results/drafts/sweep-709.md): the 34
+designs above at 8-byte cells, -226 to -458 bytes (the smallest 4,576 to 4,230), and the 20 at 4-byte cells (i386),
+-234 to -336; all 54 alive, fib and apps as s6; the digits by hand on the smallest's i386 engine (a text file (1), a
+cut header (4), the version raised (2), a feature bit set (3), each exit 2; the image itself runs); ARMv7 - 10 of the
+ARM list spread by speed, cross-built by clang (tools/arm-cross-check.py, qemu-arm), 10 of 10 alive and identical on fib
+and apps. With sysstubs and rtsc, chain B's x86-64 engines are about 400-1,100 bytes below chain A's for the same designs (GCC's the least).
