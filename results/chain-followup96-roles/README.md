@@ -6,3 +6,14 @@ Laid out by lab/evolve/chain-sessions.py (lab/evolve/process-followup.sh 96-role
 report and out.json (dream.lan-prebuilt64 and -prebuilt32 s1-s8, rage.lan-prebuiltarm s1-s3). The holders' size and
 memory: the chain's measure-ids pack (forth-vm-evolution-measure-ids-517d6310-fury-20261119-200739.tar.gz), put into
 results/followup-seed96-roles.md by results/drafts/holders-laptop-713.py. Processed: results/followup-roles-seed96-roles.md.
+
+The reports and the laptop's table, by session (the out.json files beside each):
+
+- s1/dream.lan-prebuilt32.md s1/dream.lan-prebuilt64.md s1/loadtest.md s1/rage.lan-prebuiltarm.md
+- s2/dream.lan-prebuilt32.md s2/dream.lan-prebuilt64.md s2/loadtest.md s2/rage.lan-prebuiltarm.md
+- s3/dream.lan-prebuilt32.md s3/dream.lan-prebuilt64.md s3/loadtest.md s3/rage.lan-prebuiltarm.md
+- s4/dream.lan-prebuilt32.md s4/dream.lan-prebuilt64.md s4/loadtest.md
+- s5/dream.lan-prebuilt32.md s5/dream.lan-prebuilt64.md s5/loadtest.md
+- s6/dream.lan-prebuilt32.md s6/dream.lan-prebuilt64.md
+- s7/dream.lan-prebuilt32.md s7/dream.lan-prebuilt64.md
+- s8/dream.lan-prebuilt32.md s8/dream.lan-prebuilt64.md
