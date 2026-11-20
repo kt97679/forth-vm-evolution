@@ -1,3 +1,25 @@
+diff --git a/forth/cross-cv8.4 b/forth/cross-cv8.4
+index b0fc1a7..f97bd1b 100644
+--- a/forth/cross-cv8.4
++++ b/forth/cross-cv8.4
+@@ -1719,12 +1719,16 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
+       DUP SH-NAME 4 PICK 4 PICK COMPARE 0= IF @ >R 2DROP R> UNLOOP EXIT THEN
+     THEN DROP
+   LOOP 2DROP -1 ;
++: JW-MAX ( --- e )
++\ The last body's end - the table's largest number (bodies do not overlap).
++  0 BEGIN DUP JW-NEXT ?DUP WHILE SWAP DROP REPEAT DUP IF JW-END THEN ;
+ : SAVE-JIT-LAYOUT ( "name" --- )
+   BL WORD COUNT G-JIT 0= IF 2DROP EXIT THEN
+   W/O CREATE-FILE ABORT" cross: can't create the JIT's layout" FID-J !
+   JW-COLLECT
+   S" #define JIT_NWENDS " J-TYPE 0 0 BEGIN JW-NEXT ?DUP WHILE SWAP 1+ SWAP REPEAT J-NUM J-CR
+-  S" static const unsigned int jit_wends[][2] = {" J-TYPE
++  \ Iteration 710 (tools/layout.py's, wends16): two bytes a number where every end is under 64 KB
++  JW-MAX 65536 < IF S" static const unsigned short jit_wends[][2] = {" ELSE S" static const unsigned int jit_wends[][2] = {" THEN J-TYPE
+   0 0 BEGIN JW-NEXT ?DUP WHILE
+     SWAP IF S" , " J-TYPE THEN
+     S" {" J-TYPE DUP J-NUM S" , " J-TYPE DUP JW-END J-NUM S" }" J-TYPE
 diff --git a/tools/layout.py b/tools/layout.py
 index cb4757a..80f2e55 100644
 --- a/tools/layout.py
@@ -16,3 +38,20 @@ index cb4757a..80f2e55 100644
              def _woff(nm):             # Iteration 485: a word's offset in the image (its body, as the call map's W lines), -1 if none
                  ws_ = [w_ for w_ in order if w_['n'] == nm]
                  return new_off[ws_[0]['s']]['body'] if ws_ else -1
+diff --git a/tools/selfhost-check.sh b/tools/selfhost-check.sh
+index 41d1812..3e7873a 100755
+--- a/tools/selfhost-check.sh
++++ b/tools/selfhost-check.sh
+@@ -56,10 +56,10 @@ if [ "$N" != s6 ] && grep -q "jit_wends" "$DS/$N/src/vm-jit-ops.h" 2>/dev/null;
+     mkdir -p "$D/eng"; cp -r "$DS/$N/Makefile" "$DS/$N/src" "$DS/$N/src32" "$D/eng/"
+     python3 - "$D/eng/$S/vm-jit-ops.h" "$D/A.img.jit.h" <<'PYEOF' || exit 1
+ import sys
+-key = lambda l: l.split(' = ')[0] if l.startswith('static const unsigned int jit_wends') else ' '.join(l.split()[:2])
++key = lambda l: 'jit_wends' if l.startswith('static const unsigned') and 'jit_wends[][2]' in l else ' '.join(l.split()[:2])   # 710: int or short
+ new = {key(l): l for l in open(sys.argv[2]).read().splitlines() if l}
+ old = open(sys.argv[1]).read().splitlines(); out = [new.get(key(l), l) for l in old]
+-assert {'#define JIT_NWENDS', 'static const unsigned int jit_wends[][2]'} <= set(map(key, old)), 'selfhost-check: the layout lines not found'
++assert {'#define JIT_NWENDS', 'jit_wends'} <= set(map(key, old)), 'selfhost-check: the layout lines not found'
+ open(sys.argv[1], 'w').write('\n'.join(out) + '\n')
+ PYEOF
+     make -s -C "$D/eng" $E > "$D/eng.log" 2>&1 || { echo "selfhost-check: FAIL - the engine for A did not build ($D/eng.log)"; exit 1; }
