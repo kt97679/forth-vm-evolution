@@ -1,0 +1,533 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 36b05b6..9f7d81a 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -246,6 +246,26 @@ struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; }
+ #define JIT_BROPND(o) ((o)->opnd >= 6)
+ #endif
+ #include "vm-jit-ops.h"                 /* jit_ops[], JIT_CODE: this design's */
++/*  Iteration 710, the gene jitdead (mechanism 9's V1', results/drafts/triz-706.md): the header is the JIT's code
++ *  alone, [JIT] - no 4-byte field. The length is found as the converter finds a body's end (the first EXIT no branch
++ *  reaches past; an image word's from jit_wends), and the native offset is kept in the body itself once it is dead:
++ *  translated, a word's trigger becomes JITN_CODE and its first four bytes the offset - native code runs the whole
++ *  word, so its bytecode is not run again (what it reads there at run time - an inline string, (ABORT")'s resume
++ *  point - is copied first: jit_keep). Left bytecode - refused, or a body under four bytes (jit_rd) - the trigger
++ *  becomes a NOOP (code 0): the bytecode intact, its callers re-pointed past it as before, and to native code it is
++ *  what a field of 0 was. The run-time words' bodies are padded with NOOPs to four bytes (forth/cv8t-jitd.4), the
++ *  image's (--jitimg) by the converter: the room is the body and the NOOPs after its end.  */
++#ifndef JITDEAD
++#define JITDEAD 0
++#endif
++#if JITDEAD
++#define JIT_HDR 1
++#if JIT_PRICE
++#error "jitdead: a translated word's bytecode is its offset - JIT_PRICE (jitstack.py) runs the bytecode"
++#endif
++#else
++#define JIT_HDR 5
++#endif
+ #define JIT_NOPS ((int)(sizeof jit_ops / sizeof jit_ops[0]))
+ #ifndef T2_ESC
+ #define T2_ESC  0xFFFE
+@@ -354,7 +374,11 @@ static int jit_init(void) {
+ #else
+             t_[0] = 0x48; t_[1] = 0xB8; memcpy(t_ + 2, &a_, 8); t_[10] = 0xFF; t_[11] = 0xE0;
+ #endif
++#if JITDEAD
++            jit_sentinel[0] = (UNS8)JITN_CODE; memcpy(jit_sentinel + 1, &o_, 4);   /* 710: a native word's form */
++#else
+             jit_sentinel[0] = (UNS8)JIT_CODE; memcpy(jit_sentinel + 1, &o_, 4);
++#endif
+         }
+ #endif
+     }
+@@ -406,7 +430,7 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+    point it past the header - that call site then skips the JIT dispatch
+    for good. Anything else (EXECUTE, a target past the width) is left. */
+ static void jit_repoint(UNS64 w, UNS64 ra) {
+-    UNS64 t = w + 5 - jit_cbase, x;
++    UNS64 t = w + JIT_HDR - jit_cbase, x;
+     int wd, i;
+     for (wd = 2; wd <= 4; wd += T2_WSTEP) {
+         UNS64 a = ra - (UNS64)wd;
+@@ -448,7 +472,7 @@ static void jit_dump(int fd) {
+         m = snprintf(b, sizeof b, "L %d %d %d %d %d %d %d %d %d\n", i, jit_ops[i].opnd, jit_ops[i].k, jit_ops[i].n,
+                      jit_ops[i].st[0], jit_ops[i].st[1], jit_ops[i].st[2], jit_ops[i].st[3], jit_ops[i].st[4]); write(fd, b, (size_t)m); }
+     for (i = 0; i < jn_n; i++) {        /* Iteration 220: every call of every word met, translated or not */
+-        UNS64 w = jn_w[i], end = jn_end[i], a = w + 5;
++        UNS64 w = jn_w[i], end = jn_end[i], a = w + JIT_HDR;
+         while (a < end) {
+             UNS8 c = BYTE(a);
+             if (T2_CALL(c)) {
+@@ -481,8 +505,12 @@ static void jit_dump(int fd) {
+     for (k = 0; k < T2_JONES; k++)
+         if (jit_one[k] < (unsigned)JIT_NOPS && jit_ops[jit_one[k]].ok) { m = snprintf(b, sizeof b, "S %d\n", k < 64 ? k : k + 64); write(fd, b, (size_t)m); }
+     for (i = 0; i < jn_n; i++) {
+-        UNS64 w = jn_w[i], end = jn_end[i], a = w + 5;
++        UNS64 w = jn_w[i], end = jn_end[i], a = w + JIT_HDR;
++#if JITDEAD
++        uint32_t f = BYTE(w) == (UNS8)JITN_CODE ? jit_ld32(w + 1) : 0;
++#else
+         uint32_t f = jit_ld32(w + 1);
++#endif
+         m = snprintf(b, sizeof b, "J %llu %llu %u\n", (unsigned long long)(w - jit_cbase), (unsigned long long)(end - jit_cbase), f);
+         write(fd, b, (size_t)m);
+         while (f < 2 && a < end) {
+@@ -624,7 +652,10 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+ /* Iteration 476: a word whose body is >R then EXIT - the kernel's `: EXECUTE >R ;` (layout.py) - is EXECUTE */
+ static int jit_isexec(UNS64 a) {
+     unsigned L; UNS8 b;
+-    if (BYTE(a) == JIT_CODE) a += 5;
++    if (BYTE(a) == JIT_CODE) a += JIT_HDR;
++#if JITDEAD
++    else if (BYTE(a) == (UNS8)JITN_CODE) return 0;      /* 710: native - its first bytes the offset */
++#endif
+     b = BYTE(a); if (T2_CALL(b)) return 0;
+     L = jit_one[T2_ONEIX(b)]; a++; if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+     if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 0;
+@@ -637,6 +668,38 @@ static int jit_isexec(UNS64 a) {
+ #endif
+ /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
+ static int jit_deep;                    /* 490: a translation refused below the depth limit - its callers may try again */
++#if JITDEAD
++/*  Iteration 710 (jitdead): w is being translated at depth i while jit_busy[i] is w - a call to it from below is to a
++ *  word not native meanwhile (the field's 0 did that); jit_rd[i]: its body and the NOOPs after it are under four
++ *  bytes - no room for the offset (the run-time words' and the image's are padded: never, but for a word laid
++ *  otherwise).  */
++static UNS64 jit_busy[JIT_DEPTH + 2]; static unsigned char jit_rd[JIT_DEPTH + 2];
++#if JITEXEC
++/*  What native code reads at run time from a body's first four bytes - an inline string, (ABORT")'s call and string,
++ *  where the interpreter resumes on a true flag - copied to the JIT's memory first, the offset written over them;
++ *  0: no room (the word then stays bytecode).  */
++__attribute__((noinline)) static UNS64 jit_keep(UNS64 a, unsigned n) {
++    if (jit_used + n > JIT_MEM) return 0;
++    memcpy(jit_mem + jit_used, (const void *)(uintptr_t)a, n); jit_used += n;
++    return (UNS64)(uintptr_t)(jit_mem + jit_used - n);
++}
++#endif
++__attribute__((noinline)) static uint32_t jit_word(UNS64 w, int depth) {   /* not in the interpreter's loop: once a word */
++    uint32_t f; int i, d = depth > JIT_DEPTH ? JIT_DEPTH + 1 : depth;   /* past the limit jit_body refuses at once */
++    for (i = 0; i < d; i++) if (jit_busy[i] == w) return 0;
++    if (!depth) jit_deep = 0;
++    jit_busy[d] = w; jit_rd[d] = 0;
++    f = jit_body(w, w + 1, 0, depth);       /* one call: without jitx jit_body is inlined where it is called */
++    jit_busy[d] = 0;
++#if JITLOG
++    if (!f) jitlog_refused(w);
++    jitlog_note(f && jit_rd[d] ? 'D' : 'T', w, w, f);   /* D: native, but its body under four bytes - left bytecode */
++#endif
++    if (f && !jit_rd[d]) { jit_st32(w + 1, f); BYTE(w) = (UNS8)JITN_CODE; return f; }
++    if (!(jit_deep && depth)) BYTE(w) = 0;             /* bytecode for good: a NOOP for the trigger */
++    return 0;                                          /* 490: refused for depth - its JIT code left, to translate again */
++}
++#else
+ static uint32_t jit_word(UNS64 w, int depth) {
+     UNS64 end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
+     uint32_t f, orig = jit_ld32(w + 1);
+@@ -652,13 +715,20 @@ static uint32_t jit_word(UNS64 w, int depth) {
+     else if (jit_deep && depth) jit_st32(w + 1, orig);   /* 490: refused for depth - left to translate again */
+     return f;
+ }
++#endif
+ #if JITEXEC
+ /* Iteration 476: EXECUTE from native code - the token's word native when it is, translated now when it can be
+    (a word with the JIT's header by jit_word, one without by its kslot, as a call's callee is), else run by the
+    interpreter (jit_interp, jitre's: a sentinel return address, a longjmp back) - and the stack handed back. */
+ __attribute__((force_align_arg_pointer)) static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
+     UNS64 w = (UNS64)xt; uint32_t f = 0;
++#if JITDEAD
++    if (BYTE(w) == (UNS8)JITN_CODE) f = jit_ld32(w + 1);                 /* 710 */
++    else if (BYTE(w) == JIT_CODE) f = jit_word(w, 0);
++    else if (!BYTE(w)) ;                                                 /* a NOOP: left bytecode - interpreted, no jit_k */
++#else
+     if (BYTE(w) == JIT_CODE) { f = jit_ld32(w + 1); if (f & 0x80000000u) f = jit_word(w, 0); }
++#endif
+     else if (BYTE(w) != JIT_DOVAR) { uint32_t *k = jit_kslot(w);
+         if (k) { if (*k & 0x80000000u) { *k = 1; *k = jit_body(w, w, 0, 0); } f = *k; } }
+     if (f > 1) {                        /* 481: native - this site's cache remembers it */
+@@ -810,10 +880,11 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         return 0;
+     }
+     if (!jit_init()) return 0;
+-#if JITX
++#if JITX || JITDEAD
+ #if defined(JIT_NWENDS)
+-    if (!end && a == w && w >= jit_cbase) {     /* 489: an image word reached without its header - its end from the converter's
+-                                       table, not the first EXIT no branch passes (DABS ran on into FM/MOD's header) */
++    if (!end && (a == w || a == w + JITDEAD) && w >= jit_cbase) {     /* 489: an image word reached without its header - its
++                                       end from the converter's table, not the first EXIT no branch passes (DABS ran on into
++                                       FM/MOD's header); 710: under jitdead an image word with the header too, at w + 1 */
+         UNS64 o_ = w - jit_cbase; int lo_ = 0, hi_ = JIT_NWENDS - 1;
+         while (lo_ <= hi_) { int m_ = (lo_ + hi_) / 2;
+             if (jit_wends[m_][0] == o_) { end = jit_cbase + jit_wends[m_][1]; break; }
+@@ -833,7 +904,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+          *  what the interpreter runs as the PFA pushed on the return stack and a jump to the DOES> code, whose first
+          *  operation, R>, takes it back. Here: a literal of the PFA, then the DOES> code from after that R>, to its
+          *  EXIT - the return stack never touched, so the code's own order holds (results/drafts/jitapps-471.md).  */
+-        if (n == 0 && JIT_DODOES >= 0 && JIT_FROMR >= 0 && b == (UNS8)JIT_DODOES && (a == w || a == w + 5)) {   /* 473: a child has
++        if (n == 0 && JIT_DODOES >= 0 && JIT_FROMR >= 0 && b == (UNS8)JIT_DODOES && (a == w || a == w + JIT_HDR)) {   /* 473: a child has
+                                          no header, as a variable has none - reached as a callee, translated once (jit_kslot) */
+             UNS64 t_ = ((UNS64)(BYTE(a + 1) & 0x3F) << 24) | ((UNS64)BYTE(a + 2) << 16) | ((UNS64)BYTE(a + 3) << 8) | BYTE(a + 4);
+             UNS64 tail = jit_cbase + t_;
+@@ -870,14 +941,21 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+                                            own address kept for the interpreter to resume at when it is true */
+                 UNS64 s_ = a; unsigned c_ = BYTE(s_);
+                 opl[n] = JIT_L_ABORTQ; arg[n] = at[n];
++#if JITDEAD
++                if (at[n] < w + 5) {                     /* 710: the interpreter resumes there - a copy, the call and string */
++                    UNS64 k_ = jit_keep(at[n], (unsigned)(s_ + 1 + c_ - at[n])); if (!k_) return 0; arg[n] = k_; }
++#endif
+                 a = s_ + 1 + c_;     /* 681: CV8's strings unpadded (cv8.4's (S")8) */
+             } else
+ #endif
+             if (JIT_W_SQ >= 0 && JIT_W_DQ >= 0 && JIT_W_TYPE >= 0 &&
+                 (arg[n] == jit_cbase + (UNS64)JIT_W_SQ || arg[n] == jit_cbase + (UNS64)JIT_W_DQ)) {
+-                UNS64 s_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
++                UNS64 s_ = a, v_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
++#if JITDEAD
++                if (s_ < w + 5 && !(v_ = jit_keep(s_, c_ + 1))) return 0;   /* 710: native code reads it - a copy */
++#endif
+                 if (n + 4 >= JIT_MAXOPS) return 0;
+-                opl[n] = 0xFFFD; arg[n] = s_ + 1;
++                opl[n] = 0xFFFD; arg[n] = v_ + 1;
+                 n++; at[n] = ((UNS64)1 << 63) | (s_ + 1); opl[n] = 0xFFFD; arg[n] = c_;
+                 if (dq_) { n++; at[n] = ((UNS64)1 << 63) | (s_ + 2); opl[n] = 0xFFFD; arg[n] = jit_cbase + (UNS64)JIT_W_TYPE;
+                            n++; at[n] = ((UNS64)1 << 63) | (s_ + 3); opl[n] = JIT_L_EXECUTE;
+@@ -914,7 +992,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+ #endif
+             default: return 0;
+             }
+-#if JITX
++#if JITX || JITDEAD
+             if (JIT_BROPND(&jit_ops[L]) && arg[n] > far) far = arg[n];
+             if (!end && jit_ends(L) && a > far) { n++; end = a; break; }   /* the end: an EXIT no branch reaches past */
+ #endif
+@@ -922,6 +1000,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+     }
+     if (a != end) return 0;
+     at[n] = end;
++#if JITDEAD
++    {   UNS64 k_ = end - (w + 1);                        /* 710: the offset's room - the body's bytes, or the NOOPs */
++        if (k_ < 4 && jit_ld32(w + 1) >> (8 * k_)) jit_rd[depth] = 1;   /* after its EXIT (read by jit_word alone) */
++    }
++#if PROFILE
++    if (BYTE(w) == JIT_CODE && at[0] == w + 1) JITNOTE(w, end);
++#endif
++#endif
+ #if JITX && JITCFA
+     {   /* Iteration 482, the gene jitcfa: the same rule along the paths, not down the page - the depth before each
+            operation (dv), a branch's target given the depth at the branch, the code after an unconditional jump or an
+@@ -982,10 +1068,17 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         if (jit_isexec(arg[i])) {                                         /* 476: a call of EXECUTE - its helper; 481: its cache */
+             opl[i] = JIT_L_EXECUTE; arg[i] = (UNS64)(uintptr_t)jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1]; continue; }
+ #endif
++#if JITDEAD
++        if (BYTE(arg[i]) == JIT_CODE) (void)jit_word(arg[i], depth + 1);   /* 710: then JITN, a NOOP, or still JIT (depth) */
++        if (BYTE(arg[i]) == (UNS8)JITN_CODE) f = jit_ld32(arg[i] + 1);    /* native */
++        else if (BYTE(arg[i]) == JIT_CODE || !BYTE(arg[i])) f = 0;         /* refused for depth, being translated - or a NOOP:
++                                                                              left bytecode, as a field of 0 was */
++#else
+         if (BYTE(arg[i]) == JIT_CODE) {
+             f = jit_ld32(arg[i] + 1);
+             if (f & 0x80000000u) f = jit_word(arg[i], depth + 1);
+         }
++#endif
+ #if JITX
+         else if (BYTE(arg[i]) == JIT_DOVAR) {         /* a variable: its address, a literal */
+             arg[i] = (arg[i] + 5 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1); opl[i] = 0xFFFD; continue;   /* 460: a cell's alignment - 4 at 32 bits, as L_dovar's */
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 843932c..c20a8ab 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1705,7 +1705,12 @@ static void virtual_machine(void) {
+ #endif
+ #if X_JIT     /* the lazy JIT's opcode (JIT.md): a code, no slot in the table */
+ #define T2_JIT  0xFFFD
++#if JITDEAD   /* Iteration 710, the gene jitdead: a translated word's trigger - its own code, the same handler */
++#define T2_JITN 0xFFFC
++#define T2JIT(x) (x) == T2_JIT || (x) == T2_JITN ? &&L_x_jit :
++#else
+ #define T2JIT(x) (x) == T2_JIT ? &&L_x_jit :
++#endif
+ #else
+ #define T2JIT(x)
+ #endif
+@@ -2192,9 +2197,17 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
+  *  EXIT does. The return stack crosses in jit_rp, for loops and >R.
+  *  Here among the ordinary handlers: gen-tos.py must wrap it in SPILL
+  *  and FILL - after the tag's call handlers it is left bare (Iteration 81). */
++#if JITDEAD
++/*  Iteration 710 (jitdead, engine/jit.c): [JIT] - translated now; [JITN][offset] - native. Left bytecode, the
++ *  trigger is a NOOP and the body follows it - ip is there already.  */
++L_x_jit:   { uint32_t f_;
++             jit_cbase = cbase;
++             f_ = BYTE(ip - 1) == JIT_CODE ? jit_word(ip - 1, 0) : jit_ld32(ip);
++#else
+ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
+              jit_cbase = cbase;
+              if (f_ & 0x80000000u) f_ = jit_word(ip - 1, 0);
++#endif
+              if (JIT_NATIVE(f_)) {
+                  spn_st r_;
+ #if JITRP && defined(__x86_64__)
+@@ -2216,8 +2229,12 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
+ #endif
+                  rp = JIT_RP_GET(); dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
+                  ip = RS; rp += CELL_BYTES;
++#if JITDEAD
++             } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); } } NEXT();   /* bytecode: its caller skips the NOOP next time */
++#else
+              } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
+ #endif
++#endif
+ L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
+ #if ENC == 3
+     /*  The PFA is align(body+3), not align(body+1), so that it is the
+diff --git a/forth/cv8t-jitd.4 b/forth/cv8t-jitd.4
+new file mode 100644
+index 0000000..a86158d
+--- /dev/null
++++ b/forth/cv8t-jitd.4
+@@ -0,0 +1,25 @@
++\ cv8t-jitd.4 - the lazy JIT's header as the code alone (Iteration 710, the
++\ gene jitdead: mechanism 9's V1', results/drafts/triz-706.md). Loaded last
++\ instead of cv8t-jit.4, only for designs with the gene (lab/evolve). Every
++\ colon word compiled at run time begins [JIT]: translated at its first call
++\ (engine/jit.c), its end found as the converter finds a body's - then its
++\ trigger becomes JITN and the body's first four bytes the native offset,
++\ the bytecode dead; or a NOOP, the word left bytecode. The body is padded
++\ to four bytes after its EXIT: room for the offset. cv8t-jit.4's [JIT]
++\ [four bytes] cost every definition four bytes more.
++
++0 CONSTANT JIT-OP              \ tag 2: layout.py writes this design's code
++VARIABLE JIT-AT                \ the body's start, while compiling
++
++: :8 ( "ccc" --- )
++\ As kernel.4's :, then the header.
++  !CSP HEADER ]
++  JIT-OP OP,  HERE JIT-AT !  0 LAST-OP ! ;
++
++: ;8 ( --- )
++\ As the ;8 before this one, then NOOPs to four bytes of body.
++  POSTPONE ;8
++  JIT-AT @ ?DUP IF
++    4 + HERE -  DUP 0> IF 0 DO 0 C, LOOP ELSE DROP THEN
++    0 JIT-AT !
++  THEN ; IMMEDIATE
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 327915a..0b0fdcc 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -78,6 +78,7 @@ as the record of what each does.
+ | the return-stack check along the paths (`jitcfa`: 0, 1; Iteration 482; JIT with jitx; enabled 483): a word's >R and R> balanced on every control-flow path, not in page order - fcp's evalLP. As jitmul for seed 70. |
+ | pairs as one stencil on the JIT (`jitfuse`: 0, 1; Iteration 507; JIT with jitx; enabled for seed 72 by the owner, 508): a literal into +, <, >, =, XOR, AND or OR, and I into + or 2@, copied as one stencil, never where the second is a branch target (results/drafts/jit-pairs-506.md); -3.8% of instructions over the seven workloads (fib -16.3%), +2.4% bytes. |
+ | the return-stack pointer in a register on the JIT (`jitrp`: 0, 1; Iterations 465, 494; GCC, 64-bit, JIT with jitx; enabled for seed 71 by the owner, 495): a global register variable across the stencils (r15; rbx under regpin 2, r13 under 3); loop -19% of instructions on a GCC JIT design. |
++| the JIT's header the code alone (`jitdead`: 0, 1; Iteration 710; JIT designs - mechanism 9's V1', results/drafts/triz-706.md): [JIT], not [JIT][four bytes] - the body's end found by the converter's rule (the jitimg words' from jit_wends), the native offset written over the translated word's dead first four bytes and its trigger then JITN (a code of its own, pinned); left bytecode, a NOOP; what native code reads there at run time (S", .", (ABORT")'s resume point) copied first; bodies padded to four bytes (forth/cv8t-jitd.4, layout.py --jit-dead). -693 to -741 bytes of the five programs' code, the image -24 to -80, the engine -592 to +640; the total -0.3 to -2.9 % on ten JIT designs at both widths, instructions the same or fewer on every workload; not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/jitdead-710.md |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index c601148..8d93902 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -75,6 +75,10 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT, jitvar, varslot 1', dict(JIT, jitvar=1, varslot=1), ['jitvar']),
+     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
+     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
++    ('the JIT, jitdead', dict(JIT, jitdead=1), ['jit', 'jitdead']),        # Iteration 710: the header the code alone
++    ('the JIT, jitdead without jitx', dict(JIT, jitx=0, jitloop=0, jitinl=0, jitdead=1), ['jit', 'jitdead']),
++    ('the JIT, jitdead with jitexec, jitmul, jitcfa, jitimg', dict(JIT, jitdead=1, jitexec=1, jitmul=1, jitcfa=1, jitimg=1), ['jitdead', 'jitexec', 'jitimg']),
++    ('the JIT, jitdead on the wide tag', dict(JIT, jitdead=1, t2wide=1, jitexec=1, jitmul=1), ['jitdead', 't2wide']),
+     ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259
+     ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
+     ('link-time optimisation', dict(lto=1), ['lto']),                           # Iteration 260
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index eb06e6e..ad7d311 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -215,6 +215,7 @@ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGN
+      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
+ gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
++gene('jitdead', values=range(2), needs=lambda g, e: jit_on(g))   # Iteration 710: mechanism 9's V1' - the JIT's header the code alone, the offset in the dead body (results/drafts/triz-706.md)
+ gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
+ gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
+ gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+@@ -321,7 +322,7 @@ def boot_files(name):
+                    + (['cv8-fuse-inline.4'] if '-inl' in name else [])      # Iteration 694: after rtvar's, before rtconst's
+                    + (['cv8-fuse-const.4'] if '-const' in name else [])     # Iteration 691: after rtvar's
+                    + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
+-                   + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
++                   + (['cv8t-jitd.4'] if '-jitd' in name else ['cv8t-jit.4'] if '-jit' in name else [])   # Iteration 80: last - its ;8 wraps the others'; 710: jitdead's
+                    + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
+                    + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3')) else [])   # Iteration 205: the rest of the file words (fsys 2)
+                    + (['file-sysc3.4'] if any(k in name for k in ('-fsys3',)) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
+@@ -357,7 +358,7 @@ def all_dump_names():
+             for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loopall')
+             for t in (('', '-iplus') if l == '-loopall' else ('',))
+             for v in (('', '-var') if f else ('',)) for i in (('', '-inl') if f else ('',)) for c in (('', '-const') if f else ('',))
+-            for e in (('', '-empty') if b == bt else ('',)) for j in (('', '-jit') if b == bt else ('',))
++            for e in (('', '-empty') if b == bt else ('',)) for j in (('', '-jit', '-jitd') if b == bt else ('',))
+             for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or v or i or c or e or j or y or b == bt]
+ def prebuild_dumps():
+     """Iteration 697: a search makes and checks every dump before its workers start, at each width it selects at - so a
+@@ -570,6 +571,10 @@ def recorded_genome(i):
+                 except ValueError: pass
+     return None
+ 
++def jitdead_on(g):
++    """Iteration 710, the gene jitdead (mechanism 9's V1', results/drafts/triz-706.md): the JIT's header [JIT] alone -
++    the body's end found as the converter finds it, the native offset written into the translated word's dead body."""
++    return jit_on(g) and bool(g.get('jitdead'))
+ def jit_on(g):
+     """Iteration 80 (JIT.md): the lazy JIT - colon words compiled at run time
+     translated to native code on their first call (engine/jit.c, SPN's
+@@ -1087,6 +1092,7 @@ def _build(g, d):
+     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
+     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
++    if jitdead_on(g): flags.append('-DJITDEAD=1')               # Iteration 710: the header the code alone (engine/jit.c)
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
+     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
+@@ -1162,6 +1168,7 @@ def _build(g, d):
+     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
+     for k, conv in GENE_CONVERT: opts += conv(g)                  # Iteration 276-278: the rows' own options (gene())
+     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
++    if jitdead_on(g): opts.append('--jit-dead')                    # Iteration 710: the jitimg words' header, JITN's code
+     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
+     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
+     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
+@@ -1185,7 +1192,7 @@ def _build(g, d):
+     fuse += '-inl' if rtinline_on(g) else ''                                                           # rtinline: 694
+     fuse += '-const' if rtconst_on(g) else ''                                                          # rtconst: 691
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+-    dump = dump_file((KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
++    dump = dump_file((KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + (('-jitd' if jitdead_on(g) else '-jit') if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+     # Iteration 199: a short branch the tag-2 encoding finds out of range is
+     # written to long-branches.json and the conversion fails; converted again
+     # with it kept long - the set only grows, so it ends.
+@@ -2110,7 +2117,7 @@ def setup():
+     import shutil
+     W = os.path.join(O, 'work')
+     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-inline.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
++               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+diff --git a/lab/evolve/export-genes.py b/lab/evolve/export-genes.py
+index 205a867..860f057 100644
+--- a/lab/evolve/export-genes.py
++++ b/lab/evolve/export-genes.py
+@@ -121,7 +121,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+     hs = [(c_, t_, str(k_)) for c_, t_, k_, _ in prof if '%s>%s#%d' % (c_, t_, k_) in said]
+     assert len(hs) == len(said), ('hot-inline: sites not in the profile', len(hs), len(said))
+     L += lst('G-HOT-INLINE', ['%s %s %s' % h for h in hs], 'calls inlined: caller callee k (the k-th call), as the translator chose them')
+-    ny = [k for k in ('--opcall-file', '--guard-abort', '--factor') if k in args]
++    ny = [k for k in ('--opcall-file', '--guard-abort', '--factor', '--jit-dead') if k in args]   # 710: --jit-dead not yet
+     ny += [n for n in ('=I?BRANCH', '=I?BRANCH8', 'DUP?NBRANCH', 'DUP?NBRANCH8') if n in dict(o10)]
+     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
+diff --git a/tools/layout.py b/tools/layout.py
+index 80f2e55..a08244c 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -482,6 +482,10 @@ if V8 and '--hotcalls' in ARGV and not TAG2_ON and not _os.environ.get('SOD16_NO
+ # reproducible. Before anything is sized: sizes depend on it.
+ T2MAP = None
+ G['JIT_ON'] = '--jit' in ARGV           # Iteration 81: the JIT's opcode among the tag's operations (sod16 t2_names)
++# Iteration 710, the gene jitdead (mechanism 9's V1', results/drafts/triz-706.md): the JIT's header the code alone - the
++# native offset kept in a translated word's dead body, its trigger then JITN (engine/jit.c), a code of its own, pinned
++G['JITDEAD_ON'] = G['JIT_ON'] and '--jit-dead' in ARGV
++JITDEAD = G['JITDEAD_ON']
+ if V8 and _os.environ.get('SOD16_T2NAMES'):        # the names behind the reference ranking (lab/evolve/tag2-rank.py)
+     json.dump({str(k): v for k, v in G['t2_names']().items()}, open(_os.environ['SOD16_T2NAMES'], 'w'))
+ if TAG2_ON:
+@@ -498,6 +502,7 @@ if TAG2_ON:
+     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
+     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
+     _pin += [G['T2_JIT']] if '--jit' in ARGV else []   # Iterations 80-81: every run-time word's first byte - no slot
++    _pin += [G['T2_JITN']] if JITDEAD else []           # Iteration 710: a translated word's trigger (engine/jit.c)
+     # the run-time loop compiler (cv8-fuse-loopall.4; the partial cv8-fuse-loop.4
+     # retired at 641): its loop opcodes, pinned - loopall has no fallback
+     if any(x['n'] == 'LOOPTAB' for x in order):
+@@ -745,9 +750,13 @@ def _jitimg_pick():
+         if any(s0 < r < w['e'] for r in refs): continue
+         JH.add(s0)
+ 
++def jh_pad(w):
++    """Iteration 710 (jitdead): the bytes after a JIT-headed image word's tokens - its body made four bytes long, room
++    for the native offset (engine/jit.c); 0 for any other word."""
++    return max(0, 4 - len(tok[w['s']]) * UB) if JITDEAD and w['s'] in JH else 0
+ def new_body_bytes(w):
+     if kind[w['s']] == 'code':
+-        jh = 5 if w['s'] in JH else 0          # Iteration 341: the JIT header
++        jh = (1 + jh_pad(w) if JITDEAD else 5) if w['s'] in JH else 0          # Iteration 341: the JIT header; 710: jitdead's
+         if BYTEHDR:
+             return jh + len(tok[w['s']]) * UB + tail_bytes(w)
+         return align_up(jh + len(tok[w['s']]) * UB, CELL) + tail_bytes(w)
+@@ -1291,13 +1300,16 @@ def emit(path):
+             for (ws, j), nv in xt_new.items():
+                 if ws == s0: ops2[j] = ('XT', nv)
+             G['CUR_WORD'][0] = s0          # Iteration 199
+-            jh = 5 if s0 in JH else 0           # Iteration 341: the JIT header first, as a run-time word's
+-            if jh:
++            jh = (1 if JITDEAD else 5) if s0 in JH else 0    # Iteration 341: the JIT header first, as a run-time word's
++            if jh and JITDEAD:                             # 710: the code alone (jitdead)
++                img += bytes([T2MAP['one'][G['T2_JIT']]])
++            elif jh:
+                 _tb = bytes(to_tokens(ops2)) if V8 else b''.join(tk(t_) for t_ in to_tokens(ops2))
+                 img += bytes([T2MAP['one'][G['T2_JIT']]]) + (len(_tb) | 0x80000000).to_bytes(4, 'little')
+             if V8: img += bytes(to_tokens(ops2))
+             else:
+                 for t_ in to_tokens(ops2): img += tk(t_)
++            if jh and JITDEAD: img += bytes(jh_pad(w))     # NOOPs after the EXIT, never run
+             if _cm is not None:
+                 _c2t, _, _ts, _, _ = layout(ops2)
+                 for _j, (_k, _pl) in enumerate(ops2):
+@@ -1447,7 +1459,7 @@ def emit(path):
+             _fb = [0] * 32
+             for f_, p_ in _pairs: _fb[f_ >> 3] |= 1 << (f_ & 7)      # 695: which codes are folds - the pairs searched only for them
+             data = (bytes(sum(_bits[4 * i + k] << (2 * k) for k in range(4)) for i in range(64)) + bytes(_fb)
+-                    + bytes([_jit or 0, 5 if _jit is not None else 0, len(_pairs)]) + bytes(x for e in _pairs for x in e))
++                    + bytes([_jit or 0, (1 if JITDEAD else 5) if _jit is not None else 0, len(_pairs)]) + bytes(x for e in _pairs for x in e))
+             assert len(data) <= 152, 'INL-OPS overflows'
+             if _os.environ.get('SOD16_NO_INLINE'): data = bytes(len(data))   # =1: nothing copied - the overlay's cost alone, to measure
+         elif w['n'] == 'IMM-OPS':
+@@ -1744,8 +1756,9 @@ if EMIT:
+             _lint = ''                  # Iteration 504: jitre retired (frozen since 455) - its interpreted-call row gone
+             _jc = T2MAP['one'][G['T2_JIT']]
+             def _wends():              # Iteration 489: every image word's body, start and end - the decoder's end for a word reached
+-                rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_)) for w_ in order
+-                               if w_['s'] in new_off and kind.get(w_['s']) == 'code')
++                rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_) - jh_pad(w_)) for w_ in order
++                               if w_['s'] in new_off and kind.get(w_['s']) == 'code'   # 710: jitdead's pad not decoded;
++                               and ('--jitx' in ARGV or not JITDEAD or w_['s'] in JH))   # with jitdead, no jitx: the jitimg words'
+                 # Iteration 710 (the sweep): two bytes a number where the image's code is under 64 KB, as it is (8-11 KB) -
+                 # the table was 2.6 KB of every jitx engine's 5-6 KB of rodata
+                 return ('#define JIT_NWENDS %d\nstatic const unsigned %s jit_wends[][2] = {%s};\n'
+@@ -1761,7 +1774,7 @@ if EMIT:
+                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
+                 '#define JIT_CODE %d\n#define JIT_DOVAR %d\n#define JIT_DODOES %d\n#define JIT_FROMR %d\n%s%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
+                 % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]],
+-                   _one('DODOES'), _one('R>'), _lint + _wends(), (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
++                   _one('DODOES'), _one('R>'), _lint + _wends() + ('#define JITN_CODE %d\n' % T2MAP['one'][G['T2_JITN']] if JITDEAD else ''), (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
+                    for k_, n_ in (('SQ', '(S")'), ('DQ', '(.")'), ('TYPE', 'TYPE')))
+                    + '#define JIT_L_ABORTQ %d\n#define JIT_W_AQ %d\n' % (_le + 2, _woff('(ABORT")'))
+                    + '#define JIT_L_CALLX %d\n#define JIT_W_COLD %s\n' % (_le + 1, ', '.join(str(_woff(n_)) for n_ in
+diff --git a/tools/sod16.py b/tools/sod16.py
+index f02a9f8..687fd11 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -1136,8 +1136,10 @@ def t2_names():
+     # pair out (seed 19's fastest lost R> =, and 4-10% on kernel, parse,
+     # corpus). T2_JIT in engine/vm-lab.c.
+     if JIT_ON: nm[T2_JIT] = 'JIT'
++    if JIT_ON and JITDEAD_ON: nm[T2_JITN] = 'JITN'   # Iteration 710, the gene jitdead: a translated word's trigger
+     return nm
+ T2_JIT, JIT_ON = 0xFFFD, False      # JIT_ON: layout.py --jit sets it
++T2_JITN, JITDEAD_ON = 0xFFFC, False  # Iteration 710: layout.py --jit-dead sets it
+ 
+ def before_operand(ops, j):
+     """True if op j is a call whose inline CELL operand follows it."""
