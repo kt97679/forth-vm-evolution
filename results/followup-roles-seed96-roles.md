@@ -132,10 +132,18 @@ clockcheck.py does (counters.PerfHold, the time alone when refused) and next-run
   JIT-free designs off it up to 27,400 B at master - sizes-knee-713.json the 754 between 22,700 and 29,000): the
   4-objective front (in-run speeds, master's size, memory) 455 before the batch, 433 after; 6 on it only after, all off
   chain A's list - 219878ec89 (in chain B), three small-end trades (340c985752, b4f9afac29, 6e5c5bfe12), and two for
-  **small and fast on ARMv7**: e51c01ba10 (24,273 B, 7.6 % below ae99617f06's 26,261; in-run 0.4493 / 0.4362 against
-  0.4669 / 0.5522; 136 KB against 140) and 4acee9a48e (23,742 B; 0.5185 / 0.4643 - a trade). Their ARMv7 speed is unread:
-  **chain C**, after chain B - results/drafts/chainC-candidates-713.md, with pool-sizes.py's finds and anchors (the
-  holders, chain B's leaders). The knee: no design moved near it (the two above are 3,000+ bytes below, 30 % slower).
+  **small and fast on ARMv7**, long shots: e51c01ba10 (24,273 B, 7.6 % below ae99617f06's 26,261; 136 KB against 140;
+  in-run +19.6 % / +7.8 % slower than the holder in in-run terms) and 4acee9a48e (23,742 B; +38 % / +15 %). Their ARMv7
+  speed is unread. The knee: no design moved near it.
+- **The smallest JIT design's middle, which chain A's screen never covered** (its list held the 5 smallest JIT designs,
+  all slow, and the fast band - not the designs between): the results files' 381 JIT designs up to 39,100 B off chain A's
+  list, built at master (results/drafts/sizes-jit-713.json; the JIT front: 11 moved onto it by the batch, all off the
+  list). 1 % or more below c6f1c1331b's 36,805 B and in-run within 2 % of it at both widths: 1 - 13a2b38e1b (36,408 B,
+  -1.1 %; +0.3 % / +1.8 %); within 5 %: 4. A trap on the way, kept here: **the ten holders' records in chain A's list are
+  the sandbox's** (705's holders-705.py) - against them 136 pool designs looked smaller and as fast; in in-run terms (the
+  holder's chain A reading alone x the list's in-run / alone, 0.914 / 0.934 for JIT designs, 0.977 / 0.979 JIT-free) one.
+- **chain C**, after chain B - results/drafts/chainC-candidates-713.md (the 5 above and the 4 JIT designs), with
+  pool-sizes.py's finds and anchors (the holders, chain B's leaders) on the three machines.
 
 ## Predictions (Iteration 705) - 6 of 6
 

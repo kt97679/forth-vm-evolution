@@ -11887,3 +11887,7 @@ results/drafts/chainB-rehearsal-713.sh: PASS) - process-followup.sh now applies 
 A's list and the results files' 1,238 JIT-free designs up to 27,400 B (results/drafts/front-after-batch-713.py,
 results/drafts/sizes-knee-713.json): 6 moved onto it, all off chain A's list - 219878ec89 (in chain B) and 5 for chain C
 (results/drafts/chainC-candidates-713.md: e51c01ba10 and 4acee9a48e for small-and-fast-on-ARMv7).
+Then the JIT designs (results/drafts/sizes-jit-713.json: the results files' 381 up to 39,100 B off chain A's list): the
+smallest JIT design's middle was never screened - one 1 % smaller and within 2 % in-run (13a2b38e1b), four within 5 %,
+added to chain C's candidates; the holders' records in chain A's list are the sandbox's, so in-run comparisons go through
+in-run terms (the e51c01ba10 claim corrected: +19.6 % slower on x86-64, a long shot).
