@@ -11844,3 +11844,16 @@ data will say whether one run's counts can screen designs without rounds. And it
 percentile, about a fifth of their advantage carried, the JIT's about half - proposed: the roles' held-out pair in their
 write-up, and more held out by group for the reopened search. Not taken: the architecture. The after-seed-96 batch is
 eight patches.
+
+## Iteration 712 - 2026-11-20 - Claude
+
+The owner: a deep dive for more articles, posts and implementations that can help. results/drafts/literature-712.md,
+checked first against everything the project has read (258-260's sweep, the GP deep dive, the JIT survey, the scouts,
+513, 525, 539, 605, 707, 711) so nothing is re-proposed. One premise in the register is wrong: since Linux 5.8 an x86-64
+binary without PT_GNU_STACK is exec-none (the stack stays rw-, no READ_IMPLIES_EXEC - measured on 6.18; i386 and 32-bit
+ARM still exec-all), so 251's "a weaker process" does not hold for the 8-byte engines; the smallest engine relinked with
+one segment is 48 bytes smaller and runs the same (literature-712.txt) - the owner's call, reopened. Proposed, none
+built: countfit with the machine's penalties shared (the interval model's form), counters.py with Zen 4's top-down
+metrics, the roles' build-level spread before they are named (Kalibera and Jones), Gforth 1.0 for the comparisons
+(gforth-fast 0.7.3 now). Checked, nothing for us: Pulley's dispatch data, identical code folding, header overlays,
+Zen 4's branch targets.

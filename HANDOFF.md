@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 711.
+- master: Iteration 712.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -220,6 +220,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   chain B (a screen without rounds, if it holds). The held-out check on the screen's pool: the interpreted end's
   search-set advantage carries about a fifth to the held-out pair - proposed: the roles' held-out pair reported, more
   held out by group in the reopened search (the owner's call).
+  **712 (the owner: a deep dive for more that can help)**: results/drafts/literature-712.md. The register's stack-header
+  premise is wrong on x86-64 since Linux 5.8 (exec-none: the stack stays rw-) - -48 bytes on every 8-byte engine with
+  a one-segment link, the owner's call reopened; proposed, not built: countfit with shared penalties, counters.py
+  --topdown (Zen 4), the roles' build-level spread, Gforth 1.0 in the comparisons.
   **Next: chain A's processing** - first the batch (eight patches now), by hand (ORDER.md: batch-check, git apply, the move to
   results/applied-after-seed96); then the plan's "Its processing": process-followup.sh 96-roles with the ten roles (the
   holders' records from the measure-ids pack first), the shortlist (final-pick.py's shortlist, about 60), chain B at 10

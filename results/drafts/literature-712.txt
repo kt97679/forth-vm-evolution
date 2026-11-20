@@ -1,0 +1,27 @@
+Iteration 712 - the stack header's premise, measured on this VM (Linux 6.18.44, x86-64; GCC 13.3, clang, GNU ld 2.42)
+
+1. A static C program printing its own [stack] mapping and /proc/self/personality; then the same file with its
+   PT_GNU_STACK entry turned into PT_NULL (what the kernel sees when the header is absent).
+
+   x86-64, with PT_GNU_STACK      stack rw-p   personality 00000000   text r-xp, rodata r--p
+   x86-64, without                stack rw-p   personality 00000000   text r-xp, rodata r--p   (nothing changes)
+   i386 (gcc -m32), with          stack rw-p   personality 00000000
+   i386 (gcc -m32), without       stack rwxp   personality 00400000   (READ_IMPLIES_EXEC: every readable mapping executable)
+
+2. designs/smallest (d180351903), its Makefile's x86-64 command (clang -Oz ..., GNU ld): rebuilt byte for byte
+   (cmp: 0 differences), then linked with a one-segment script instead of ld's default (no PT_GNU_STACK):
+
+   one.ld:  ENTRY(_start)
+            PHDRS { all PT_LOAD FILEHDR PHDRS FLAGS(7); }
+            SECTIONS { . = 0x400000 + SIZEOF_HEADERS;
+                       .text : { *(.text .text.*) } :all   .rodata : { *(.rodata .rodata.*) } :all
+                       .data : { *(.data .data.*) } :all   .bss : { *(.bss .bss.* COMMON) } :all
+                       /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) } }
+
+                          program headers               tight file (elf_tight.py)   stack   personality
+   as built (ld default)  LOAD RWE + GNU_STACK          4,912 bytes                 rw-p    00000000
+   one.ld                 LOAD RWE (headers inside)     4,864 bytes  (-48)          rw-p    00000000
+   lld -z nognustack      LOAD RWE                      4,872 bytes  (-40; lld lays the code 8 bytes longer)
+
+   Both engines: "2 3 + . : SQ DUP * ; 12 SQ . S" ok" TYPE CR BYE" -> "5 144 ok", exit 0.
+   -48 bytes: 1.0 % of the engine, 0.35 % of its binary + image (record.json: total 13,883).

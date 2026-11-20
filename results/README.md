@@ -281,6 +281,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/new-roles-plan-705.md` - The new roles (Iteration 705, the owner: straight to the new designs, no confirmation run): the series' pool, the screen's two lists, chain A and its processing, chain B.
 - `drafts/frostbite-711.md` - What Architect Labs' Frostbite lends the search (Iteration 711): a time model fitted over the PMU's counters (the counters patch, chain B's data), the held-out check; the architecture not.
 - `drafts/heldout-711.py` - The search set against the held-out pair on the screen's pool (Iteration 711), by family; `.txt` its output.
+- `drafts/literature-712.md` - More from the literature, checked against what is here (Iteration 712): the stack header's premise wrong on x86-64 since Linux 5.8 (measured), the interval model for countfit, Zen 4's top-down metrics, Kalibera and Jones, Gforth 1.0; `.txt` its measurements.
 - `drafts/jitdead-710.md` - The gene jitdead built (Iteration 710, mechanism 9's V1'): the JIT's header the code alone; -700 bytes of the programs' code, the total -0.3 to -2.9 % on ten JIT designs; wends16 found; chainorder mispriced.
 - `drafts/jitdead-710.txt` - Its raw measurements: sizes at both widths, instruction counts, the fuzzer, wends16 alone.
 - `drafts/sweep-709.md` - The sweep by symbol size (Iteration 709): the system calls as unified stubs (clang -176 to -400 bytes; lost on GCC's LTO) and the image's refusals as one coded message (-226 to -458, every design); the kernel's largest words priced.
