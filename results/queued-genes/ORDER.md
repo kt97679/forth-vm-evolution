@@ -8,6 +8,9 @@ tools/batch-check.sh`. Then, from the repository's top:
 
     git apply results/queued-genes/jitdead-after-seed96.patch
 
+batch-check (710, on d0ff5d1 - 1 patches, after results/pending's 7): PASS - run-tests PASS (the generators: 113 paths),
+validate 7 of 7 IDENTICAL, the jail PASS.
+
 **jitdead-after-seed96.patch** (engine/jit.c, engine/vm-lab.c, forth/cv8t-jitd.4, lab/evolve/GENES.md,
 lab/evolve/engines-check.py, lab/evolve/evolve.py, lab/evolve/export-genes.py, tools/layout.py, tools/sod16.py) - the
 gene jitdead, mechanism 9's V1' (results/drafts/triz-706.md): the JIT's header [JIT] alone, not [JIT][four bytes]. The
