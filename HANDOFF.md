@@ -241,7 +241,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   counters.py, missmap.py, clockcheck.py only) - else none, the timing the same.
   **Next: chain B's processing** - `HANDOFF=results/handoff-relf-657.md sh lab/evolve/process-followup.sh 96-roles-b
   ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command), the list's records first from
-  the measure-ids packs (results/drafts/holders-laptop-713.py LIST PACK ..., oldest first: the lean 14's memory the
+  the measure-ids packs (lab/evolve/ids-records.py LIST PACK ..., oldest first: the lean 14's memory the
   median of five), then the roles; pool-sizes.md - a design it names gets a short chain - the owner's trades, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
   them; then results/queued-genes (jitdead) applied, chainorder if its prototype pays, and the reopened search's series;
   the article.

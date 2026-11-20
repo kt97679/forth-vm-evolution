@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""results/drafts/holders-laptop-713.py LIST PACK_MD [PACK_MD ...] - a list's records replaced by a chain's measure-ids packs'
+"""lab/evolve/ids-records.py LIST PACK_MD [PACK_MD ...] - a list's records replaced by a chain's measure-ids packs'
 (measure-ids.md: the laptop's memory and speeds; the binary, image and programs' code the same bytes), before
 process-followup.sh. Chain A (713): the ten holders in results/followup-seed96-roles.md, one pack. Chain B: every design of
 results/followup-seed96-roles-b.md, its first pack the whole list's and four more the lean end's

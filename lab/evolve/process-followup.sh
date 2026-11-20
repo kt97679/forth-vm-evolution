@@ -16,7 +16,8 @@
 # the list); ROLES: the handoff's portable roles, role=id,... (followup-roles.py); ARCHIVE: default the newest
 # forth-vm-evolution-chain-*_tar.gz in /mnt/user-data/uploads. OUT=/tmp/followup, DEST=results - the rehearsal's another
 # (results/drafts/followup-rehearsal-615.sh: 611's readings made into an archive, every output against 611's). About a
-# minute, as the build user. The judgment stays in the chat: the roles (the owner's trades - 611),
+# minute, as the build user. A chain's measure-ids packs (713) go into the list first (lab/evolve/ids-records.py: C
+# rewritten), and pool-sizes.py's findings into the summary. The judgment stays in the chat: the roles (the owner's trades - 611),
 # results/followup-roles-seedN.md, the package and designs/ when a role changes (pack-designs.py, export-designs.py).
 set -u
 N=${1:?N}; I=${2:?ITERATION}; ROLES=${3:?ROLES}
@@ -40,8 +41,17 @@ echo "the laptop: $(grep -c 'this step DONE' "$H/chain.log") steps done, $(ls "$
 grep -h -E 'skipp|deadline|not started|FAIL|STOP|crash|Traceback' "$H/chain.log" | sed 's/^next-run: /  /' | cut -c1-200 | head -n 8
 grep -h 'sessions measured' "$H/chain.log" | sed 's/^next-run: /  /'
 python3 lab/evolve/remote-load.py "$H/remote" 2>/dev/null | sed 's/^/  /' | cut -c1-260   # 633: another load on a host (630)
+for p in "$O"/*-pool-sizes-*/pack/pool-sizes.md; do [ -f "$p" ] || continue   # 713: a design pool-sizes.py names needs measuring
+  echo "pool-sizes.py: $(grep -c '^{"' "$p") below the list's smallest - $(grep -E '^(JIT|built)' "$p" | tr '\n' ' ' | cut -c1-200)"
+  grep '^- ' "$p" | head -n 8 | sed 's/^/  /'; done
 echo
 } > "$S"
+m=$(ls "$O"/*-measure-ids-*/pack/measure-ids.md 2>/dev/null | sort)            # 713: the laptop's sizes and memory into the list
+if [ -n "$m" ]; then                                                           # (oldest first: a design read more than once -
+  python3 lab/evolve/ids-records.py "$C" $m > "$O/ids-records.log" 2>&1 \
+      || die "ids-records.py ($O/ids-records.log)"                             # the median memory); C rewritten
+  echo "the list's records from $(echo "$m" | wc -l) measure-ids pack(s): $(tail -n 1 "$O/ids-records.log")" >> "$S"
+fi
 python3 lab/evolve/chain-sessions.py "$O" "$K" > "$O/sessions.log" 2>&1 || die "chain-sessions.py ($O/sessions.log)"   # 3.
 head -n 1 "$O/sessions.log" >> "$S"
 ss=$(ls -d "$K"/s[0-9]* 2>/dev/null | sed 's/.*\/s//' | sort -n)                                # 4.

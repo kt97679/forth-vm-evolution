@@ -11872,12 +11872,12 @@ results/drafts/shortlist-713.py; the ARMv7 pre-flight 21 of 21. Found: the count
 Also results/chain-followup96-roles/ (README.md; each sK's loadtest.md, dream.lan-prebuilt64.md,
 dream.lan-prebuilt64.out.json, dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json, rage.lan-prebuiltarm.md,
 rage.lan-prebuiltarm.out.json), results/followup-pick-seed96-roles.md
-(.json), results/drafts/holders-laptop-713.py, results/drafts/chainA-713.py.
+(.json), lab/evolve/ids-records.py, results/drafts/chainA-713.py.
 Then (the owner: "ensure we are not losing good designs"; chain B restarted): the shortlist checked against chain A's
 readings - no stall (80 of 35,295 readings past 10 % of their median, the worst 1.20), but 22 designs within 1.5 % of a
 speed role's best were off it (the fastest portable crowded: 18 within 1.5 %, the median's best 25a6fc9a9e among the
 missing) - added; the results files' 503 small JIT-free designs off chain A's list built at master
 (results/drafts/sizes-pool-713.json): 219878ec89 21,673 B, below the six (fbuf=2) - added. 99 designs, -arm 61, -lean 14;
-lab/evolve/pool-sizes.py (new) builds seed 96's database's small end in chain B; holders-laptop-713.py takes several
-packs (the median of the reads). The checks: results/drafts/outliers-chainA-713.py, results/drafts/neartie-chainA-713.py;
+lab/evolve/pool-sizes.py (new) builds seed 96's database's small end in chain B; lab/evolve/ids-records.py (was
+results/drafts/holders-laptop-713.py) takes several packs (the median of the reads). The checks: results/drafts/outliers-chainA-713.py, results/drafts/neartie-chainA-713.py;
 the ARMv7 pre-flight on the -arm 61: 39 of 39 clang builds alive and identical.

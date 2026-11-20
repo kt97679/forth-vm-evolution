@@ -5,7 +5,7 @@ Laid out by lab/evolve/chain-sessions.py (lab/evolve/process-followup.sh 96-role
 (the Tegra the 437 of its -arm list), 3 rounds - sK holds the laptop's loadtest.md (s1-s5) and each remote line's Kth
 report and out.json (dream.lan-prebuilt64 and -prebuilt32 s1-s8, rage.lan-prebuiltarm s1-s3). The holders' size and
 memory: the chain's measure-ids pack (forth-vm-evolution-measure-ids-517d6310-fury-20261119-200739.tar.gz), put into
-results/followup-seed96-roles.md by results/drafts/holders-laptop-713.py. Processed: results/followup-roles-seed96-roles.md.
+results/followup-seed96-roles.md by lab/evolve/ids-records.py. Processed: results/followup-roles-seed96-roles.md.
 
 The reports and the laptop's table, by session (the out.json files beside each):
 

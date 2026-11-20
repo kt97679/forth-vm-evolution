@@ -6,7 +6,7 @@ alone and loaded at both widths, 3 rounds a session; dream the 944 at both width
 Processed by `HANDOFF=results/handoff-relf-657.md sh lab/evolve/process-followup.sh 96-roles 713 ROLES` (the ten roles,
 the plan's step 1: ROLES = fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,
 smallest=d180351903,fast64=c7c35f9c97,fast32=ee34931cd7,allround=06b188f45b,smalljit=c6f1c1331b; followup-roles.py again
-with --predictions 705 after the fix below), the holders' records first replaced by the measure-ids pack's (results/drafts/holders-laptop-713.py:
+with --predictions 705 after the fix below), the holders' records first replaced by the measure-ids pack's (lab/evolve/ids-records.py:
 the binary, image and programs' code the same bytes; the laptop's memory 4-16 KB below the sandbox's). The readings by
 session: results/chain-followup96-roles; the pooled pick: results/followup-pick-seed96-roles.md (.json).
 
@@ -109,7 +109,7 @@ on the lean 14 four times more (five reads of the memory), pool-sizes.py (40 min
 about 72 minutes a session, repeated while another ends by the remote lines' deadline (about 14). REMOTES: the Tegra the
 61, 5 sessions in 1,110 minutes (about 3.1 hours each); dream the 99 at both widths, 34 sessions a width, 555 + 555
 minutes. Its processing: `process-followup.sh 96-roles-b` - the shortlist named so for it (its records first from the
-measure-ids packs: results/drafts/holders-laptop-713.py LIST PACK ..., oldest first - the lean end's memory the median of
+measure-ids packs: lab/evolve/ids-records.py LIST PACK ..., oldest first - the lean end's memory the median of
 its five reads), then the roles; pool-sizes.md read - a design it names gets a short chain.
 
 **Found: the counts need the perf hold on the laptop.** The batch's counters patch (711) has cputime read four counts
@@ -119,6 +119,23 @@ clockcheck.py only. So chain B carries counts only if the owner sets 2 by hand b
 kernel.perf_event_paranoid=2`, 4 after - Iteration 544's way); xcheck.py's remote lines record none in any case. The
 timing is CPU time either way (EVOLVE_METRIC unset). The fix for later chains: loadtest.py taking the hold as
 clockcheck.py does (counters.PerfHold, the time alone when refused) and next-run.sh asking for it - not built here.
+
+## While chain B runs - its processing rehearsed, and the front after the batch (Iteration 713)
+
+- **The processing, rehearsed** (results/drafts/chainB-rehearsal-713.sh: a stand-in archive from chain A's readings cut
+  to the 99, five measure-ids packs, a pool-sizes pack): PASS - process-followup.sh 96-roles-b takes all 99 into the pick
+  and the readings (dream all 99 at both widths), the lean 14's memory the median of five reads and the rest one,
+  219878ec89 in the smallest role, pool-sizes.py's find in the summary. Two gaps closed on the way: process-followup.sh now
+  puts a chain's measure-ids packs into the list itself (lab/evolve/ids-records.py, was results/drafts/holders-laptop-713.py
+  - chain A's by hand) and prints pool-sizes.py's findings in its summary.
+- **The front after the batch** (results/drafts/front-after-batch-713.py: chain A's list and the results files' 1,238
+  JIT-free designs off it up to 27,400 B at master - sizes-knee-713.json the 754 between 22,700 and 29,000): the
+  4-objective front (in-run speeds, master's size, memory) 455 before the batch, 433 after; 6 on it only after, all off
+  chain A's list - 219878ec89 (in chain B), three small-end trades (340c985752, b4f9afac29, 6e5c5bfe12), and two for
+  **small and fast on ARMv7**: e51c01ba10 (24,273 B, 7.6 % below ae99617f06's 26,261; in-run 0.4493 / 0.4362 against
+  0.4669 / 0.5522; 136 KB against 140) and 4acee9a48e (23,742 B; 0.5185 / 0.4643 - a trade). Their ARMv7 speed is unread:
+  **chain C**, after chain B - results/drafts/chainC-candidates-713.md, with pool-sizes.py's finds and anchors (the
+  holders, chain B's leaders). The knee: no design moved near it (the two above are 3,000+ bytes below, 30 % slower).
 
 ## Predictions (Iteration 705) - 6 of 6
 
