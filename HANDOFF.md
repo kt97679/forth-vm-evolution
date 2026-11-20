@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 708.
+- master: Iteration 709.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -202,7 +202,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **708 (the owner)**: the roles' memory rule 8 KB, not 4 (followup-roles.py; HANDOFF-REFERENCE.md's standing decisions
   give the data); **the search reopens after the roles** - chainorder and mechanism 9's V1' built as genes, then a new
   series.
-  **Next: chain A's processing** - first the batch (four patches now), by hand (ORDER.md: batch-check, git apply, the move to
+  **709 (the owner: "proceed" - the sweep with the evaluator in the loop)**: results/drafts/sweep-709.md. Two patches
+  into the batch: sysstubs (the runtime's system calls as unified stubs; clang's x86-64 engines -176 to -400 bytes, GCC's
+  unchanged - its LTO inlines the C wrappers) and imagemsg (the image's refusals as `not a RelF image (N)`, a check
+  digit; -226 to -458 bytes on every design, both widths; user-visible, the owner told). The smallest engine 4,768 to
+  4,230. Not reached: the profiler's top dispatches (speed) - after chain A, on the shortlist's fastest.
+  **Next: chain A's processing** - first the batch (six patches now), by hand (ORDER.md: batch-check, git apply, the move to
   results/applied-after-seed96); then the plan's "Its processing": process-followup.sh 96-roles with the ten roles (the
   holders' records from the measure-ids pack first), the shortlist (final-pick.py's shortlist, about 60), chain B at 10
   rounds on the three machines (the owner's hours); then the roles, designs/ and the package, self-hosting phase 6 on
