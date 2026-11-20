@@ -15,6 +15,9 @@
 # N: the seed at whose processing process-run.sh applies the batch.
 # PENDING=DIR (Iteration 588): the batch's directory, default results/pending - results/queued-consolidation for
 # consolidation's queue (results/drafts/retire-stages-584.md), which process-run.sh never applies.
+# TITLE="..." (Iteration 710): a new queue's ORDER.md title, for one that is no seed's batch (results/queued-genes: the
+# reopened search's genes, after the new roles) - its README line then says that title, and N is only the patches'
+# names; a queue with an ORDER.md of its own title keeps it.
 set -u
 N=${1:?N - the seed whose processing applies the batch}; I=${2:?ITERATION}; X=${3:?SCRATCH - the scratch tree}; Q=${PENDING:-results/pending}
 cd "$(dirname "$0")/.." || exit 1
@@ -23,8 +26,9 @@ say() { echo "batch-make: $*"; }
 [ -z "$(git status --porcelain -- "$Q" results/README.md)" ] || { say "$Q or results/README.md has changes - commit them first"; exit 1; }
 [ -z "$(git -C "$X" status --porcelain --untracked-files=no)" ] || { say "$X has changes not committed - commit them as the patches they are"; exit 1; }
 O=$Q/ORDER.md; mkdir -p "$Q"
-[ -f "$O" ] || printf '# The after-seed-%s batch - to apply first at seed %s'"'"'s processing (Iteration %s)\n\nprocess-run.sh checks and applies it.\n\n' "$N" "$N" "$I" > "$O"
-grep -q "^# The after-seed-$N batch" "$O" || { say "$O is another seed's batch: $(head -n 1 "$O")"; exit 1; }
+if [ ! -f "$O" ] && [ -n "${TITLE:-}" ]; then printf '# %s (Iteration %s)\n\n' "$TITLE" "$I" > "$O"
+elif [ ! -f "$O" ]; then printf '# The after-seed-%s batch - to apply first at seed %s'"'"'s processing (Iteration %s)\n\nprocess-run.sh checks and applies it.\n\n' "$N" "$N" "$I" > "$O"; fi
+grep -q "^# The after-seed-" "$O" && ! grep -q "^# The after-seed-$N batch" "$O" && { say "$O is another seed's batch: $(head -n 1 "$O")"; exit 1; }
 made=0
 for c in $(git -C "$X" rev-list --reverse origin/master..HEAD); do
     s=$(git -C "$X" log -1 --format=%s "$c")
@@ -52,6 +56,8 @@ done
 names=$(sed -n "s|^ *git apply $Q/\\(.*\\)-after-seed[0-9]*\\.patch.*|\\1|p" "$O" | tr '\n' ' ' | sed 's/ $//; s/ /, /g')
 L="- \`pending/ORDER.md\` - the batch to apply first at seed $N's processing: $names (ORDER.md says what each does)."
 [ "$Q" = results/pending ] || L="- \`${Q#results/}/ORDER.md\` - the batch queued for consolidation, applied after the final pick: $names (ORDER.md says what each does)."
+grep -q "^# The after-seed-" "$O" || [ "$Q" = results/queued-consolidation ] ||          # 710: a queue of its own title
+    L="- \`${Q#results/}/ORDER.md\` - $(head -n 1 "$O" | sed 's/^# //; s/ (Iteration [0-9]*)$//'): $names (ORDER.md says what each does)."
 python3 - results/README.md "$L" << 'PY'
 import sys
 p, line = sys.argv[1:]; s = open(p).read().split('\n')
@@ -62,7 +68,8 @@ else:
     s.insert(j[-1] + 1 if j else len(s), line)
 open(p, 'w').write('\n'.join(s))
 PY
-git add "$Q" results/README.md && git commit -q -m "Iteration $I: the after-seed-$N batch - $names (batch-make.sh from $X)" &&
+grep -q "^# The after-seed-$N batch" "$O" && what="the after-seed-$N batch" || what=$Q   # 710
+git add "$Q" results/README.md && git commit -q -m "Iteration $I: $what - $names (batch-make.sh from $X)" &&
     say "committed: $(git log --oneline -1 | cut -c1-90)"
 grep -q TODO "$O" && say "next: the TODO paragraphs in $O, a commit, then: setsid nohup env PENDING=$Q RECORD=1 sh tools/batch-check.sh > /dev/null 2>&1 &" ||
     say "next: setsid nohup env PENDING=$Q RECORD=1 sh tools/batch-check.sh > /dev/null 2>&1 &"

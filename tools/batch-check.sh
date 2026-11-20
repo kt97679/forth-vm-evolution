@@ -12,6 +12,8 @@
 #   setsid nohup sh tools/batch-check.sh > /dev/null 2>&1 &   ... then: cat /tmp/batch-check/summary
 # PENDING=DIR (Iteration 588): the batch's directory, default results/pending - results/queued-consolidation for
 # consolidation's queue, tested as it will be applied after the final pick.
+# BASE=DIR (Iteration 710): a batch DIR's patches applied first, in its ORDER.md's order - for a queue made on top of
+# one not applied yet (results/queued-genes on results/pending, until chain A's processing applies that).
 set -u
 REPO=$(cd "$(dirname "$0")/.." && pwd); OUT=${1:-/tmp/batch-check}; Q=${PENDING:-results/pending}
 rm -rf "$OUT"; mkdir -p "$OUT"; T=$OUT/tree
@@ -19,6 +21,14 @@ say() { echo "batch-check: $*" | tee "$OUT/summary"; }
 git clone -q "$REPO" "$T" || { say "the clone failed"; exit 1; }
 cd "$T" || exit 1
 [ -f "$Q/ORDER.md" ] || { say "no batch in $Q - nothing to test"; exit 0; }
+B=${BASE:-}; nb=0
+if [ -n "$B" ]; then
+    [ -f "$B/ORDER.md" ] || { say "BASE=$B: no batch there"; exit 1; }
+    for p in $(sed -n "s|^ *git apply \\($B/[^ ]*\\.patch\\).*|\\1|p" "$B/ORDER.md"); do
+        git apply "$p" 2> "$OUT/apply.log" || { say "$p (BASE) does not apply ($OUT/apply.log)"; exit 1; }
+        nb=$((nb + 1))
+    done
+fi
 n=0
 for p in $(sed -n "s|^ *git apply \\($Q/[^ ]*\\.patch\\).*|\\1|p" "$Q/ORDER.md"); do
     # Iteration 501: a patch that adds conflict markers applies cleanly - the after-seed-68 engine patch carried one from
@@ -37,7 +47,8 @@ python3 lab/evolve/test-jail.py > "$OUT/jail.log" 2>&1; rj=$?; j=$(tail -1 "$OUT
 # line must not hide a failure; on any FAIL the patched clone stays, and the script exits 1.
 if [ "$rt" -eq 0 ] && [ "$t" = "PASS - no regressions" ] && [ "$rv" -eq 0 ] && [ "$va" -gt 0 ] && [ "$vi" -eq "$va" ] \
    && [ "$rj" -eq 0 ] && [ "$j" = "PASS" ]; then verdict=PASS; else verdict=FAIL; fi
-say "$verdict - $n patch(es) applied to a fresh clone of $(git -C "$T" log --oneline -1 | cut -c1-50); run-tests: $t (exit $rt); validate: $vi of $va IDENTICAL (exit $rv); jail: $j (exit $rj); logs in $OUT"
+[ "$nb" -gt 0 ] && n2="$n patch(es) of $Q after $B's $nb" || n2="$n patch(es)"
+say "$verdict - $n2 applied to a fresh clone of $(git -C "$T" log --oneline -1 | cut -c1-50); run-tests: $t (exit $rt); validate: $vi of $va IDENTICAL (exit $rv); jail: $j (exit $rj); logs in $OUT"
 [ "$verdict" = PASS ] || { echo "batch-check: the patched clone kept, to look at: $T" >> "$OUT/summary"; exit 1; }
 # Iteration 567 (results/drafts/automation-audit-567.md): RECORD=1 writes the PASS into ORDER.md - its "batch-check (...)"
 # paragraph, made or replaced - and commits that file alone; until then a chat typed it and committed it, 11 times since
@@ -45,7 +56,7 @@ say "$verdict - $n patch(es) applied to a fresh clone of $(git -C "$T" log --one
 if [ "${RECORD:-0}" = 1 ]; then
     C=$(git -C "$T" rev-parse --short HEAD); I=$(sed -n 's/^- master: Iteration \([0-9]*\).*/\1/p' "$REPO/HANDOFF.md" | head -n 1)
     G=$(sed -n 's/.*generators *ok *\([0-9]* paths\).*/\1/p' "$OUT/tests.log" | head -n 1)
-    L="batch-check ($I, on $C - $n patches): PASS - run-tests PASS (the generators: ${G:-?}), validate $vi of $va IDENTICAL, the jail PASS."
+    L="batch-check ($I, on $C - $n patches${B:+, after $B's $nb}): PASS - run-tests PASS (the generators: ${G:-?}), validate $vi of $va IDENTICAL, the jail PASS."
     if ! git -C "$REPO" diff --quiet HEAD -- "$Q/ORDER.md"; then say "PASS - ORDER.md has edits not committed, so not recorded: $L"
     elif python3 - "$REPO/$Q/ORDER.md" "$L" << 'PY'
 import re, sys, textwrap
@@ -59,7 +70,8 @@ else:
 open(p, 'w').write(s)
 PY
     then N=$(sed -n 's/^# The after-seed-\([0-9]*\) batch.*/\1/p' "$REPO/$Q/ORDER.md")
-         git -C "$REPO" commit -q -m "Iteration $I: the after-seed-$N batch checked (batch-check PASS on $C, $n patches)" -- "$Q/ORDER.md" &&
+         [ -n "$N" ] && what="the after-seed-$N batch" || what="$Q"      # 710: a queue of another title
+         git -C "$REPO" commit -q -m "Iteration $I: $what checked (batch-check PASS on $C, $n patches${B:+ after $B's $nb})" -- "$Q/ORDER.md" &&
              echo "batch-check: recorded in ORDER.md and committed - $(git -C "$REPO" log --oneline -1 | cut -c1-80)" >> "$OUT/summary"
     fi
 fi

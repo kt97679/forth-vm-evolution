@@ -82,7 +82,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed86/ORDER.md` - the after-seed-86 batch, consolidation's retirements (queued 583-596, applied 599 at 1b53e88): fsys45, freeze, lean, scale, varcall, doesfar, bytehdr, rtloop (ORDER.md says what each does; msc's deleted at 598, KEEP).
 - `applied-after-seed91/ORDER.md` - the after-seed-91 batch, the freeze's retirements (queued 642-643 in queued-freeze/, applied 656 on e8c6e51): rtloop and rtimmlean - two run-time overlays no pooled-front design uses; no shipped byte changes.
 - `applied-after-seed95/` - the after-seed-95 batch, applied at seed 95's processing (Iteration 703): why32, remeasure32, ticker (ORDER.md says what each does).
-- `queued-genes/ORDER.md` - The reopened search's genes - to apply after the new roles ship, before the next series (the owner, Iteration 708): jitdead (ORDER.md says what each does).
+- `queued-genes/ORDER.md` - The reopened search's genes - after the new roles ship, before the next series: jitdead (ORDER.md says what each does).
 - `pending/ORDER.md` - the batch to apply first at seed 96's processing: arm2at, armcheck, ticker, rtsc, sysstubs, imagemsg, wends16 (ORDER.md says what each does).
 
 ### The processing checklists
@@ -279,6 +279,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/selfhost-plan-666.md` - The ten designs self-hosting, relf's way (Iteration 666, the owner): today's image path, each design's overlays and translator options, the target, the pieces, six phases, the checks.
 - `drafts/search-reopen-plan-677.md` - The search reopened (Iteration 677, the owner): application code - the selection's four apps - counted in the size, relf's run-time compiler mechanisms priced, then genes; the order, what stays, the risks.
 - `drafts/new-roles-plan-705.md` - The new roles (Iteration 705, the owner: straight to the new designs, no confirmation run): the series' pool, the screen's two lists, chain A and its processing, chain B.
+- `drafts/jitdead-710.md` - The gene jitdead built (Iteration 710, mechanism 9's V1'): the JIT's header the code alone; -700 bytes of the programs' code, the total -0.3 to -2.9 % on ten JIT designs; wends16 found; chainorder mispriced.
+- `drafts/jitdead-710.txt` - Its raw measurements: sizes at both widths, instruction counts, the fuzzer, wends16 alone.
 - `drafts/sweep-709.md` - The sweep by symbol size (Iteration 709): the system calls as unified stubs (clang -176 to -400 bytes; lost on GCC's LTO) and the image's refusals as one coded message (-226 to -458, every design); the kernel's largest words priced.
 - `drafts/sweep-709.txt` - The sweep's raw measurements (Iteration 709): each design's bytes before and after both patches at both widths, the ARM check, the kernel's words by bytes.
 - `drafts/ideation-707.md` - Idea-generation methods beyond TRIZ, applied (Iteration 707): a pre-mortem, differential fuzzing, a superoptimizer, gene interactions, a morphological box, the evaluator in the loop, a bound - what each found.
