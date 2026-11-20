@@ -11867,6 +11867,9 @@ applied first (7081f96; batch-check PASS) - every engine 482-2,224 bytes smaller
 (the list had no "jit" mark - now the JIT expressed). On the screen seven of the ten holders are beaten by the rule (the
 smallest to one of six at 21,679 B, 25-29 % faster; least memory tied at 108 KB; small-and-fast-on-ARMv7 kept; the
 smallest JIT design's contenders all trades). Chain B set, the owner's 19 hours: results/followup-seed96-roles-b.md (76),
--arm (42), -lean (13) by results/drafts/shortlist-713.py; the ARMv7 pre-flight 21 of 21. Found: the counts need
-paranoid 2 by hand on the laptop. Also results/chain-followup96-roles/, results/followup-pick-seed96-roles.md (.json),
-results/drafts/holders-laptop-713.py, results/drafts/chainA-713.py.
+results/followup-seed96-roles-b-arm.md (42), results/followup-seed96-roles-b-lean.md (13) by
+results/drafts/shortlist-713.py; the ARMv7 pre-flight 21 of 21. Found: the counts need paranoid 2 by hand on the laptop.
+Also results/chain-followup96-roles/ (README.md; each sK's loadtest.md, dream.lan-prebuilt64.md,
+dream.lan-prebuilt64.out.json, dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json, rage.lan-prebuiltarm.md,
+rage.lan-prebuiltarm.out.json), results/followup-pick-seed96-roles.md
+(.json), results/drafts/holders-laptop-713.py, results/drafts/chainA-713.py.
