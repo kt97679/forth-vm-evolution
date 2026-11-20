@@ -10,7 +10,7 @@ BASE since 713). Then, from the repository's top:
     git apply results/queued-genes/fixenv-after-seed96.patch
     git apply results/queued-genes/jitfew-after-seed96.patch
 
-batch-check (713, on ec09a65 - 2 patches): PASS - run-tests PASS (the generators: 113 paths), validate 7 of 7 IDENTICAL,
+batch-check (713, on 6f91bb0 - 3 patches): PASS - run-tests PASS (the generators: 118 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
 
 **jitdead-after-seed96.patch** (engine/jit.c, engine/vm-lab.c, forth/cv8t-jitd.4, lab/evolve/GENES.md,
