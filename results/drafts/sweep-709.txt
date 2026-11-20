@@ -1,0 +1,280 @@
+# Iteration 709's sweep - the raw lines of results/drafts/rtsc-707.py (each design's engine bytes, alive, fib and apps vs s6)
+# sysstubs: sw-* (20 designs) and sg-* (14 GCC): before = the batch of 707, after = v1 (the stubs for every compiler), v2 = clang only (the patch)
+## sw-before-8
+9f1a569f91 bin 4768 alive fib+apps=fib,apps
+6eae8a3f46 bin 4768 alive fib+apps=fib,apps
+21768033b7 bin 4768 alive fib+apps=fib,apps
+90273721a1 bin 4768 alive fib+apps=fib,apps
+cdea6ab042 bin 4768 alive fib+apps=fib,apps
+5cd995716d bin 4768 alive fib+apps=fib,apps
+18da216ce3 bin 4800 alive fib+apps=fib,apps
+d4ab4861a6 bin 4800 alive fib+apps=fib,apps
+923951e8ab bin 34200 alive fib+apps=fib,apps
+6d7559ee00 bin 27876 alive fib+apps=fib,apps
+f0becb735c bin 34404 alive fib+apps=fib,apps
+e7fe76f718 bin 35204 alive fib+apps=fib,apps
+fd86e4c50f bin 24884 alive fib+apps=fib,apps
+e18939c078 bin 34452 alive fib+apps=fib,apps
+a1ebde07ab bin 33000 alive fib+apps=fib,apps
+6f2e721d94 bin 15096 alive fib+apps=fib,apps
+8fe37f346e bin 15096 alive fib+apps=fib,apps
+b4c80cafb1 bin 22856 alive fib+apps=fib,apps
+b575c8d1ff bin 12196 alive fib+apps=fib,apps
+70055390e1 bin 6456 alive fib+apps=fib,apps
+## sw-after-8
+9f1a569f91 bin 4576 alive fib+apps=fib,apps
+6eae8a3f46 bin 4576 alive fib+apps=fib,apps
+21768033b7 bin 4576 alive fib+apps=fib,apps
+90273721a1 bin 4576 alive fib+apps=fib,apps
+cdea6ab042 bin 4576 alive fib+apps=fib,apps
+5cd995716d bin 4576 alive fib+apps=fib,apps
+18da216ce3 bin 4624 alive fib+apps=fib,apps
+d4ab4861a6 bin 4624 alive fib+apps=fib,apps
+923951e8ab bin 33912 alive fib+apps=fib,apps
+6d7559ee00 bin 27684 alive fib+apps=fib,apps
+f0becb735c bin 34132 alive fib+apps=fib,apps
+e7fe76f718 bin 34932 alive fib+apps=fib,apps
+fd86e4c50f bin 24708 alive fib+apps=fib,apps
+e18939c078 bin 34052 alive fib+apps=fib,apps
+a1ebde07ab bin 32712 alive fib+apps=fib,apps
+6f2e721d94 bin 14792 alive fib+apps=fib,apps
+8fe37f346e bin 14792 alive fib+apps=fib,apps
+b4c80cafb1 bin 22920 alive fib+apps=fib,apps
+b575c8d1ff bin 11972 alive fib+apps=fib,apps
+70055390e1 bin 6264 alive fib+apps=fib,apps
+## sw-v2-8
+9f1a569f91 bin 4576 alive fib+apps=fib,apps
+6eae8a3f46 bin 4576 alive fib+apps=fib,apps
+21768033b7 bin 4576 alive fib+apps=fib,apps
+90273721a1 bin 4576 alive fib+apps=fib,apps
+cdea6ab042 bin 4576 alive fib+apps=fib,apps
+5cd995716d bin 4576 alive fib+apps=fib,apps
+18da216ce3 bin 4624 alive fib+apps=fib,apps
+d4ab4861a6 bin 4624 alive fib+apps=fib,apps
+923951e8ab bin 33912 alive fib+apps=fib,apps
+6d7559ee00 bin 27684 alive fib+apps=fib,apps
+f0becb735c bin 34132 alive fib+apps=fib,apps
+e7fe76f718 bin 34932 alive fib+apps=fib,apps
+fd86e4c50f bin 24708 alive fib+apps=fib,apps
+e18939c078 bin 34052 alive fib+apps=fib,apps
+a1ebde07ab bin 32712 alive fib+apps=fib,apps
+6f2e721d94 bin 14792 alive fib+apps=fib,apps
+8fe37f346e bin 14792 alive fib+apps=fib,apps
+b4c80cafb1 bin 22856 alive fib+apps=fib,apps
+b575c8d1ff bin 11972 alive fib+apps=fib,apps
+70055390e1 bin 6264 alive fib+apps=fib,apps
+## sg-before-8
+24c51f146d bin 5728 alive fib+apps=fib,apps
+5d1597283e bin 5760 alive fib+apps=fib,apps
+a4a7fa53ef bin 5984 alive fib+apps=fib,apps
+548902b142 bin 7048 alive fib+apps=fib,apps
+40637400b5 bin 7112 alive fib+apps=fib,apps
+c6d37f5da7 bin 7240 alive fib+apps=fib,apps
+ce67c28925 bin 7656 alive fib+apps=fib,apps
+d3496fcc6c bin 7968 alive fib+apps=fib,apps
+94a4605110 bin 24968 alive fib+apps=fib,apps
+89da7aaa44 bin 27784 alive fib+apps=fib,apps
+064a0e0452 bin 23112 alive fib+apps=fib,apps
+bd8a9677de bin 22664 alive fib+apps=fib,apps
+1875a6900d bin 25864 alive fib+apps=fib,apps
+71005d8a0d bin 8064 alive fib+apps=fib,apps
+## sg-after-8
+24c51f146d bin 5664 alive fib+apps=fib,apps
+5d1597283e bin 5696 alive fib+apps=fib,apps
+a4a7fa53ef bin 5920 alive fib+apps=fib,apps
+548902b142 bin 6984 alive fib+apps=fib,apps
+40637400b5 bin 7016 alive fib+apps=fib,apps
+c6d37f5da7 bin 7112 alive fib+apps=fib,apps
+ce67c28925 bin 7624 alive fib+apps=fib,apps
+d3496fcc6c bin 7968 alive fib+apps=fib,apps
+94a4605110 bin 25160 alive fib+apps=fib,apps
+89da7aaa44 bin 27912 alive fib+apps=fib,apps
+064a0e0452 bin 23112 alive fib+apps=fib,apps
+bd8a9677de bin 22728 alive fib+apps=fib,apps
+1875a6900d bin 24008 alive fib+apps=fib,apps
+71005d8a0d bin 7936 alive fib+apps=fib,apps
+## sg-v2-8
+24c51f146d bin 5728 alive fib+apps=fib,apps
+5d1597283e bin 5760 alive fib+apps=fib,apps
+a4a7fa53ef bin 5984 alive fib+apps=fib,apps
+548902b142 bin 7048 alive fib+apps=fib,apps
+40637400b5 bin 7112 alive fib+apps=fib,apps
+c6d37f5da7 bin 7240 alive fib+apps=fib,apps
+ce67c28925 bin 7656 alive fib+apps=fib,apps
+d3496fcc6c bin 7968 alive fib+apps=fib,apps
+94a4605110 bin 24968 alive fib+apps=fib,apps
+89da7aaa44 bin 27784 alive fib+apps=fib,apps
+064a0e0452 bin 23112 alive fib+apps=fib,apps
+bd8a9677de bin 22664 alive fib+apps=fib,apps
+1875a6900d bin 25864 alive fib+apps=fib,apps
+71005d8a0d bin 8064 alive fib+apps=fib,apps
+# imagemsg: before = the batch with sysstubs, after = with imagemsg; -4 = 4-byte cells (i386)
+## sm-before-8
+9f1a569f91 bin 4576 alive fib+apps=fib,apps
+6eae8a3f46 bin 4576 alive fib+apps=fib,apps
+21768033b7 bin 4576 alive fib+apps=fib,apps
+90273721a1 bin 4576 alive fib+apps=fib,apps
+cdea6ab042 bin 4576 alive fib+apps=fib,apps
+5cd995716d bin 4576 alive fib+apps=fib,apps
+18da216ce3 bin 4624 alive fib+apps=fib,apps
+d4ab4861a6 bin 4624 alive fib+apps=fib,apps
+923951e8ab bin 33912 alive fib+apps=fib,apps
+6d7559ee00 bin 27684 alive fib+apps=fib,apps
+f0becb735c bin 34132 alive fib+apps=fib,apps
+e7fe76f718 bin 34932 alive fib+apps=fib,apps
+fd86e4c50f bin 24708 alive fib+apps=fib,apps
+e18939c078 bin 34052 alive fib+apps=fib,apps
+a1ebde07ab bin 32712 alive fib+apps=fib,apps
+6f2e721d94 bin 14792 alive fib+apps=fib,apps
+8fe37f346e bin 14792 alive fib+apps=fib,apps
+b4c80cafb1 bin 22856 alive fib+apps=fib,apps
+b575c8d1ff bin 11972 alive fib+apps=fib,apps
+70055390e1 bin 6264 alive fib+apps=fib,apps
+## sm-after-8
+9f1a569f91 bin 4230 alive fib+apps=fib,apps
+6eae8a3f46 bin 4230 alive fib+apps=fib,apps
+21768033b7 bin 4230 alive fib+apps=fib,apps
+90273721a1 bin 4230 alive fib+apps=fib,apps
+cdea6ab042 bin 4230 alive fib+apps=fib,apps
+5cd995716d bin 4230 alive fib+apps=fib,apps
+18da216ce3 bin 4262 alive fib+apps=fib,apps
+d4ab4861a6 bin 4262 alive fib+apps=fib,apps
+923951e8ab bin 33608 alive fib+apps=fib,apps
+6d7559ee00 bin 27316 alive fib+apps=fib,apps
+f0becb735c bin 33812 alive fib+apps=fib,apps
+e7fe76f718 bin 34612 alive fib+apps=fib,apps
+fd86e4c50f bin 24340 alive fib+apps=fib,apps
+e18939c078 bin 33652 alive fib+apps=fib,apps
+a1ebde07ab bin 32312 alive fib+apps=fib,apps
+6f2e721d94 bin 14560 alive fib+apps=fib,apps
+8fe37f346e bin 14560 alive fib+apps=fib,apps
+b4c80cafb1 bin 22630 alive fib+apps=fib,apps
+b575c8d1ff bin 11712 alive fib+apps=fib,apps
+70055390e1 bin 5904 alive fib+apps=fib,apps
+## smg-before-8
+24c51f146d bin 5728 alive fib+apps=fib,apps
+5d1597283e bin 5760 alive fib+apps=fib,apps
+a4a7fa53ef bin 5984 alive fib+apps=fib,apps
+548902b142 bin 7048 alive fib+apps=fib,apps
+40637400b5 bin 7112 alive fib+apps=fib,apps
+c6d37f5da7 bin 7240 alive fib+apps=fib,apps
+ce67c28925 bin 7656 alive fib+apps=fib,apps
+d3496fcc6c bin 7968 alive fib+apps=fib,apps
+94a4605110 bin 24968 alive fib+apps=fib,apps
+89da7aaa44 bin 27784 alive fib+apps=fib,apps
+064a0e0452 bin 23112 alive fib+apps=fib,apps
+bd8a9677de bin 22664 alive fib+apps=fib,apps
+1875a6900d bin 25864 alive fib+apps=fib,apps
+71005d8a0d bin 8064 alive fib+apps=fib,apps
+## smg-after-8
+24c51f146d bin 5270 alive fib+apps=fib,apps
+5d1597283e bin 5302 alive fib+apps=fib,apps
+a4a7fa53ef bin 5526 alive fib+apps=fib,apps
+548902b142 bin 6598 alive fib+apps=fib,apps
+40637400b5 bin 6662 alive fib+apps=fib,apps
+c6d37f5da7 bin 6790 alive fib+apps=fib,apps
+ce67c28925 bin 7238 alive fib+apps=fib,apps
+d3496fcc6c bin 7574 alive fib+apps=fib,apps
+94a4605110 bin 24742 alive fib+apps=fib,apps
+89da7aaa44 bin 27558 alive fib+apps=fib,apps
+064a0e0452 bin 22886 alive fib+apps=fib,apps
+bd8a9677de bin 22438 alive fib+apps=fib,apps
+1875a6900d bin 25638 alive fib+apps=fib,apps
+71005d8a0d bin 7606 alive fib+apps=fib,apps
+## sm-before-4
+9f1a569f91 bin 5524 alive fib+apps=fib,apps
+6eae8a3f46 bin 5524 alive fib+apps=fib,apps
+21768033b7 bin 5524 alive fib+apps=fib,apps
+90273721a1 bin 5524 alive fib+apps=fib,apps
+cdea6ab042 bin 5524 alive fib+apps=fib,apps
+5cd995716d bin 5524 alive fib+apps=fib,apps
+18da216ce3 bin 5604 alive fib+apps=fib,apps
+d4ab4861a6 bin 5604 alive fib+apps=fib,apps
+923951e8ab bin 29808 alive fib+apps=fib,apps
+6d7559ee00 bin 24532 alive fib+apps=fib,apps
+f0becb735c bin 30292 alive fib+apps=fib,apps
+e7fe76f718 bin 31100 alive fib+apps=fib,apps
+fd86e4c50f bin 24092 alive fib+apps=fib,apps
+e18939c078 bin 32684 alive fib+apps=fib,apps
+a1ebde07ab bin 32112 alive fib+apps=fib,apps
+6f2e721d94 bin 15908 alive fib+apps=fib,apps
+8fe37f346e bin 15908 alive fib+apps=fib,apps
+b4c80cafb1 bin 33520 alive fib+apps=fib,apps
+b575c8d1ff bin 12836 alive fib+apps=fib,apps
+70055390e1 bin 7228 alive fib+apps=fib,apps
+## sm-after-4
+9f1a569f91 bin 5190 alive fib+apps=fib,apps
+6eae8a3f46 bin 5190 alive fib+apps=fib,apps
+21768033b7 bin 5190 alive fib+apps=fib,apps
+90273721a1 bin 5190 alive fib+apps=fib,apps
+cdea6ab042 bin 5190 alive fib+apps=fib,apps
+5cd995716d bin 5190 alive fib+apps=fib,apps
+18da216ce3 bin 5270 alive fib+apps=fib,apps
+d4ab4861a6 bin 5270 alive fib+apps=fib,apps
+923951e8ab bin 29488 alive fib+apps=fib,apps
+6d7559ee00 bin 24196 alive fib+apps=fib,apps
+f0becb735c bin 30048 alive fib+apps=fib,apps
+e7fe76f718 bin 30856 alive fib+apps=fib,apps
+fd86e4c50f bin 23756 alive fib+apps=fib,apps
+e18939c078 bin 32364 alive fib+apps=fib,apps
+a1ebde07ab bin 31792 alive fib+apps=fib,apps
+6f2e721d94 bin 15664 alive fib+apps=fib,apps
+8fe37f346e bin 15664 alive fib+apps=fib,apps
+b4c80cafb1 bin 33286 alive fib+apps=fib,apps
+b575c8d1ff bin 12580 alive fib+apps=fib,apps
+70055390e1 bin 6896 alive fib+apps=fib,apps
+## arm-cross-check.py (imagemsg, clang ARMv7 under qemu-arm)
+arm-cross-check: 10 designs of 437 (cv8, clang, no JIT, under qemu-arm); the reference build/s6-cv8b-32 (the C library)
+  1 a4e502f224 cv8   speed 0.267: ARM 18316 bytes, alive, fib+apps IDENTICAL
+  2 847846159f cv8   speed 0.273: ARM 18316 bytes, alive, fib+apps IDENTICAL
+  3 d3c79f0616 cv8   speed 0.275: ARM 18456 bytes, alive, fib+apps IDENTICAL
+  4 b3639ca5fc cv8   speed 0.277: ARM 18476 bytes, alive, fib+apps IDENTICAL
+  5 d87cb34667 cv8   speed 0.279: ARM 18348 bytes, alive, fib+apps IDENTICAL
+  6 782f3ad7ff cv8   speed 0.298: ARM 17572 bytes, alive, fib+apps IDENTICAL
+  7 b496051bbd cv8   speed 0.313: ARM 15388 bytes, alive, fib+apps IDENTICAL
+  8 158d0706f6 cv8   speed 0.351: ARM 18256 bytes, alive, fib+apps IDENTICAL
+  9 72b34ce2a8 cv8   speed 0.826: ARM 6472 bytes, alive, fib+apps IDENTICAL
+ 10 d180351903 cv8   speed 2.144: ARM 6012 bytes, alive, fib+apps IDENTICAL
+arm-cross-check: 10 built for ARM, 10 alive, 10 identical on fib and apps, of 10; ARM engines 6012-18476 bytes
+exit 0
+## the kernel's words by bytes (the smallest design's 8-byte image; bytes, offset, names)
+ 1242  8720 READ-LINE
+  273  8004 RESIZE
+  259  3271 NUMBER?
+  184  8311 BYE
+  158  2635 FORTH-WORDLIST
+  154  3925 HEADER
+  152  3599 THROW
+  147  8573 READ
+  143  7512 READ-FILE
+  143  4868 STRING,
+  129  7383 LOOP,
+  118  5334 INTERPRET
+  111  7032 NEXT-NFA8
+  109  5183 DOES>
+  104  6471 CALL,
+   99  6933 LINK,
+   92  6241 LIT,
+   92  5774 COLD
+   90  6843 LINK-LEN
+   84  2238 REFILL
+   82  7851 DELETE-FILE
+   74  6742 !CALL
+   74  1885 ACC-BYTE
+   70  4224 COMPILE,
+   70  2565 NAMEBUF
+   69  7782 FILE-SIZE
+   68  3063 FIND
+   63  5569 INCLUDE-FILE
+   63  2820 CONTEXT
+   62  3190 >NUMBER
+   62  2380 SKIP
+   60  5030 POSTPONE
+   59  8514 CLOSE-FILE
+   59  3131 DIGIT?
+   58  5452 EVALUATE
+   58  2322 SCAN
+   57  5677 QUIT
+   56  1959 ACCEPT
+   53  3010 SEARCH-WORDLIST
+   52  7655 WRITE-LINE

@@ -5,7 +5,8 @@ systematic sweep with the evaluator in the loop (results/drafts/ideation-707.md,
 The engine's largest pieces were read by size (nm -S, the smallest design's engine.full), a change was proposed against
 each, and each was built and measured exactly. Taken: two patches, both in the after-seed-96 batch (results/pending),
 which apply on top of 707's four. Measured by results/drafts/rtsc-707.py (the same check: each design's bytes,
-evolve.alive, fib and apps against s6), master with the batch as the base and the patched tree after.
+evolve.alive, fib and apps against s6), master with the batch as the base and the patched tree after; the raw lines,
+the ARM check's and the kernel words' table in results/drafts/sweep-709.txt.
 
 ## Taken
 
