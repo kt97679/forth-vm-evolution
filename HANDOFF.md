@@ -230,15 +230,19 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   followup-roles.py fixed (the list had no "jit" mark: the portable roles had taken JIT designs - now the JIT expressed).
   On the screen seven of ten holders beaten by the rule - the smallest to one of six at 21,679 B (25-29 % faster), least
   memory tied at 108 KB (five reads in chain B), small-and-fast-on-ARMv7 kept, the smallest JIT design's contenders all
-  trades (the owner's). **Chain B is NEXT-RUN and REMOTES** (the owner: 19 hours): results/followup-seed96-roles-b.md (76;
-  -arm 42, -lean 13 - results/drafts/shortlist-713.py; the records carry master's sizes) - measure-ids.py first, the lean
-  13 four times more, then loadtest.py at 10 rounds (about 19 sessions); the Tegra 8 sessions, dream 40 a width. The
+  trades (the owner's). **Chain B is NEXT-RUN and REMOTES** (the owner: 19 hours; restarted for "not losing good
+  designs"): results/followup-seed96-roles-b.md (99; -arm 61, -lean 14 - results/drafts/shortlist-713.py; the records
+  carry master's sizes) - the 76 first made, then the 22 within 1.5 % of a speed role's best in chain A (by the mean or
+  the median; the median's best portable 25a6fc9a9e had been left out) and 219878ec89 (21,673 B after the batch, 6 below
+  the six - off chain A's list; fbuf=2). measure-ids.py first, the lean 14 four times more, lab/evolve/pool-sizes.py
+  (new: every database's small end built at master for 40 minutes - seed 96's database is the laptop's), then loadtest.py
+  at 10 rounds (about 14 sessions); the Tegra 5 sessions, dream 34 a width. The
   PMU's counts need `sudo sysctl kernel.perf_event_paranoid=2` by hand before the start (the hold is taken for
   counters.py, missmap.py, clockcheck.py only) - else none, the timing the same.
   **Next: chain B's processing** - `HANDOFF=results/handoff-relf-657.md sh lab/evolve/process-followup.sh 96-roles-b
   ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command), the list's records first from
-  the measure-ids pack (results/drafts/holders-laptop-713.py, every design; the lean 13's memory the median of five),
-  then the roles - the owner's trades, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
+  the measure-ids packs (results/drafts/holders-laptop-713.py LIST PACK ..., oldest first: the lean 14's memory the
+  median of five), then the roles; pool-sizes.md - a design it names gets a short chain - the owner's trades, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
   them; then results/queued-genes (jitdead) applied, chainorder if its prototype pays, and the reopened search's series;
   the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

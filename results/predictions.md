@@ -1557,9 +1557,10 @@ ended by hand), dream 8 a width, the Tegra 3, none failed. (2) right - 1.113 (1.
 
 ## The new roles' shortlist - chain B (19 hours; the laptop, dream and the Tegra) - predicted (Iteration 713)
 
-The 76 of results/followup-seed96-roles-b.md at 10 rounds (the Tegra the 42 of -arm), master with the after-seed-96 batch;
-measure-ids.py first, the lean 13 read five times. (1) Every line returns whole sessions and none fails: the laptop 15 or
-more, dream 40 a width, the Tegra 7 or more - 70/30 (chain A's rates; 8 fit the Tegra's 1,110 minutes with about 5 % to spare).
+The 99 of results/followup-seed96-roles-b.md at 10 rounds (the Tegra the 61 of -arm; restarted from 76 for the near-ties), master with the after-seed-96 batch;
+measure-ids.py first, the lean 14 read five times. (1) Every line returns whole sessions and none fails: the laptop 13 or
+more, dream 34 a width, the Tegra 5 - 70/30 (chain A's rates; 5 fit the Tegra's 1,110 minutes with about 15 % to spare).
+(1b) pool-sizes.py names no design below 21,673 B (JIT-free) or 32,044 B (JIT) - 60/40 (the results files' 503: one).
 (2) The smallest role: one of the six at 21,679 B beats d180351903 by the rule (1 % smaller, no class 2 % slower) - 90/10
 (chain A: 24.6-29.4 % faster in every class). (3) A JIT-free design beats 782f3ad7ff's mean by 2 % at 2 SE - 85/15
 (chain A: d7fb9683c2 -5.07 % +/- 0.33 %). (4) A design beats 3eb59b271d on the Tegra by 2 % at 2 SE - 65/35 (chain A:
@@ -1568,4 +1569,4 @@ memory of five reads 8 KB below fb0d57c8a2's - 90/10 (108 KB the floor since see
 ee34931cd7, 06b188f45b) beaten by 2 % at 2 SE on its class - 80/20 (chain A: -10.9 %, -7.9 %, -5.9 %). (7) If the counts are
 recorded (paranoid 2 set by hand - results/followup-roles-seed96-roles.md), countfit.py on them, the laptop alone at 8-byte cells: the time fitted to the four counts within 5 % median error held out by
 design - 55/45 (its self-test 1.5 % on a known model; Frostbite's Arcmodel 5 % to RTL). (8) No listed design dies on any
-line - 85/15 (the ARMv7 pre-flight: 21 of 21 clang builds alive and identical under qemu).
+line - 85/15 (the ARMv7 pre-flight: 39 of 39 clang builds alive and identical under qemu).

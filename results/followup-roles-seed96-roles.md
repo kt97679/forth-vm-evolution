@@ -1,4 +1,4 @@
-# The new roles' screen - chain A processed: seven of the ten holders beaten by the rule on the screen; chain B, 76 designs (Iteration 713)
+# The new roles' screen - chain A processed: seven of the ten holders beaten by the rule on the screen; chain B, 99 designs (Iteration 713)
 
 Chain A (results/drafts/new-roles-plan-705.md; the archive forth-vm-evolution-chain-517d6310-fury-20261120-150552.tar.gz,
 at 517d6310): the ten holders measured on the laptop first (measure-ids.py), then the 944 of results/followup-seed96-roles.md
@@ -71,26 +71,46 @@ rule (the least memory tied at the floor, small and fast on ARMv7 kept, the smal
 The smallest JIT design is a size role with no trade-free contender: the strict reading takes 1f7a2646cd (-4,761 B, 1.7x
 the time), a 1 % rule none.
 
-## Chain B - the shortlist (results/followup-seed96-roles-b.md: 76; -arm: 42; -lean: 13)
+## Chain B - the shortlist (results/followup-seed96-roles-b.md: 99; -arm: 61; -lean: 14)
 
 results/drafts/shortlist-713.py: final-pick.py's shortlist (--n 40: the set alone and loaded, the additions across machines,
 each width's 5 fastest alone and loaded, then by hypervolume), the ten holders, and each role's leaders by the pooled
 classes - the 5 best JIT-free means, the 5 fastest JIT-free on ARMv7, the 5 fastest on x86-64 and x86-32 and the 5 best
 means over every design, the knee's and small-and-fast's contenders by the rule (sizes after the batch) and the pool's
 knee bee5d0daa2, the 5 fastest JIT-free at 108 KB, the 5 best means within 0.1 % of the smallest after the batch, the 3
-smallest JIT designs and those smaller than c6f1c1331b within 10 % of its x86-64. 35 JIT-free, 41 JIT. Each record carries
-master's sizes (bin, total; before_batch the chain's). The -arm list: the JIT-free designs and the JIT designs leading
-across machines with the all-round holder (their JIT-off builds). The -lean list: the 13 within 8 KB of 108 KB.
+smallest JIT designs and those smaller than c6f1c1331b within 10 % of its x86-64 - 76; then, the owner: "ensure we are not
+losing good designs" (chain B restarted for them):
 
-ARMv7 pre-flight (tools/arm-cross-check.py, qemu-arm, the batch applied): the -arm list's 21 clang JIT-free designs 21
-built, alive and identical on fib and apps (engines 6,012-18,596 bytes); its GCC ones are built by the Tegra.
+- **the near-ties - 22 more**: every design within 1.5 % of a speed role's best (about 2-3 SE of chain A's paired
+  differences), the sessions pooled by the geometric mean and again by the median. The fastest portable is crowded - 18
+  JIT-free designs within 1.5 % of d7fb9683c2, 5 of them in the 76 - and by the median its best is 25a6fc9a9e, off the 76;
+  x86-32 3 more, ARMv7 1ce4882d06 (+1.49 % by the median). No stall in chain A: 80 of 35,295 readings more than 10 % off
+  their design's median after the session's shift, the worst 1.20 - but the Tegra's 3 sessions move a mean ~5 % on one
+  1.16 reading, hence the median beside it.
+- **219878ec89 - the smallest after the batch, off chain A's list**: the results files of seeds 92-96 hold 503 JIT-free
+  designs up to 22,700 B that chain A's list lacks (distinct expressed genomes, all); built at master
+  (results/drafts/sizes-pool-713.json), every one -730 or -746 bytes, and 219878ec89 (seed 93's file; fbuf=2 - its engine
+  16 bytes more off) 22,419 -> 21,673 B, 6 below the six at 21,679. In-run 1.18 / 1.09, as theirs.
+- **seed 96's database** (the laptop's - 46,971 alive in the pool, the results files its fronts only): chain B's
+  pool-sizes.py step (new, lab/evolve/) builds every database's small end at master, smallest first, for 40 minutes, and
+  names any design below the list's smallest (21,673 B; JIT 32,044) - a short chain after B measures any it finds. Not
+  covered: a dominated design the batch's 200-odd-byte swing between compilers moves onto the knee's 1 % rule (the
+  screen's list held the JIT-free front; low risk).
 
-NEXT-RUN (the owner: 19 hours): measure-ids.py on the 76 (the laptop's size and memory beside the batch), measure-ids.py
-on the lean 13 four times more (five reads of the memory), then loadtest.py at 10 rounds, about 56 minutes a session,
-repeated while another ends by the remote lines' deadline (about 19). REMOTES: the Tegra the 42, 8 sessions in 1,110
-minutes (about 2.2 hours each); dream the 76 at both widths, 40 sessions a width, 555 + 555 minutes. Its processing:
-`process-followup.sh 96-roles-b` - the shortlist named so for it (its holders' and candidates'
-records from the measure-ids pack, the lean end's memory the median of its five), then the roles.
+54 JIT-free, 45 JIT. Each record carries master's sizes (bin, total; before_batch the chain's). The -arm list: the JIT-free
+designs and the JIT designs leading across machines with the all-round holder (their JIT-off builds). The -lean list: the
+14 within 8 KB of 108 KB.
+
+ARMv7 pre-flight (tools/arm-cross-check.py, qemu-arm, the batch applied): the -arm list's 39 clang JIT-free designs 39
+built, alive and identical on fib and apps (engines 6,012-19,244 bytes); its GCC ones are built by the Tegra.
+
+NEXT-RUN (the owner: 19 hours): measure-ids.py on the 99 (the laptop's size and memory beside the batch), measure-ids.py
+on the lean 14 four times more (five reads of the memory), pool-sizes.py (40 minutes), then loadtest.py at 10 rounds,
+about 72 minutes a session, repeated while another ends by the remote lines' deadline (about 14). REMOTES: the Tegra the
+61, 5 sessions in 1,110 minutes (about 3.1 hours each); dream the 99 at both widths, 34 sessions a width, 555 + 555
+minutes. Its processing: `process-followup.sh 96-roles-b` - the shortlist named so for it (its records first from the
+measure-ids packs: results/drafts/holders-laptop-713.py LIST PACK ..., oldest first - the lean end's memory the median of
+its five reads), then the roles; pool-sizes.md read - a design it names gets a short chain.
 
 **Found: the counts need the perf hold on the laptop.** The batch's counters patch (711) has cputime read four counts
 and loadtest.py's lines carry them - but cputime opens them only at kernel.perf_event_paranoid 2 or below, the laptop's

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""results/drafts/shortlist-713.py LIST SESSIONS FPSHORT SIZES OUT OUTARM - chain B's designs (the new-roles plan's step 2,
+"""results/drafts/shortlist-713.py LIST SESSIONS FPSHORT SIZES OUT OUTARM [POOLSIZES] - chain B's designs (the new-roles plan's step 2,
 results/drafts/new-roles-plan-705.md): final-pick.py's shortlist (FPSHORT, --n 40), the ten holders, and each role's
 leaders on its own lines, pooled as followup-roles.py pools (each source's geometric mean over its sessions; x86-64 the
 laptop alone and dream, x86-32 likewise, ARMv7 the Tegra; the mean of the three):
@@ -8,6 +8,10 @@ laptop alone and dream, x86-32 likewise, ARMv7 the Tegra; the mean of the three)
   bee5d0daa2; least memory - the 5 fastest JIT-free at the holder's memory or less; x86-64, x86-32 and the best mean -
   the 5 best over every design; the smallest - the 5 best means among the JIT-free designs within 0.1 % of the smallest after the batch;
   the smallest JIT design - the 3 smallest JIT designs after the batch and those within 10 % of the holder's x86-64.
+  And (713, the owner: "ensure we are not losing good designs") the near-ties - every design within NEAR (1.5 %) of a
+  speed role's best, the sessions pooled by the geometric mean and by the median; and with POOLSIZES (sizes-713.py over
+  the results files' small end: results/drafts/sizes-pool-713.json) every pool design off LIST smaller after the batch
+  than all LIST's measured JIT-free designs, its record from its results file (219878ec89: fbuf=2's engine 16 B more).
 SIZES: results/drafts/sizes-713.py's JSON (the batch's sizes at 8-byte cells - the size roles use them, and OUT's records
 carry them: bin and total; image and the programs' code unchanged by the batch). Without a size for a chosen design it
 prints the ids missing and writes nothing (sizes-713.py --ids, then again). OUT: one record a line (loadtest.py --ids,
@@ -16,10 +20,22 @@ builds there, as chain A's -arm list)."""
 import glob, json, math, os, statistics, sys
 
 lst, ses, fps, szf, out, outarm = sys.argv[1:7]
+POOL = sys.argv[7] if len(sys.argv) > 7 else None      # 713: sizes-713.py's JSON over the results files' small end
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'lab', 'evolve')); sys.argv = ['x']
 import evolve as E
 C = {r['id']: r for r in (json.loads(l) for l in open(lst) if l.startswith('{"'))}
 SZ = json.load(open(szf))
+EXTRA = {}                                               # pool designs off LIST smaller, after the batch, than all LIST's
+if POOL:
+    PS = json.load(open(POOL)); m0 = min(v['total'] for i, v in SZ.items() if 'total' in v and i in C and not v.get('jit'))
+    ex = {i for i, v in PS.items() if 'total' in v and not v.get('jit') and v['total'] < m0 and i not in C}
+    for f in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(lst)), 'evolve-amd-ryzen-7-pro-8840hs-seed9[2-6].md'))):
+        for l in open(f):
+            if l.startswith('{"') and '"genome"' in l:
+                r = json.loads(l)
+                if r['id'] in ex and r['id'] not in EXTRA: EXTRA[r['id']] = (r, os.path.basename(f))
+    for i, (r, f) in EXTRA.items(): C[i] = r; SZ[i] = PS[i]
+    print('shortlist-713: %d pool designs below %d B after the batch, off chain A\'s list: %s' % (len(EXTRA), m0, ' '.join(sorted(EXTRA))))
 jit = {i: bool(E.express(E.canon(C[i]['genome'])).get('jit')) for i in C}
 HOLD = dict(fastest='782f3ad7ff', arm='3eb59b271d', knee='11a56ff9e4', smallarm='ae99617f06', memory='fb0d57c8a2',
             smallest='d180351903', fast64='c7c35f9c97', fast32='ee34931cd7', allround='06b188f45b', smalljit='c6f1c1331b')
@@ -62,6 +78,29 @@ for i in best(free, 'ARMv7', 5): add(i, 'the fastest on ARMv7: among the 5 faste
 for i in best(C, 'x86-64', 5): add(i, 'the fastest on x86-64: among the 5 fastest')
 for i in best(C, 'x86-32', 5): add(i, 'the fastest on x86-32: among the 5 fastest')
 for i in best(C, 'mean', 5): add(i, 'best all-round: among the 5 best means')
+# Iteration 713, the owner: "ensure we are not losing good designs" - the near-ties: every design within NEAR (1.5 %, about
+# 2-3 SE of chain A's paired differences) of a speed role's best, the classes pooled by the geometric mean and again by
+# the median (robust to one odd session: the Tegra's 3 sessions move a mean ~5 % on one 1.16 reading); 22 at 1.5 %,
+# among them the median's best portable 25a6fc9a9e, off the 5 best means
+NEAR = float(os.environ.get('NEAR', '0.015'))
+def pooled(f):
+    T = {k: {i: f(v) for i, v in d.items()} for k, d in src.items()}; R = {}
+    for i in C:
+        c = {}
+        if i in T['lap64'] and i in T['dream64']: c['x86-64'] = gm([T['lap64'][i], T['dream64'][i]])
+        if i in T['lap32'] and i in T['dream32']: c['x86-32'] = gm([T['lap32'][i], T['dream32'][i]])
+        if i in T['rage']: c['ARMv7'] = T['rage'][i]
+        if len(c) == 3: c['mean'] = gm(list(c.values()))
+        R[i] = c
+    return R
+for how, CX in (('mean', CL), ('median', pooled(statistics.median))):
+    for name, pool, k in (('the fastest portable', free, 'mean'), ('the fastest on ARMv7', free, 'ARMv7'),
+                          ('the fastest on x86-64', list(C), 'x86-64'), ('the fastest on x86-32', list(C), 'x86-32'),
+                          ('best all-round', list(C), 'mean')):
+        P = [i for i in pool if k in CX[i]]; b = min(CX[i][k] for i in P)
+        for i in sorted(P, key=lambda i: CX[i][k]):
+            if CX[i][k] > b * (1 + NEAR): break
+            add(i, '%s: within %.1f%% of the best (%+.2f%%, the sessions pooled by the %s)' % (name, NEAR * 100, (CX[i][k] / b - 1) * 100, how))
 def role(inc, keys, name, T=0.02, B=0.01):
     for i in sorted(free, key=tot):
         if i == inc or not all(k in CL[i] for k in keys): continue
@@ -73,7 +112,10 @@ role(HOLD['knee'], ('x86-64', 'x86-32'), 'the knee'); add('bee5d0daa2', 'the kne
 role(HOLD['smallarm'], ('ARMv7',), 'small, fast on ARMv7')
 lean = [i for i in free if C[i]['rss'] <= C[HOLD['memory']]['rss'] and 'x86-64' in CL[i]]
 for i in sorted(lean, key=lambda i: CL[i]['x86-64'])[:5]: add(i, 'least memory: at the holder\'s %d KB, among the 5 fastest' % C[HOLD['memory']]['rss'])
-fs = [i for i in free if i in SZ and 'total' in SZ[i]]; m = min(tot(i) for i in fs)
+for i, (r, f) in sorted(EXTRA.items(), key=lambda x: tot(x[0])):
+    add(i, 'the smallest: %d B after the batch (%d before), below every design chain A measured - off its list, from %s '
+        '(713: sizes-pool-713.json)' % (tot(i), r['total'], f))
+fs = [i for i in free if i in SZ and 'total' in SZ[i] and 'mean' in CL[i]]; m = min(tot(i) for i in fs)
 for i in sorted((i for i in fs if tot(i) <= m * 1.001 and 'mean' in CL[i]), key=lambda i: CL[i]['mean'])[:5]:
     add(i, 'the smallest: among the 5 best means within 0.1%% of %d B after the batch' % m)
 js = [i for i in C if jit[i] and i in SZ and 'total' in SZ[i]]
