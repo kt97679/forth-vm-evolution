@@ -42,7 +42,7 @@ grep -h -E 'skipp|deadline|not started|FAIL|STOP|crash|Traceback' "$H/chain.log"
 grep -h 'sessions measured' "$H/chain.log" | sed 's/^next-run: /  /'
 python3 lab/evolve/remote-load.py "$H/remote" 2>/dev/null | sed 's/^/  /' | cut -c1-260   # 633: another load on a host (630)
 for p in "$O"/*-pool-sizes-*/pack/pool-sizes.md; do [ -f "$p" ] || continue   # 713: a design pool-sizes.py names needs measuring
-  echo "pool-sizes.py: $(grep -c '^{"' "$p") below the list's smallest - $(grep -E '^(JIT|built)' "$p" | tr '\n' ' ' | cut -c1-200)"
+  echo "pool-sizes.py: $(grep -c '^{"' "$p") below its threshold - $(grep -E '^(JIT|built)' "$p" | tr '\n' ' ' | cut -c1-200)"
   grep '^- ' "$p" | head -n 8 | sed 's/^/  /'; done
 echo
 } > "$S"

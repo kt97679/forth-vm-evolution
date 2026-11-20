@@ -246,7 +246,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/drafts/chainB-rehearsal-713.sh PASS); then **chain C** - results/drafts/chainC-candidates-713.md (e51c01ba10
   and 4acee9a48e - long shots for small-and-fast-on-ARMv7; three small-end trades; 13a2b38e1b and 3 more for the smallest
   JIT design - its middle, which chain A's screen never covered; in-run comparisons need in-run terms: the list's holder
-  records are the sandbox's), pool-sizes.py's finds, and anchors, a few hours on the three machines - the roles the owner's trades, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
+  records are the sandbox's), pool-sizes.py's finds, and anchors, a few hours on the three machines - its laptop steps measure-ids.py, then
+  `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle; the
+  results files' gave 4 of 381), then loadtest.py - the roles the owner's trades, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
   them; then results/queued-genes (jitdead) applied, chainorder if its prototype pays, and the reopened search's series;
   the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

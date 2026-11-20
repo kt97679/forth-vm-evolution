@@ -34,7 +34,7 @@ for i in sorted(lean):
 n = len(L)
 if '%d candidates, %d re-measured at both widths' % (n, n) not in pick: f.append('the pick: not all %d re-measured' % n)
 if pick.count('%d candidates measured' % n) < 2: f.append('dream: not all %d measured at both widths' % n)
-if '0000000000' not in S or 'pool-sizes.py: 1 below' not in S: f.append('pool-sizes.py\'s design not in the summary')
+if '0000000000' not in S or 'pool-sizes.py: 1 below its threshold' not in S: f.append('pool-sizes.py\'s design not in the summary')
 if 'measure-ids pack(s)' not in S: f.append('the measure-ids line not in the summary')
 if '219878ec89' not in S: f.append('219878ec89 (the smallest after the batch) not in the summary\'s roles')
 print('chainB-rehearsal: %d designs, %d lean - %s' % (len(L), len(lean), 'PASS' if not f else 'FAIL'))
