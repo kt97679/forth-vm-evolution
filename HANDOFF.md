@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 709.
+- master: Iteration 710.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -207,11 +207,18 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   unchanged - its LTO inlines the C wrappers) and imagemsg (the image's refusals as `not a RelF image (N)`, a check
   digit; -226 to -458 bytes on every design, both widths; user-visible, the owner told). The smallest engine 4,768 to
   4,230. Not reached: the profiler's top dispatches (speed) - after chain A, on the shortlist's fastest.
-  **Next: chain A's processing** - first the batch (six patches now), by hand (ORDER.md: batch-check, git apply, the move to
+  **710 (the owner: "yes" - the genes built while chain A runs)**: results/drafts/jitdead-710.md. **Chainorder
+  mispriced** at 707 (byte headers' links point backward only: signed links, +19-73 B, five places to change) - the
+  owner told; a converter-and-engine prototype, instructions counted, before the full build. **Mechanism 9's V1' built:
+  the gene jitdead** (results/queued-genes - its own queue, applied after the roles ship, after the after-seed-96
+  batch; batch-check with BASE=results/pending until that is applied): -700 B of the programs' code, the total -0.3 to
+  -2.9 % on ten JIT designs, instructions the same or fewer; not yet in the self-hosting compiler (G-NOT-YET).
+  **wends16** into the after-seed-96 batch: -1.1 KB on every jitx engine.
+  **Next: chain A's processing** - first the batch (seven patches now), by hand (ORDER.md: batch-check, git apply, the move to
   results/applied-after-seed96); then the plan's "Its processing": process-followup.sh 96-roles with the ten roles (the
   holders' records from the measure-ids pack first), the shortlist (final-pick.py's shortlist, about 60), chain B at 10
   rounds on the three machines (the owner's hours); then the roles, designs/ and the package, self-hosting phase 6 on
-  them; then the two genes and the reopened search's series; the article.
+  them; then results/queued-genes (jitdead) applied, chainorder if its prototype pays, and the reopened search's series; the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
