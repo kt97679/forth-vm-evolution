@@ -12,6 +12,7 @@ touched by it (x86 engines byte-identical); chain B and the export measure and s
     git apply results/pending/rtsc-after-seed96.patch
     git apply results/pending/sysstubs-after-seed96.patch
     git apply results/pending/imagemsg-after-seed96.patch
+    git apply results/pending/wends16-after-seed96.patch
 
 batch-check (709, on 0501f69 - 6 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -81,3 +82,5 @@ designs above at 8-byte cells, -226 to -458 bytes (the smallest 4,576 to 4,230),
 cut header (4), the version raised (2), a feature bit set (3), each exit 2; the image itself runs); ARMv7 - 10 of the
 ARM list spread by speed, cross-built by clang (tools/arm-cross-check.py, qemu-arm), 10 of 10 alive and identical on fib
 and apps. With sysstubs and rtsc, chain B's x86-64 engines are about 400-1,100 bytes below chain A's for the same designs (GCC's the least).
+
+**wends16-after-seed96.patch** (tools/layout.py) - TODO: what it does, why, how it was tested.
