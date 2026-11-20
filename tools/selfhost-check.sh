@@ -56,10 +56,10 @@ if [ "$N" != s6 ] && grep -q "jit_wends" "$DS/$N/src/vm-jit-ops.h" 2>/dev/null; 
     mkdir -p "$D/eng"; cp -r "$DS/$N/Makefile" "$DS/$N/src" "$DS/$N/src32" "$D/eng/"
     python3 - "$D/eng/$S/vm-jit-ops.h" "$D/A.img.jit.h" <<'PYEOF' || exit 1
 import sys
-key = lambda l: l.split(' = ')[0] if l.startswith('static const unsigned int jit_wends') else ' '.join(l.split()[:2])
+key = lambda l: 'jit_wends' if l.startswith('static const unsigned') and 'jit_wends[][2]' in l else ' '.join(l.split()[:2])   # 710: int or short
 new = {key(l): l for l in open(sys.argv[2]).read().splitlines() if l}
 old = open(sys.argv[1]).read().splitlines(); out = [new.get(key(l), l) for l in old]
-assert {'#define JIT_NWENDS', 'static const unsigned int jit_wends[][2]'} <= set(map(key, old)), 'selfhost-check: the layout lines not found'
+assert {'#define JIT_NWENDS', 'jit_wends'} <= set(map(key, old)), 'selfhost-check: the layout lines not found'
 open(sys.argv[1], 'w').write('\n'.join(out) + '\n')
 PYEOF
     make -s -C "$D/eng" $E > "$D/eng.log" 2>&1 || { echo "selfhost-check: FAIL - the engine for A did not build ($D/eng.log)"; exit 1; }

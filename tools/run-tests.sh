@@ -402,6 +402,10 @@ echo "a death by a retired value (lab/evolve/deaths-check.py --self-test - Itera
 if out=$(python3 "$ROOT/lab/evolve/deaths-check.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' deaths "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
 else printf '  %-12s FAIL   %s\n' deaths "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
 echo
+echo "the counters' time model (lab/evolve/countfit.py --self-test - Iteration 711):"
+if out=$(python3 "$ROOT/lab/evolve/countfit.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' countfit "$(printf '%s' "$out" | tail -1 | cut -c27-127)"
+else printf '  %-12s FAIL   %s\n' countfit "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+echo
 echo "the JIT's value holes (lab/evolve/jitholes-check.py):"
 if out=$(python3 "$ROOT/lab/evolve/jitholes-check.py" 2>&1); then printf '  %-12s ok     %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c17-117)"
 else printf '  %-12s FAIL   %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi

@@ -5,7 +5,8 @@
  *                                  then "MAXRSS <kilobytes>": peak resident
  *                                  memory, from the same rusage record,
  *                                  then, where the hardware counters can
- *                                  be read, "CYCLES <n>" and "INSTR <n>"
+ *                                  be read, "CYCLES <n>" and "INSTR <n>", and
+ *                                  "BRMISS <n>" and "LLCMISS <n>" (Iteration 711)
  *
  *  CYCLES AND INSTRUCTIONS. CPU time excludes the time spent waiting
  *  while other processes run, but not how fast the CPU runs while this
@@ -106,10 +107,10 @@ static void jail(void) {
 int main(int argc, char **argv)
 {
     pid_t pid;
-    int status = 0, go[2], fc, fi;
+    int status = 0, go[2], fc, fi, fb, fl;
     struct rusage ru;
     unsigned long long ns;
-    long long cyc, ins;
+    long long cyc, ins, brm, llc;
     char c = 'g';
 
     if (argc < 2) {
@@ -131,6 +132,12 @@ int main(int argc, char **argv)
     close(go[0]);
     fc = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
     fi = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
+    /* Iteration 711 (results/drafts/frostbite-711.md): two more of the work's counters, for a model of the time from
+       counts (Architect Labs' Arcmodel: power and performance as a function fitted over a design's counters) - a
+       branch mispredicted, an interpreter's dispatch's price, and a last-level cache miss. Each on its own: one the
+       PMU does not have is simply absent, as above; at most four events, no multiplexing on the hosts' cores. */
+    fb = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
+    fl = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
     if (write(go[1], &c, 1) != 1) { say("write failed\n"); return 2; }
     close(go[1]);
     if (waitpid(pid, &status, 0) < 0) { say("waitpid failed\n"); return 2; }
@@ -157,6 +164,10 @@ int main(int argc, char **argv)
     ins = perf_value(fi);
     if (cyc > 0) say("CYCLES %lld\n", cyc);
     if (ins > 0) say("INSTR %lld\n", ins);
+    brm = perf_value(fb);
+    llc = perf_value(fl);
+    if (brm >= 0 && ins > 0) say("BRMISS %lld\n", brm);     /* 0 is a count here: with instructions counted */
+    if (llc >= 0 && ins > 0) say("LLCMISS %lld\n", llc);
 
     if (WIFEXITED(status)) return WEXITSTATUS(status);
     return 128 + (WIFSIGNALED(status) ? WTERMSIG(status) : 0);

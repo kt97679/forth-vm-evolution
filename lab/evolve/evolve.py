@@ -1370,6 +1370,9 @@ def run_metric(eng, img, pw, w, single=False):
     # The run's memory, KB (Iteration 75): the pages it touched - cputime's
     # MINFLT, faults counted one by one - times the page size. MAXRSS only
     # from an older cputime: on Linux 6.x it reads 0 for a small static run.
+    # Iteration 711 (results/drafts/frostbite-711.md): the run's counters where the PMU gives them (tools/cputime.c) -
+    # instructions, cycles, branches mispredicted, last-level cache misses - kept beside the time for a model of it
+    CNT_LAST.clear(); CNT_LAST.update({k.decode().lower(): int(v) for k, v in re.findall(rb'^(INSTR|CYCLES|BRMISS|LLCMISS) (\d+)', r.stderr, re.M)})
     mf = re.search(rb'^MINFLT (\d+)', r.stderr, re.M)
     mr = re.search(rb'^MAXRSS (\d+)', r.stderr, re.M)
     RSS_LAST[0] = int(mf.group(1)) * PAGE_KB if mf else (int(mr.group(1)) if mr else 0)
@@ -1379,6 +1382,8 @@ def run_metric(eng, img, pw, w, single=False):
     if not m: raise RuntimeError('died: no measurement (exit %s)' % r.returncode)   # 527: not an AttributeError that ends the run
     return int(m.group(1))
 RSS_LAST, LAST_RSS = [0], {}     # the last run's memory (KB); the last measure()'s design, per workload: the median
+CNT_LAST, LAST_CNT = {}, {}      # Iteration 711: the last run's counters; the last measure()'s, per workload and side: medians
+CNT_KEYS = ('instr', 'cycles', 'brmiss', 'llcmiss')   # a record's 'cnt': these medians in this order (-1 absent), per workload
 OUT_LAST = ['']                  # Iteration 516: the last run's output, hashed
 PAGE_KB = os.sysconf('SC_PAGE_SIZE') // 1024
 
@@ -1414,14 +1419,16 @@ def measure(eng, img, pw, works, rounds, state=None, r0=0):
     agreed within 3.6% between halves of a session and 2.1% between CPUs
     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
     # Iteration 529: state - an earlier call's runs, to go on from (one round first, then the rest); r0 its rounds
-    runs, ref, mem, outs = state if state is not None else ({}, {}, {}, {})
-    LAST_RSS.clear()
+    runs, ref, mem, outs = state[:4] if state is not None else ({}, {}, {}, {})
+    LAST_RSS.clear(); LAST_CNT.clear()
+    cnt = state[4] if state is not None and len(state) > 4 else {}   # 711: (side, workload) -> counter -> runs
     for r_ in range(r0, r0 + rounds):
         for w in works:
             pair = [(eng, img, pw, runs), REF + (ref,)]
             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
                 store.setdefault(w, []).append(run_metric(e, i, p, w))
                 if store is runs: mem.setdefault(w, []).append(RSS_LAST[0])   # the design's, not s6's
+                for k_, v_ in CNT_LAST.items(): cnt.setdefault((store is runs, w), {}).setdefault(k_, []).append(v_)
                 outs.setdefault((store is runs, w), set()).add(OUT_LAST[0])
     # Iteration 516: a workload's output must be s6's - the run, not only its time. Unchecked, the applications
     # workload (seed 71) rewarded failing it: 791 cpt16 designs stopped early in apps on undefined words and timed
@@ -1431,6 +1438,9 @@ def measure(eng, img, pw, works, rounds, state=None, r0=0):
     if 'corpus' in mem and 'corpus' in LONGF:    # Iteration 100: the corpus's memory from one single run
         run_metric(eng, img, pw, 'corpus', single=True); mem['corpus'] = [RSS_LAST[0]]
     LAST_RSS.update({w: statistics.median(v) for w, v in mem.items()})     # a page or two of noise
+    for (mine, w), d_ in cnt.items():                                       # 711: 'design' and 's6', each workload
+        LAST_CNT.setdefault('design' if mine else 's6', {})[w] = dict({k_: statistics.median(v_) for k_, v_ in d_.items()},
+                                                                   ns=statistics.median((runs if mine else ref)[w]))
     med = {w: statistics.median(runs[w]) for w in works}
     return {w: med[w] / statistics.median(ref[w]) for w in works}, med
 
@@ -1516,7 +1526,7 @@ def evaluate(g, rounds, keep=False, gate=None, again=False, stop=None):
         rec['appby'] = app_size(eng, img, pw); rec['app'] = sum(rec['appby'])     # Iteration 677: the four's code
         rec['total'] = rec['bin'] + rec['size'] + rec['app']     # an objective: Iteration 75, the applications' since 677
         if stop and rounds > 1 and not again:     # Iteration 529 (the owner): one round first
-            st = ({}, {}, {}, {})
+            st = ({}, {}, {}, {}, {})      # 711: and the counters
             t1, raw1 = measure(eng, img, pw, WORK_SEL + WORK_HELD, 1, state=st)
             s1 = math.exp(sum(math.log(t1[w]) for w in WORK_SEL) / len(WORK_SEL))
             m1 = max([v for w_, v in LAST_RSS.items() if w_ != 'apps'] or list(LAST_RSS.values())) if LAST_RSS else None
@@ -1536,6 +1546,8 @@ def evaluate(g, rounds, keep=False, gate=None, again=False, stop=None):
         # (460-500 KB, the six's 108-136): the objective measured the programs, not the machine. The rest as before.
         rec['rss'] = max([v for w_, v in LAST_RSS.items() if w_ != 'apps'] or list(LAST_RSS.values())) if LAST_RSS else None   # KB: an objective
         rec['mem'] = dict(LAST_RSS)
+        if LAST_CNT.get('design'):     # Iteration 711: the counters' medians a workload, where the PMU gives them -
+            rec['cnt'] = {w: [round(c_.get(k_, -1)) for k_ in CNT_KEYS] for w, c_ in LAST_CNT['design'].items()}   # data for a time model
         rec['unit'] = UNIT
         if gate and rec['speed'] < gate:   # Iteration 391: under the fast gate, measured again; Iteration 446
             rec['gated'] = 1               # (results/drafts/fastgate-review-445.md): not at once - back to back the two

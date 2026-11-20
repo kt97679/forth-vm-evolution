@@ -1,10 +1,10 @@
 # The reopened search's genes - after the new roles ship, before the next series (Iteration 710)
 
 The owner (708): the search reopens after the roles, chainorder and mechanism 9's V1' built as genes first. Made on
-top of the after-seed-96 batch (results/pending), so applied after it: at chain A's processing that batch goes in; this
-queue after the roles ship (designs/, the package), before the reopened search's first seed. Until results/pending is
-applied, check it with that batch first: `env PENDING=results/queued-genes BASE=results/pending RECORD=1 sh
-tools/batch-check.sh`. Then, from the repository's top:
+top of the after-seed-96 batch, so applied after it: that batch went in at chain A's processing (Iteration 713,
+results/applied-after-seed96); this queue after the roles ship (designs/, the package), before the reopened search's
+first seed. Check it on master as it stands: `env PENDING=results/queued-genes RECORD=1 sh tools/batch-check.sh` (no
+BASE since 713). Then, from the repository's top:
 
     git apply results/queued-genes/jitdead-after-seed96.patch
 

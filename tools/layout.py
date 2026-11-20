@@ -1746,8 +1746,11 @@ if EMIT:
             def _wends():              # Iteration 489: every image word's body, start and end - the decoder's end for a word reached
                 rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_)) for w_ in order
                                if w_['s'] in new_off and kind.get(w_['s']) == 'code')
-                return ('#define JIT_NWENDS %d\nstatic const unsigned int jit_wends[][2] = {%s};\n'
-                        % (len(rows_), ', '.join('{%d, %d}' % r_ for r_ in rows_) or '{0, 0}'))
+                # Iteration 710 (the sweep): two bytes a number where the image's code is under 64 KB, as it is (8-11 KB) -
+                # the table was 2.6 KB of every jitx engine's 5-6 KB of rodata
+                return ('#define JIT_NWENDS %d\nstatic const unsigned %s jit_wends[][2] = {%s};\n'
+                        % (len(rows_), 'short' if max([e_ for _, e_ in rows_] or [0]) < 65536 else 'int',
+                           ', '.join('{%d, %d}' % r_ for r_ in rows_) or '{0, 0}'))
             def _woff(nm):             # Iteration 485: a word's offset in the image (its body, as the call map's W lines), -1 if none
                 ws_ = [w_ for w_ in order if w_['n'] == nm]
                 return new_off[ws_[0]['s']]['body'] if ws_ else -1

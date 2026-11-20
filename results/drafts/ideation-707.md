@@ -20,7 +20,7 @@ Each method run here, its result, and what it leaves for the owner. TRIZ's: resu
 
 ## For the owner
 
-1. **The after-seed-96 batch, four patches now** (results/pending/ORDER.md): arm2at (clang too), armcheck, ticker, rtsc -
+1. **The after-seed-96 batch, four patches now** (results/applied-after-seed96/ORDER.md): arm2at (clang too), armcheck, ticker, rtsc -
    all to apply at chain A's processing. rtsc changes every x86-64 engine's bytes (-192 to -304), not its timing (a
    system call is rare: the I/O is buffered), so the roles' sizes in chain B are 192-304 bytes smaller than chain A's.
 2. **Two candidate genes, each priced, neither built**: chainorder (zero bytes, the lookup walk up to half shorter) and

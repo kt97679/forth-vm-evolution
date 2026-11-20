@@ -1719,12 +1719,16 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
       DUP SH-NAME 4 PICK 4 PICK COMPARE 0= IF @ >R 2DROP R> UNLOOP EXIT THEN
     THEN DROP
   LOOP 2DROP -1 ;
+: JW-MAX ( --- e )
+\ The last body's end - the table's largest number (bodies do not overlap).
+  0 BEGIN DUP JW-NEXT ?DUP WHILE SWAP DROP REPEAT DUP IF JW-END THEN ;
 : SAVE-JIT-LAYOUT ( "name" --- )
   BL WORD COUNT G-JIT 0= IF 2DROP EXIT THEN
   W/O CREATE-FILE ABORT" cross: can't create the JIT's layout" FID-J !
   JW-COLLECT
   S" #define JIT_NWENDS " J-TYPE 0 0 BEGIN JW-NEXT ?DUP WHILE SWAP 1+ SWAP REPEAT J-NUM J-CR
-  S" static const unsigned int jit_wends[][2] = {" J-TYPE
+  \ Iteration 710 (tools/layout.py's, wends16): two bytes a number where every end is under 64 KB
+  JW-MAX 65536 < IF S" static const unsigned short jit_wends[][2] = {" ELSE S" static const unsigned int jit_wends[][2] = {" THEN J-TYPE
   0 0 BEGIN JW-NEXT ?DUP WHILE
     SWAP IF S" , " J-TYPE THEN
     S" {" J-TYPE DUP J-NUM S" , " J-TYPE DUP JW-END J-NUM S" }" J-TYPE

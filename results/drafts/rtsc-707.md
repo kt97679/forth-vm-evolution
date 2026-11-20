@@ -1,6 +1,6 @@
 # The system-call wrapper at x86-64 - the patch's tests (Iteration 707)
 
-The after-seed-96 batch's rtsc (results/pending/ORDER.md): found by reading the smallest design's engine by symbol size
+The after-seed-96 batch's rtsc (results/applied-after-seed96/ORDER.md): found by reading the smallest design's engine by symbol size
 (nm -S on 21768033b7's engine.full: 4,784 bytes of code - virtual_machine 2,028, main 758, the dispatch table 512,
 **syscall 241**) - the ideation pilot's loop (results/drafts/ideation-707.md): a proposal against the largest, built,
 measured exactly. The runtime's variadic `syscall(long n, ...)` (engine/rt-linux-x86_64.c) makes the compiler save every

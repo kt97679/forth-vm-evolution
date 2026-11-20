@@ -77,7 +77,7 @@ bytecode - gc16 +129 %. Both fixed above; the table is the build that has neithe
 The JIT's image-word ends table (jit_wends) was in a design without jitx - and in every jitx engine it is 2,568 bytes
 of 5-6 KB of rodata, two 4-byte numbers a row where every number is under 64 KB. Two bytes each: -1,096 to -1,176
 bytes on the six jitx engines at both widths, the four without it unchanged; the self-hosting compiler writes its
-table the same way and selfhost-check.sh takes either (small-jit PASS at both widths). results/pending/ORDER.md.
+table the same way and selfhost-check.sh takes either (small-jit PASS at both widths). results/applied-after-seed96/ORDER.md.
 
 ## Chainorder - mispriced at 707
 

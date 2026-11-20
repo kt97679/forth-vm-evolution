@@ -183,7 +183,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   its 4-byte field's two jobs elsewhere - the length at an end-EXIT, the offset in a side table (V1: +95-152 engine
   bytes, up to +8 KB) or in the translated word's dead bytecode (V1': separation in time, no table) - -700 B of the five
   programs' code, about -1.8 % on the smallest JIT design; the trigger byte stays; not built (after the roles, the
-  owner's call; GOALS.md's register). **The after-seed-96 batch** (results/pending/ORDER.md; batch-check PASS): arm2at -
+  owner's call; GOALS.md's register). **The after-seed-96 batch** (results/applied-after-seed96/ORDER.md; batch-check PASS): arm2at -
   2@ and 2! through a byte-aligned cell, so GCC no longer joins a tos=1 design's two loads into ARMv7's LDRD (x86
   engines byte-identical, 48 of 48; the GCC ARMv7 builds alive under qemu - results/drafts/arm2at-706.md); armcheck -
   arm-cross-check.py compares as evolve.py does ("Redefining:" lines out; s0-cell's false DIFFER).

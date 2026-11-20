@@ -84,8 +84,8 @@ SPECS = {
     'L_x_j':         ([], ['x'], 'x = CELL(rp + 2 * CELL_BYTES);'),
     'L_x_iplus':     (['a'], ['b'], 'b = a + RS;'),     # Iteration 60: I +
     'L_x_plusstore': (['x', 'a'], [], 'CELL(a) += x;'),
-    'L_x_2fetch':    (['a'], ['x1', 'x2'], '{ UNS64 a_ = a; x1 = CELL(a_ + CELL_BYTES); x2 = CELL(a_); }'),   # Iteration 290: 2@
-    'L_x_2store':    (['x1', 'x2', 'a'], [], '{ UNS64 a_ = a; CELL(a_) = x2; CELL(a_ + CELL_BYTES) = x1; }'),   # 2!
+    'L_x_2fetch':    (['a'], ['x1', 'x2'], '{ UNS64 a_ = a; x1 = CELLU(a_ + CELL_BYTES); x2 = CELLU(a_); }'),   # Iteration 290: 2@ (706: CELLU - any address)
+    'L_x_2store':    (['x1', 'x2', 'a'], [], '{ UNS64 a_ = a; CELLU(a_) = x2; CELLU(a_ + CELL_BYTES) = x1; }'),   # 2!
     'L_x_gt':        (['a', 'b'], ['c'], 'c = -(UNS64)((INT64)a > (INT64)b);'),   # Iteration 299: >
     'L_x_zeq':       (['a'], ['f'], 'f = -(UNS64)(a == 0);'),   # 0=
     'L_x_do':        (['a', 'b'], [], 'RPUSH(a); RPUSH(b);'),

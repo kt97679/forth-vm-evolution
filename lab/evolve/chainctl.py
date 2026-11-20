@@ -273,15 +273,16 @@ def cmd_ticker(pid, until, every=300):
             time.sleep(1)
             if not os.path.exists('/proc/%d' % pid): return 0
         late = time.monotonic() - t0 - every       # 701: a tick late by a tenth or more - the machine stalled
-        gen, n = evolution_progress(repo)
+        label = os.environ.get('TICK_LABEL')      # 707: an experiment step's - no evolution to report
+        gen, n = (None, 0) if label else evolution_progress(repo)
         left = ''
         if until > 0:
             m = max(0, int((until - time.time()) / 60))
             left = ', the evolution stops in %d h %02d min' % (m // 60, m % 60)
         mc = machine()
-        print('%sprogress %s - %s, %d designs in the database%s%s%s' % (STEP_PREFIX, time.strftime('%H:%M:%S', time.gmtime()),
-              gen or 'no generation yet', n, left, '; the machine: ' + mc if mc else '',
-              '; the tick %d s late' % late if late > every / 10 else ''), flush=True)
+        what = '%s running' % label if label else '%s, %d designs in the database' % (gen or 'no generation yet', n)
+        print('%sprogress %s - %s%s%s%s' % (STEP_PREFIX, time.strftime('%H:%M:%S', time.gmtime()), what, left,
+              '; the machine: ' + mc if mc else '', '; the tick %d s late' % late if late > every / 10 else ''), flush=True)
 
 
 def cmd_recover(runs, repo):

@@ -1,6 +1,6 @@
 # 2@ and 2! at any address on ARMv7 - the patch's tests (Iteration 706)
 
-The after-seed-96 batch's arm2at (results/pending/ORDER.md). The cause, from the ARMv7 pre-flight (results/drafts/
+The after-seed-96 batch's arm2at (results/applied-after-seed96/ORDER.md). The cause, from the ARMv7 pre-flight (results/drafts/
 arm-preflight-705.md): a tos=1 design's 2@ is `tos = CELL(a + CELL_BYTES); PUSHT(CELL(a))` (tools/gen-tos.py) - two
 adjacent loads through UNS64*, which GCC joins into LDRD; ARMv7 traps LDRD and STRD at an address not word aligned (single
 LDR and STR it allows). At tos=0 the store of the first value between the loads keeps them apart - every tos=0 design

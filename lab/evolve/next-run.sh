@@ -464,7 +464,12 @@ if [ "$MODE" = experiment ]; then
     step "lab/evolve/$TOOL $TARGS"
     T0=$(date +%s)
     STEP_T0=$T0                                                   # 591: a session's length, for a repeat (then_next)
-    python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { tail -20 "$RUN/$NAME.log"; exit 1; }
+    # Iteration 707 (the pre-mortem of the new roles, results/drafts/premortem-roles-707.md): the machine's line every 5 minutes
+    # beside an experiment too - only a seed run had it (701), so a stall under chain A's laptop sessions would pool unseen
+    TICK_LABEL="lab/evolve/$TOOL" python3 lab/evolve/chainctl.py ticker $$ 0 &
+    TICKX=$!
+    python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { kill $TICKX 2>/dev/null || true; tail -20 "$RUN/$NAME.log"; exit 1; }
+    kill $TICKX 2>/dev/null || true
     if [ "$TOOL" = compare-fronts.py ]; then                      # Iteration 152: the next chain's reserve
         cr_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); cr_=${cr_:-10}
         cc_=$(ncpus "$TARGS")

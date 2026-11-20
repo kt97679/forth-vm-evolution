@@ -13,7 +13,9 @@ under it - loaded / idle near 0.90 - and the slow group does not.
 --ids FILE (Iteration 573 - GOALS.md step 3, the final set re-measured alone and under load; the owner's decision: the
 extremes chosen only after it): instead of the front's fastest and slowest, every design in FILE (final-set.py
 --candidates: one record a line), each also at 32 bits (evolve.py's eval32), idle and loaded; after the table one JSON
-line a design - {"id", "inrun", "inrun32", "idle", "loaded", "idle32", "loaded32"} - for the processing to read.
+line a design - {"id", "inrun", "inrun32", "idle", "loaded", "idle32", "loaded32"} - for the processing to read; and
+(Iteration 711), where the PMU gives them, "cnt": the first idle measure's counters a workload, the design's and s6's -
+instructions, cycles, branches mispredicted, last-level misses and the time (ns), medians - for lab/evolve/countfit.py.
 """
 import argparse, json, math, os, statistics, subprocess, sys, tempfile, time
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
@@ -66,8 +68,10 @@ def stop_load(ps):
     for p in ps:
         try: os.killpg(p.pid, 9)
         except OSError: pass
-def speed(eng, img, pw):
+CNT = {}                                    # Iteration 711: the first idle measure's counters (evolve.py's LAST_CNT)
+def speed(eng, img, pw, keep=False):
     t, _ = E.measure(eng, img, pw, E.WORK_SEL, a.rounds)
+    if keep and E.LAST_CNT: CNT.clear(); CNT.update({k: dict(v) for k, v in E.LAST_CNT.items()})
     return math.exp(sum(math.log(t[w]) for w in E.WORK_SEL) / len(E.WORK_SEL))
 print('# The measuring load (lab/evolve/loadtest.py, Iteration 455)\n')
 print('Front: %s, %s (%d designs); the %d fastest and %d slowest. Measured on core %d (setup()\'s), the load on %s: s6 on the'
@@ -82,8 +86,9 @@ for grp, i in groups:
     try:
         eng, img = E.build(E.canon(R[i]['genome']), d); pw = E.private_work(d)
         idle, loaded = [], []
-        for _ in range(2):
-            idle.append(speed(eng, img, pw))
+        CNT.clear()
+        for k_ in range(2):
+            idle.append(speed(eng, img, pw, keep=not k_))
             ps = start_load(); time.sleep(1)
             try: loaded.append(speed(eng, img, pw))
             finally: stop_load(ps)
@@ -96,7 +101,8 @@ for grp, i in groups:
             finally: stop_load(ps)
             f3 = lambda v: '%.3f' % v if v else '-'
             x32 = ' %s | %s | %s |' % (f3(R[i].get('speed32')), f3(i32), f3(l32))
-            js.append(dict(id=i, inrun=R[i].get('speed'), inrun32=R[i].get('speed32'), idle=gi, loaded=gl, idle32=i32, loaded32=l32))
+            js.append(dict(id=i, inrun=R[i].get('speed'), inrun32=R[i].get('speed32'), idle=gi, loaded=gl, idle32=i32, loaded32=l32,
+                           **({'cnt': dict(CNT)} if CNT else {})))   # 711: the counters, where the PMU gives them
         print('| %s | %s | %.3f | %.3f | %.3f | %.3f | %.3f |%s' % (i, grp, R[i].get('speed', 0), sp[i], gi, gl, gl / gi, x32), flush=True)
     except Exception as x: print('| %s | %s | - | - | - | - | failed: %s |' % (i, grp, str(x)[:60]), flush=True)
 os.unlink(prog.name)

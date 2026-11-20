@@ -6,14 +6,14 @@ tools/batch-check.sh` (PASS), the two lines below, a commit, then process-record
 results/applied-after-seed96`, the citations followed - HANDOFF-REFERENCE.md, step 6). Chain A's x86 readings are not
 touched by it (x86 engines byte-identical); chain B and the export measure and ship the ARMv7 engines it builds.
 
-    git apply results/pending/arm2at-after-seed96.patch
-    git apply results/pending/armcheck-after-seed96.patch
-    git apply results/pending/ticker-after-seed96.patch
-    git apply results/pending/rtsc-after-seed96.patch
-    git apply results/pending/sysstubs-after-seed96.patch
-    git apply results/pending/imagemsg-after-seed96.patch
-    git apply results/pending/wends16-after-seed96.patch
-    git apply results/pending/counters-after-seed96.patch
+    git apply results/applied-after-seed96/arm2at-after-seed96.patch
+    git apply results/applied-after-seed96/armcheck-after-seed96.patch
+    git apply results/applied-after-seed96/ticker-after-seed96.patch
+    git apply results/applied-after-seed96/rtsc-after-seed96.patch
+    git apply results/applied-after-seed96/sysstubs-after-seed96.patch
+    git apply results/applied-after-seed96/imagemsg-after-seed96.patch
+    git apply results/applied-after-seed96/wends16-after-seed96.patch
+    git apply results/applied-after-seed96/counters-after-seed96.patch
 
 batch-check (711, on 1cf8713 - 8 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.

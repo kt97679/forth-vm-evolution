@@ -11774,19 +11774,19 @@ the contradiction inventory's method and seed 96's five (GOALS.md's register: th
 header, priced: the field's length and offset elsewhere save 700 B of the five programs' code (175 definitions; 2,732
 held-out), about 1.8 % of the smallest JIT design, for 95-152 engine bytes (a side table - the prototype
 results/drafts/jit-header-table-706.c) or none of memory (the dead bytecode reused); not built. The after-seed-96 batch
-(results/pending/ORDER.md): arm2at - 2@ and 2! through a byte-aligned cell, GCC's LDRD gone from tos=1 ARMv7 engines (x86
+(results/applied-after-seed96/ORDER.md): arm2at - 2@ and 2! through a byte-aligned cell, GCC's LDRD gone from tos=1 ARMv7 engines (x86
 byte-identical, 48 of 48 - results/drafts/arm2at-bytes-706.py; ARMv7 alive under qemu - results/drafts/arm2at-706.md);
-armcheck - arm-cross-check.py compares as evolve.py does (results/pending/arm2at-after-seed96.patch,
-results/pending/armcheck-after-seed96.patch; batch-check PASS). To apply at chain A's processing.
+armcheck - arm-cross-check.py compares as evolve.py does (results/applied-after-seed96/arm2at-after-seed96.patch,
+results/applied-after-seed96/armcheck-after-seed96.patch; batch-check PASS). To apply at chain A's processing.
 
 ## Iteration 707 - 2026-11-19 - Claude
 
 Idea-generation methods beyond TRIZ, applied (the owner: "use anything that can help think out of the box") -
 results/drafts/ideation-707.md. The new roles' pre-mortem (results/drafts/premortem-roles-707.md): the ticker beside
-experiment steps (results/pending/ticker-after-seed96.patch) and a self-hosting gate before the export. Differential
+experiment steps (results/applied-after-seed96/ticker-after-seed96.patch) and a self-hosting gate before the export. Differential
 fuzzing, lab/evolve/fuzz-designs.py: x86 clean (2,240 runs), ARMv7 under qemu found clang's misaligned 2@ and 2! (fixed
 by arm2at; results/drafts/fuzz-707.md). The smallest engine read by symbol size: the variadic syscall's 241 bytes -
-results/pending/rtsc-after-seed96.patch, -192 to -304 bytes on every x86-64 design (results/drafts/rtsc-707.md,
+results/applied-after-seed96/rtsc-after-seed96.patch, -192 to -304 bytes on every x86-64 design (results/drafts/rtsc-707.md,
 results/drafts/rtsc-707.py). Priced, not built: the image's names in their chains by use, zero bytes, the parse walk
 43-49 % shorter (results/drafts/chain-order-707.py, results/drafts/chain-order-707.txt). Closed: a size superoptimizer, at
 most 11 bytes (results/drafts/superopt-707.py, results/drafts/superopt-707.txt); gene interactions, none
@@ -11804,10 +11804,10 @@ built as genes, then a new series (results/drafts/new-roles-plan-705.md, GOALS.m
 
 The sweep (the owner: "proceed", to a systematic search with the evaluator in the loop) - results/drafts/sweep-709.md.
 The smallest engine read by symbol size again, each proposal built and measured on 20-34 designs (rtsc-707.py). Two
-patches into the after-seed-96 batch (six now; batch-check PASS): results/pending/sysstubs-after-seed96.patch - the
+patches into the after-seed-96 batch (six now; batch-check PASS): results/applied-after-seed96/sysstubs-after-seed96.patch - the
 runtime's 19 register-compatible system calls as dietlibc's unified stubs, clang's x86-64 engines -176 to -400 bytes;
 GCC keeps the C wrappers, its LTO inlining them (the stubs grew its large -O2 engines by 64-192 bytes), its preprocessed
-runtime and the i386 one byte-identical; results/pending/imagemsg-after-seed96.patch - the engine's refusals of an image
+runtime and the i386 one byte-identical; results/applied-after-seed96/imagemsg-after-seed96.patch - the engine's refusals of an image
 as one message, `not a RelF image (N)` with a check digit, -226 to -458 bytes on every design at 8-byte cells, -234 to
 -336 at 4, ARMv7 10 of 10 under qemu (a user-visible change; "not a RelF image" kept for relf's crash fuzzer). The
 smallest engine 4,768 to 4,230 bytes. The kernel's largest words priced (NUMBER?'s prefixes, about 18 bytes), not built;
@@ -11827,7 +11827,7 @@ bodies padded to four bytes (forth/cv8t-jitd.4). Ten JIT designs at both widths:
 bytes, the total -0.3 to -2.9 %, all alive, fib and apps as s6, fuzz-designs.py 800 runs 0 differ, instructions
 (callgrind - no PMU here) the same or fewer on every workload; two wrong turns the counts caught (a NOOP word through
 jit_kslot, shellmix +11 %; the room check, gc16 +129 %). Not yet in the self-hosting compiler (G-NOT-YET). Found on the
-way: results/pending/wends16-after-seed96.patch - jit_wends two bytes a number, -1,096 to -1,176 bytes on every jitx
+way: results/applied-after-seed96/wends16-after-seed96.patch - jit_wends two bytes a number, -1,096 to -1,176 bytes on every jitx
 engine, the self-hosting compiler's table too (small-jit's selfhost-check PASS at both widths); the after-seed-96 batch
 is seven patches. tools/batch-check.sh BASE= and batch-make.sh TITLE= for a queue on top of a batch not yet applied.
 GOALS.md's register: two rows changed, one new.
@@ -11836,7 +11836,7 @@ GOALS.md's register: two rows changed, one new.
 
 The owner: can we reuse anything from Architect Labs' Frostbite (3DNews, then the company's post) - "reuse whatever you
 think is reasonable". results/drafts/frostbite-711.md. Taken: its fitted model (Arcmodel: a function over counters
-fitted to RTL within 5 %) - results/pending/counters-after-seed96.patch: cputime reads branch mispredictions and
+fitted to RTL within 5 %) - results/applied-after-seed96/counters-after-seed96.patch: cputime reads branch mispredictions and
 last-level misses beside instructions and cycles, evolve.py keeps the medians per workload (records' "cnt"), chain B's
 lines carry them, lab/evolve/countfit.py fits the time to them held out by design (--self-test in run-tests) - chain B's
 data will say whether one run's counts can screen designs without rounds. And its held-out check, on the screen's pool
