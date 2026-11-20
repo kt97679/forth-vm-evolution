@@ -48,8 +48,11 @@ interleaved rounds, medians (`results/drafts/jitfew-test-713.py ROOT IDS 5 LIST`
 Memory -20 to -64 KB, the engine +224 to +544 bytes (0.5-1.2 % of these designs' totals): a trade between two
 objectives, so a gene (GOALS.md: a mechanism goes behind a gene), the search to weigh it. Time: every workload
 within the noise of five rounds (-7.7 to +6.6 %, medians near 0; the kernel workload -0.4 to -3.7 % on six of
-eight - fewer faults). engines-check.py's three new variants (jitfew; without jitx; with jitdead, jitexec,
-jitmul, jitcfa) - see the result line in PROGRESS.md.
+eight - fewer faults). The long path is exercised too: the apps' longest words (cd16sim's PROCESS, fcp's - past 256
+operations, Iteration 488) go through jit_body_big, and the apps' outputs are alike. The queue checked with it
+(batch-check on 6f91bb0, three patches): PASS - run-tests (engines-check.py 118 paths, its three new variants
+among them: jitfew; without jitx; with jitdead, jitexec, jitmul, jitcfa - each at both widths where offered),
+validate 7 of 7 identical, the jail.
 
 Priced on the way and not kept:
 - **A lower cap** (JIT_MAXOPS 256 or 128, nothing else): memory -9 to -17 pages, the engine 0 or -64 bytes, but a

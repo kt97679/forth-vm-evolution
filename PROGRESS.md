@@ -11918,3 +11918,5 @@ cap (the same pages, the long words bytecode again), FILL 0 by demand-zero pages
 the image mapped from its file (1-2 pages), -fno-stack-clash-protection (no probes here). The rest of the period's
 tricks (Mesa, Smalltalk-80, the Transputer, BCPL, the B5000, SOAP, the AGC) here already. Six register rows. A trap noted:
 a scratch clone sharing build/ copies its overlays through build/work's links into the sandbox's forth/.
+The queue with jitfew checked: batch-check on 6f91bb0, 3 patches - PASS (run-tests with engines-check.py's 118 paths,
+validate 7 of 7 identical, the jail; recorded in results/queued-genes/ORDER.md).
