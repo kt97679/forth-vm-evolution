@@ -11902,3 +11902,7 @@ pages either way (results/drafts/layout-faults-713.py; results/drafts/bss-pages-
 stack tops, small variables split by t_obuf) - a fixed layout proposed for the reopened search; the reading carries the
 environment's pages (results/drafts/env-pages-713.py; results/drafts/resident-peak-713.py beside the faults); short
 branches priced, not proposed (results/drafts/branch-census-713.py). Four register rows.
+Then the owner's yes to a fixed environment: results/queued-genes/fixenv-after-seed96.patch (evolve.run_env: PATH,
+CPUTIME_JAIL and a pad to 1,024 bytes with the arguments, for every engine run through sh()) - tested
+(results/drafts/fixenv-713.md, results/drafts/fixenv-test-713.py): fb0d57c8a2 15 / 27 pages whatever the caller's
+environment, outputs alike; queued with the reopened search's series.

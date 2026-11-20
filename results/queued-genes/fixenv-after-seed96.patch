@@ -1,0 +1,40 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 33118e8..9bb146f 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -716,6 +716,27 @@ def _contain(cpu, kind=None):
+         if kind == 'engine':
+             resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
+     return f
++# Iteration 713 (the owner, from results/drafts/early-games-713.md): every engine run - the search's, a check's, a
++# remote's - with one environment, padded so that it and the engine's arguments always take RUN_ENV_BYTES of the
++# initial stack. The memory reading counts the pages a run touches, the stack's among them: the measuring process's
++# environment (the sandbox's 17 KB: 3 pages more) and the paths' lengths (the run's directory, the machine's) moved it
++# between machines and sessions - a likely reason the sandbox read chain A's holders 4-16 KB above the laptop. The
++# environment's size biases timings too (Mytkowicz et al., ASPLOS 2009); with ASLR on, as here, that part is noise.
++# No workload reads the environment; the engines need PATH alone. EVOLVE_KEEP_ENV=1: the caller's, as before.
++RUN_ENV_BYTES = 1024
++def run_env(cmd, kind):
++    """The environment of an engine run (kind 'engine' or 'cputime'): PATH, cputime's CPUTIME_JAIL, and EVOLVE_PAD
++    filling the arguments' and the environment's strings - the exec's file name (AT_EXECFN) counted too - to
++    RUN_ENV_BYTES."""
++    i = 3 if cmd and os.path.basename(str(cmd[0])) == 'taskset' else 0
++    if len(cmd) > i + 3 and os.path.basename(str(cmd[i])) == 'setarch': i += 3
++    args = [str(a) for a in cmd[i + (1 if kind == 'cputime' else 0):]]
++    e = {'PATH': '/usr/bin:/bin'}
++    if kind == 'cputime': e['CPUTIME_JAIL'] = '1'
++    used = (sum(len(a) + 1 for a in args) + len(args[0]) + 1) if args else 0
++    used += sum(len(k) + len(v) + 2 for k, v in e.items()) + len('EVOLVE_PAD') + 2
++    e['EVOLVE_PAD'] = 'x' * max(0, RUN_ENV_BYTES - used)
++    return e
+ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
+     """Run cmd in a process group of its own and kill the WHOLE group on
+     timeout. A broken design executes arbitrary code, and the engine's
+@@ -728,6 +749,7 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
+     waiting its turn on a loaded laptop is not. timeout, wall-clock, is
+     only the backstop for one that blocks. SIGXCPU counts as a timeout."""
+     kind = _kind(cmd)
++    if kind and env is None and os.environ.get('EVOLVE_KEEP_ENV') != '1': env = run_env(cmd, kind)   # 713
+     if kind == 'cputime': env = dict(env if env is not None else os.environ, CPUTIME_JAIL='1')
+     p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.PIPE if inp is not None else subprocess.DEVNULL,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain(cpu, kind), env=env)

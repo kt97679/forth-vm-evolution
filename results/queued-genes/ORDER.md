@@ -7,6 +7,7 @@ first seed. Check it on master as it stands: `env PENDING=results/queued-genes R
 BASE since 713). Then, from the repository's top:
 
     git apply results/queued-genes/jitdead-after-seed96.patch
+    git apply results/queued-genes/fixenv-after-seed96.patch
 
 batch-check (711, on 7ea03e9 - 1 patches, after results/pending's 8): PASS - run-tests PASS (the generators: 113 paths),
 validate 7 of 7 IDENTICAL, the jail PASS.
@@ -25,3 +26,16 @@ jitdead-710.md): ten JIT designs, the gene off and on, at both widths - the five
 image -24 to -80, the engine -592 to +640, the total -0.3 to -2.9 %; all 40 builds alive, fib and apps as s6;
 fuzz-designs.py 800 runs, 0 differ; instructions (callgrind) the same or fewer on every workload of four designs (up to
 -5.9 % on the corpus).
+
+**fixenv-after-seed96.patch** (lab/evolve/evolve.py; Iteration 713 - the owner: "if you think it will help us find
+better designs - let's do it") - every engine run with one environment: PATH=/usr/bin:/bin, cputime's CPUTIME_JAIL,
+and EVOLVE_PAD filling the environment's and the arguments' strings (the exec's file name counted) to 1,024 bytes of
+the initial stack (evolve.run_env, called by sh() for an engine or cputime; EVOLVE_KEEP_ENV=1 keeps the caller's). Why
+(results/drafts/early-games-713.md): memory is the pages a run faults, the stack's among them, and the measuring
+process's environment and paths moved it between machines and sessions - the sandbox's 17 KB environment +3 pages; the
+environment's size biases timings too (Mytkowicz et al., ASPLOS 2009 - with ASLR on, as the search runs, noise). With
+the reopened search's series so its runs compare with each other, not with the earlier series' records (about a page
+apart on the laptop). Tested (results/drafts/fixenv-713.md): fb0d57c8a2 medians of 15 - start-up 15 pages and the
+kernel workload 27 with the parent's environment as it is or 20 KB larger (before: 19 and 31, 24 and 36); the outputs
+alike; 27 the laptop's record. All of the search's measuring goes through sh() (measure-ids.py, loadtest.py, xcheck.py:
+E.measure); lucky.py and run-spread.py, studies of the run's spread, keep their own.

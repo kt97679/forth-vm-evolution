@@ -66,8 +66,9 @@ here: it needs the batch's checks (run-tests, validate, the jail) and a measurem
 start-up, 32 on the kernel workload), and 20 KB more of it adds 5 more. The memory reading carries the measuring
 process's environment, about a page per 4 KB. That is a likely reason the sandbox read chain A's holders 4-16 KB above the laptop
 (their records at 705). Running every workload with a fixed small environment (`env -i PATH=...`) would make memory
-comparable across machines. That is the owner's call: it shifts every reading by the laptop's own environment, about
-a page, and the series' records would then differ from the new ones by that page.
+comparable across machines. The owner left it to whether it helps find better designs; it does - designs from
+different runs and machines meet in the pooled picks on memory. **Built and queued** (results/queued-genes/
+fixenv-after-seed96.patch, with the reopened search's series; tested: results/drafts/fixenv-713.md).
 
 ## Already here - each game's trick and where the project has it
 

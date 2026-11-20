@@ -249,8 +249,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   records are the sandbox's), pool-sizes.py's finds, and anchors, a few hours on the three machines - its laptop steps measure-ids.py, then
   `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle; the
   results files' gave 4 of 381), then loadtest.py - the roles the owner's trades. From the early games (results/drafts/early-games-713.md): a fixed layout of the engine's
-  writable data, a prototype for the reopened search (memory's layout luck, 1-4 pages); memory with a fixed small environment -
-  the owner's call, as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
+  writable data, a prototype for the reopened search (memory's layout luck, 1-4 pages); memory with a fixed environment -
+  built and queued (results/queued-genes/fixenv-after-seed96.patch, the owner's yes; results/drafts/fixenv-713.md), as at 611 and 649; then designs/ and the package, self-hosting phase 6 on
   them; then results/queued-genes (jitdead) applied, chainorder if its prototype pays, and the reopened search's series;
   the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
