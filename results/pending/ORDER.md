@@ -13,6 +13,7 @@ touched by it (x86 engines byte-identical); chain B and the export measure and s
     git apply results/pending/sysstubs-after-seed96.patch
     git apply results/pending/imagemsg-after-seed96.patch
     git apply results/pending/wends16-after-seed96.patch
+    git apply results/pending/counters-after-seed96.patch
 
 batch-check (710, on 2811e05 - 7 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -93,3 +94,5 @@ six jitx engines -1,120 to -1,152 bytes at 8-byte cells (923951e8ab 33,608 to 32
 four without jitx unchanged (the table unused there); all 20 alive, fib and apps as s6. The self-hosting compiler
 writes its image's table the same way (SAVE-JIT-LAYOUT, by the largest end: JW-MAX), and selfhost-check.sh puts either
 form in the engine for A: small-jit's self-hosting check PASS at both widths, its engine for A with the two-byte table.
+
+**counters-after-seed96.patch** (lab/evolve/README.md, lab/evolve/countfit.py, lab/evolve/evolve.py, lab/evolve/loadtest.py, tools/cputime.c, tools/run-tests.sh) - TODO: what it does, why, how it was tested.

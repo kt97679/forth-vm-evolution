@@ -1,0 +1,364 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 8c07841..97b7a03 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -62,6 +62,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
+ - `loadtest.py` - the measuring load (Iteration 455): the newest run's front, its fastest and slowest, each measured against s6 idle and with other cores busy running s6 - does load explain the fast end's optimism (results/drafts/fastgate-review-445.md); --ids FILE (573): the candidates.
+ - `measure-ids.py` - designs asked for by id measured as a run measures them (Iteration 705): evolve.evaluate at both widths - the size with the five programs' code, the memory, both speeds - for records made under another measure or machine (the new roles' holders); a chain's experiment step.
+ - `fuzz-designs.py` - differential fuzzing (Iteration 707): random stack-safe Forth programs on designs against s6 at the same width (--harsh: the JIT's and the run-time compilers' special paths; --arm: clang's ARMv7 builds under qemu-arm); every difference kept.
++- `countfit.py` - a model of a run's time from its counters (Iteration 711, Architect Labs' Arcmodel): instructions, branches mispredicted and last-level misses fitted per workload to the CPU time, held out by design - from records' and loadtest.py's "cnt" (tools/cputime.c, where the PMU gives them); --self-test.
+ - `footprint.py` - does the front's speed hold as the code footprint grows: a sample of the newest run's front on footprint-gen.py's programs, paired with s6, checksums checked; run and compile phases against s6, and the selection's rank agreement at each N (Iteration 371; results/generalization.md)
+ - `gene-usage.py` - the genes fronts use, an absent gene counted as off: one group, or two side by side by their difference (--vs) - seed 58 against the carried runs, a review's evidence (Iteration 375)
+ - `missmap.py` - which handlers mispredict: perf record's user-space branch misses on the kernel and corpus workloads, each sample's source line charged to its handler (Iteration 294; the laptop's, between runs)
+diff --git a/lab/evolve/countfit.py b/lab/evolve/countfit.py
+new file mode 100644
+index 0000000..50995e3
+--- /dev/null
++++ b/lab/evolve/countfit.py
+@@ -0,0 +1,161 @@
++#!/usr/bin/env python3
++"""lab/evolve/countfit.py FILE [FILE ...] [--folds K] [--self-test] - a model of a run's time from its counters (Iteration
++711; results/drafts/frostbite-711.md). Architect Labs' Frostbite (architectlabs.com/blog/frostbite) searched its design
++space with a fast model, Arcmodel, fitted to RTL: power and performance as a scalar function over a design's counters
++(SRAM reads, operations, flits), the fit iterated until model and RTL agreed within 5 % - from a worst case near 250 %
++to under 6 %, a median of 1.5 %. Here the counters are the PMU's (tools/cputime.c: instructions, cycles, branches
++mispredicted, last-level misses) and the truth the CPU time; the question is the same - does a fit over counts that
++do not depend on the moment (instructions, mispredictions, misses: one run's) predict the time the rounds measure,
++closely enough to screen designs, or to tell a noisy reading from a real one?
++
++FILE: records with "cnt" and "raw" (evolve.py's database or a results file - the design's runs), or loadtest.py's JSON
++lines with "cnt" (the design's and s6's). Each (design, workload) a sample: time ns, and the counters. Two models, each
++fitted per workload by least squares on the relative error (ns weighted 1/ns^2), K-fold by design (default 5): the
++instructions alone, ns = a*instr + c; and the three, ns = a*instr + b*brmiss + l*llcmiss + c. Printed: per workload and
++over all, the held-out folds' error |predicted - measured| / measured - median, 90th percentile, worst - and, per
++design, the speed (the geometric mean over evolve.py's WORK_SEL of the design's time over s6's, both predicted where
++s6's counters are in the file, else s6's measured median) predicted against measured: Spearman's rho and the median
++error. Cycles are not a predictor (they are the time at a clock); they are reported, cycles / ns, as the clock seen.
++No numpy: the normal equations of four unknowns, solved by elimination. As anyone, anywhere: reads only."""
++import json, math, random, statistics, sys
++
++WORK_SEL = ['kernel', 'fib', 'corpus', 'loop', 'bubble', 'ackermann', 'apps']
++KEYS = ('instr', 'cycles', 'brmiss', 'llcmiss')
++
++def samples(paths):
++    """(design, side, workload) -> {ns, instr, cycles, brmiss, llcmiss}; side 'design' or 's6'."""
++    S = {}
++    for p in paths:
++        for l in open(p, errors='replace'):
++            l = l.strip()
++            if not l.startswith('{'): continue
++            try: r = json.loads(l)
++            except ValueError: continue
++            i, c = r.get('id'), r.get('cnt')
++            if not i or not isinstance(c, dict): continue
++            if 'design' in c or 's6' in c:                       # loadtest.py's line: sides, each workload a dict
++                for side, ws in c.items():
++                    for w, d in ws.items():
++                        if d.get('instr', -1) > 0 and d.get('ns'): S[(i, side, w)] = dict(d)
++            else:                                                # a record: workload -> [instr, cycles, brmiss, llcmiss]
++                for w, v in c.items():
++                    ns = (r.get('raw') or {}).get(w)
++                    if ns and isinstance(v, list) and v and v[0] > 0: S[(i, 'design', w)] = dict(zip(KEYS, v), ns=ns)
++    return S
++
++def solve(A, b):
++    n = len(b); M = [row[:] + [b[k]] for k, row in enumerate(A)]
++    for c in range(n):
++        p = max(range(c, n), key=lambda r: abs(M[r][c]))
++        if abs(M[p][c]) < 1e-30: return None
++        M[c], M[p] = M[p], M[c]
++        for r in range(n):
++            if r != c:
++                f = M[r][c] / M[c][c]
++                M[r] = [x - f * y for x, y in zip(M[r], M[c])]
++    return [M[k][n] / M[k][k] for k in range(n)]
++
++def features(d, three):
++    f = [d['instr']] + ([max(d.get('brmiss', 0), 0), max(d.get('llcmiss', 0), 0)] if three else [])
++    return f + [1.0]
++
++def fit(rows, three):
++    """Least squares on relative error: minimise sum ((f.x - ns) / ns)^2."""
++    k = len(features(rows[0], three)); A = [[0.0] * k for _ in range(k)]; b = [0.0] * k
++    for d in rows:
++        f = features(d, three); wt = 1.0 / d['ns'] ** 2
++        for i in range(k):
++            b[i] += wt * f[i] * d['ns']
++            for j in range(k): A[i][j] += wt * f[i] * f[j]
++    for i in range(k): A[i][i] += 1e-12 * (A[i][i] or 1.0)      # a counter all zeros must not make it singular
++    return solve(A, b)
++
++def predict(x, d, three):
++    return sum(a * f for a, f in zip(x, features(d, three)))
++
++def pct(v, q):
++    v = sorted(v); return v[min(len(v) - 1, int(q * len(v)))] if v else float('nan')
++
++def rank(v):
++    o = sorted(range(len(v)), key=lambda i: v[i]); r = [0] * len(v)
++    for k, i in enumerate(o): r[i] = k
++    return r
++
++def spearman(a, b):
++    n = len(a)
++    if n < 3: return float('nan')
++    ra, rb = rank(a), rank(b); return 1 - 6 * sum((x - y) ** 2 for x, y in zip(ra, rb)) / (n * (n * n - 1))
++
++def report(S, folds):
++    designs = sorted({i for i, side, _ in S if side == 'design'})
++    if len(designs) < folds: print('countfit: %d designs with counters - too few for %d folds' % (len(designs), folds)); return 1
++    random.Random(711).shuffle(designs); fold = {i: k % folds for k, i in enumerate(designs)}
++    works = sorted({w for _, _, w in S})
++    clock = [d['cycles'] / d['ns'] for d in S.values() if d.get('cycles', -1) > 0]
++    print('countfit: %d samples, %d designs, %d workloads; the clock seen (cycles / ns): median %.2f GHz' % (
++        len(S), len(designs), len(works), statistics.median(clock) if clock else float('nan')))
++    for three in (False, True):
++        pred, errs = {}, {}
++        for w in works:
++            rows = [(i, side, d) for (i, side, w_), d in S.items() if w_ == w]
++            for k in range(folds):
++                train = [d for i, side, d in rows if side == 's6' or fold.get(i) != k]
++                test = [(i, side, d) for i, side, d in rows if side == 'design' and fold.get(i) == k]
++                if len(train) < 5 or not test: continue
++                x = fit(train, three)
++                if x is None: continue
++                for i, side, d in test:
++                    p = predict(x, d, three); pred[(i, w)] = p
++                    errs.setdefault(w, []).append(abs(p - d['ns']) / d['ns'])
++            s6 = [d for i, side, d in rows if side == 's6']
++            if s6:
++                x = fit([d for i, side, d in rows], three)
++                if x: pred[('s6', w)] = statistics.median(predict(x, d, three) for d in s6)
++        name = 'instructions, mispredictions, last-level misses' if three else 'instructions alone'
++        allerr = [e for v in errs.values() for e in v]
++        print('\n%s - held-out error by workload: median, 90th percentile, worst' % name)
++        for w in works:
++            if errs.get(w): print('  %-10s %5.1f %%  %5.1f %%  %5.1f %%  (%d)' % (w, 100 * statistics.median(errs[w]), 100 * pct(errs[w], 0.9), 100 * max(errs[w]), len(errs[w])))
++        if allerr: print('  %-10s %5.1f %%  %5.1f %%  %5.1f %%  (%d)' % ('all', 100 * statistics.median(allerr), 100 * pct(allerr, 0.9), 100 * max(allerr), len(allerr)))
++        ms, ps = [], []
++        for i in designs:
++            have = [w for w in WORK_SEL if (i, w) in pred and (i, 'design', w) in S]
++            if len(have) < len(WORK_SEL): continue
++            ref = lambda w, p: pred.get(('s6', w)) if p and ('s6', w) in pred else statistics.median(
++                [d['ns'] for (j, side, w_), d in S.items() if side == 's6' and w_ == w] or [float('nan')])
++            m = math.exp(sum(math.log(S[(i, 'design', w)]['ns'] / ref(w, False)) for w in have) / len(have))
++            q = math.exp(sum(math.log(pred[(i, w)] / ref(w, True)) for w in have) / len(have))
++            ms.append(m); ps.append(q)
++        if ms and all(not math.isnan(v) for v in ms + ps):
++            e = [abs(q - m) / m for m, q in zip(ms, ps)]
++            print('  the speed (geometric mean over %s, to s6): %d designs, Spearman %.3f, error median %.1f %%, worst %.1f %%' % (
++                ', '.join(WORK_SEL), len(ms), spearman(ms, ps), 100 * statistics.median(e), 100 * max(e)))
++    return 0
++
++def self_test():
++    """A known model, its samples drawn with 2 % noise: the three-counter fit must find it, the instructions alone not."""
++    rnd = random.Random(1); S = {}
++    for n in range(60):
++        for w in WORK_SEL + ['sieve']:
++            instr = rnd.uniform(1e7, 5e8); br = instr * rnd.uniform(0.001, 0.03); llc = instr * rnd.uniform(0, 0.002)
++            ns = (0.25 * instr + 15.0 * br + 60.0 * llc + 2e5) * rnd.gauss(1, 0.02)
++            S[('d%02d' % n, 'design', w)] = dict(instr=instr, brmiss=br, llcmiss=llc, cycles=ns * 4.2, ns=ns)
++            i6 = 3e8; ns6 = (0.25 * i6 + 15.0 * i6 * 0.02 + 60.0 * i6 * 0.001 + 2e5) * rnd.gauss(1, 0.02)   # its s6, measured beside it
++            S[('d%02d' % n, 's6', w)] = dict(instr=i6, brmiss=i6 * 0.02, llcmiss=i6 * 0.001, cycles=ns6 * 4.2, ns=ns6)
++    import io, contextlib
++    buf = io.StringIO()
++    with contextlib.redirect_stdout(buf): report(S, 5)
++    out = buf.getvalue(); print(out)
++    alone, three = out.split('instructions, mispredictions, last-level misses')
++    med = lambda part: float(part.split('  all')[1].split('%')[0])
++    ok = med(three) < 3.0 and med(alone) > med(three) and 'Spearman' in three and '4.20 GHz' in out
++    print('countfit self-test: %s (median error %.1f %% three counters, %.1f %% instructions alone)' % ('PASS' if ok else 'FAIL', med(three), med(alone)))
++    return 0 if ok else 1
++
++if __name__ == '__main__':
++    a = sys.argv[1:]
++    if '--self-test' in a: sys.exit(self_test())
++    folds = 5
++    if '--folds' in a: k = a.index('--folds'); folds = int(a[k + 1]); del a[k:k + 2]
++    if not a: sys.exit(__doc__)
++    sys.exit(report(samples(a), folds))
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index eb06e6e..33118e8 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1370,6 +1370,9 @@ def run_metric(eng, img, pw, w, single=False):
+     # The run's memory, KB (Iteration 75): the pages it touched - cputime's
+     # MINFLT, faults counted one by one - times the page size. MAXRSS only
+     # from an older cputime: on Linux 6.x it reads 0 for a small static run.
++    # Iteration 711 (results/drafts/frostbite-711.md): the run's counters where the PMU gives them (tools/cputime.c) -
++    # instructions, cycles, branches mispredicted, last-level cache misses - kept beside the time for a model of it
++    CNT_LAST.clear(); CNT_LAST.update({k.decode().lower(): int(v) for k, v in re.findall(rb'^(INSTR|CYCLES|BRMISS|LLCMISS) (\d+)', r.stderr, re.M)})
+     mf = re.search(rb'^MINFLT (\d+)', r.stderr, re.M)
+     mr = re.search(rb'^MAXRSS (\d+)', r.stderr, re.M)
+     RSS_LAST[0] = int(mf.group(1)) * PAGE_KB if mf else (int(mr.group(1)) if mr else 0)
+@@ -1379,6 +1382,8 @@ def run_metric(eng, img, pw, w, single=False):
+     if not m: raise RuntimeError('died: no measurement (exit %s)' % r.returncode)   # 527: not an AttributeError that ends the run
+     return int(m.group(1))
+ RSS_LAST, LAST_RSS = [0], {}     # the last run's memory (KB); the last measure()'s design, per workload: the median
++CNT_LAST, LAST_CNT = {}, {}      # Iteration 711: the last run's counters; the last measure()'s, per workload and side: medians
++CNT_KEYS = ('instr', 'cycles', 'brmiss', 'llcmiss')   # a record's 'cnt': these medians in this order (-1 absent), per workload
+ OUT_LAST = ['']                  # Iteration 516: the last run's output, hashed
+ PAGE_KB = os.sysconf('SC_PAGE_SIZE') // 1024
+ 
+@@ -1414,14 +1419,16 @@ def measure(eng, img, pw, works, rounds, state=None, r0=0):
+     agreed within 3.6% between halves of a session and 2.1% between CPUs
+     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
+     # Iteration 529: state - an earlier call's runs, to go on from (one round first, then the rest); r0 its rounds
+-    runs, ref, mem, outs = state if state is not None else ({}, {}, {}, {})
+-    LAST_RSS.clear()
++    runs, ref, mem, outs = state[:4] if state is not None else ({}, {}, {}, {})
++    LAST_RSS.clear(); LAST_CNT.clear()
++    cnt = state[4] if state is not None and len(state) > 4 else {}   # 711: (side, workload) -> counter -> runs
+     for r_ in range(r0, r0 + rounds):
+         for w in works:
+             pair = [(eng, img, pw, runs), REF + (ref,)]
+             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
+                 store.setdefault(w, []).append(run_metric(e, i, p, w))
+                 if store is runs: mem.setdefault(w, []).append(RSS_LAST[0])   # the design's, not s6's
++                for k_, v_ in CNT_LAST.items(): cnt.setdefault((store is runs, w), {}).setdefault(k_, []).append(v_)
+                 outs.setdefault((store is runs, w), set()).add(OUT_LAST[0])
+     # Iteration 516: a workload's output must be s6's - the run, not only its time. Unchecked, the applications
+     # workload (seed 71) rewarded failing it: 791 cpt16 designs stopped early in apps on undefined words and timed
+@@ -1431,6 +1438,9 @@ def measure(eng, img, pw, works, rounds, state=None, r0=0):
+     if 'corpus' in mem and 'corpus' in LONGF:    # Iteration 100: the corpus's memory from one single run
+         run_metric(eng, img, pw, 'corpus', single=True); mem['corpus'] = [RSS_LAST[0]]
+     LAST_RSS.update({w: statistics.median(v) for w, v in mem.items()})     # a page or two of noise
++    for (mine, w), d_ in cnt.items():                                       # 711: 'design' and 's6', each workload
++        LAST_CNT.setdefault('design' if mine else 's6', {})[w] = dict({k_: statistics.median(v_) for k_, v_ in d_.items()},
++                                                                   ns=statistics.median((runs if mine else ref)[w]))
+     med = {w: statistics.median(runs[w]) for w in works}
+     return {w: med[w] / statistics.median(ref[w]) for w in works}, med
+ 
+@@ -1516,7 +1526,7 @@ def evaluate(g, rounds, keep=False, gate=None, again=False, stop=None):
+         rec['appby'] = app_size(eng, img, pw); rec['app'] = sum(rec['appby'])     # Iteration 677: the four's code
+         rec['total'] = rec['bin'] + rec['size'] + rec['app']     # an objective: Iteration 75, the applications' since 677
+         if stop and rounds > 1 and not again:     # Iteration 529 (the owner): one round first
+-            st = ({}, {}, {}, {})
++            st = ({}, {}, {}, {}, {})      # 711: and the counters
+             t1, raw1 = measure(eng, img, pw, WORK_SEL + WORK_HELD, 1, state=st)
+             s1 = math.exp(sum(math.log(t1[w]) for w in WORK_SEL) / len(WORK_SEL))
+             m1 = max([v for w_, v in LAST_RSS.items() if w_ != 'apps'] or list(LAST_RSS.values())) if LAST_RSS else None
+@@ -1536,6 +1546,8 @@ def evaluate(g, rounds, keep=False, gate=None, again=False, stop=None):
+         # (460-500 KB, the six's 108-136): the objective measured the programs, not the machine. The rest as before.
+         rec['rss'] = max([v for w_, v in LAST_RSS.items() if w_ != 'apps'] or list(LAST_RSS.values())) if LAST_RSS else None   # KB: an objective
+         rec['mem'] = dict(LAST_RSS)
++        if LAST_CNT.get('design'):     # Iteration 711: the counters' medians a workload, where the PMU gives them -
++            rec['cnt'] = {w: [round(c_.get(k_, -1)) for k_ in CNT_KEYS] for w, c_ in LAST_CNT['design'].items()}   # data for a time model
+         rec['unit'] = UNIT
+         if gate and rec['speed'] < gate:   # Iteration 391: under the fast gate, measured again; Iteration 446
+             rec['gated'] = 1               # (results/drafts/fastgate-review-445.md): not at once - back to back the two
+diff --git a/lab/evolve/loadtest.py b/lab/evolve/loadtest.py
+index 2d03e60..49218b7 100644
+--- a/lab/evolve/loadtest.py
++++ b/lab/evolve/loadtest.py
+@@ -13,7 +13,9 @@ under it - loaded / idle near 0.90 - and the slow group does not.
+ --ids FILE (Iteration 573 - GOALS.md step 3, the final set re-measured alone and under load; the owner's decision: the
+ extremes chosen only after it): instead of the front's fastest and slowest, every design in FILE (final-set.py
+ --candidates: one record a line), each also at 32 bits (evolve.py's eval32), idle and loaded; after the table one JSON
+-line a design - {"id", "inrun", "inrun32", "idle", "loaded", "idle32", "loaded32"} - for the processing to read.
++line a design - {"id", "inrun", "inrun32", "idle", "loaded", "idle32", "loaded32"} - for the processing to read; and
++(Iteration 711), where the PMU gives them, "cnt": the first idle measure's counters a workload, the design's and s6's -
++instructions, cycles, branches mispredicted, last-level misses and the time (ns), medians - for lab/evolve/countfit.py.
+ """
+ import argparse, json, math, os, statistics, subprocess, sys, tempfile, time
+ ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
+@@ -66,8 +68,10 @@ def stop_load(ps):
+     for p in ps:
+         try: os.killpg(p.pid, 9)
+         except OSError: pass
+-def speed(eng, img, pw):
++CNT = {}                                    # Iteration 711: the first idle measure's counters (evolve.py's LAST_CNT)
++def speed(eng, img, pw, keep=False):
+     t, _ = E.measure(eng, img, pw, E.WORK_SEL, a.rounds)
++    if keep and E.LAST_CNT: CNT.clear(); CNT.update({k: dict(v) for k, v in E.LAST_CNT.items()})
+     return math.exp(sum(math.log(t[w]) for w in E.WORK_SEL) / len(E.WORK_SEL))
+ print('# The measuring load (lab/evolve/loadtest.py, Iteration 455)\n')
+ print('Front: %s, %s (%d designs); the %d fastest and %d slowest. Measured on core %d (setup()\'s), the load on %s: s6 on the'
+@@ -82,8 +86,9 @@ for grp, i in groups:
+     try:
+         eng, img = E.build(E.canon(R[i]['genome']), d); pw = E.private_work(d)
+         idle, loaded = [], []
+-        for _ in range(2):
+-            idle.append(speed(eng, img, pw))
++        CNT.clear()
++        for k_ in range(2):
++            idle.append(speed(eng, img, pw, keep=not k_))
+             ps = start_load(); time.sleep(1)
+             try: loaded.append(speed(eng, img, pw))
+             finally: stop_load(ps)
+@@ -96,7 +101,8 @@ for grp, i in groups:
+             finally: stop_load(ps)
+             f3 = lambda v: '%.3f' % v if v else '-'
+             x32 = ' %s | %s | %s |' % (f3(R[i].get('speed32')), f3(i32), f3(l32))
+-            js.append(dict(id=i, inrun=R[i].get('speed'), inrun32=R[i].get('speed32'), idle=gi, loaded=gl, idle32=i32, loaded32=l32))
++            js.append(dict(id=i, inrun=R[i].get('speed'), inrun32=R[i].get('speed32'), idle=gi, loaded=gl, idle32=i32, loaded32=l32,
++                           **({'cnt': dict(CNT)} if CNT else {})))   # 711: the counters, where the PMU gives them
+         print('| %s | %s | %.3f | %.3f | %.3f | %.3f | %.3f |%s' % (i, grp, R[i].get('speed', 0), sp[i], gi, gl, gl / gi, x32), flush=True)
+     except Exception as x: print('| %s | %s | - | - | - | - | failed: %s |' % (i, grp, str(x)[:60]), flush=True)
+ os.unlink(prog.name)
+diff --git a/tools/cputime.c b/tools/cputime.c
+index e18e4e3..9701e28 100644
+--- a/tools/cputime.c
++++ b/tools/cputime.c
+@@ -5,7 +5,8 @@
+  *                                  then "MAXRSS <kilobytes>": peak resident
+  *                                  memory, from the same rusage record,
+  *                                  then, where the hardware counters can
+- *                                  be read, "CYCLES <n>" and "INSTR <n>"
++ *                                  be read, "CYCLES <n>" and "INSTR <n>", and
++ *                                  "BRMISS <n>" and "LLCMISS <n>" (Iteration 711)
+  *
+  *  CYCLES AND INSTRUCTIONS. CPU time excludes the time spent waiting
+  *  while other processes run, but not how fast the CPU runs while this
+@@ -106,10 +107,10 @@ static void jail(void) {
+ int main(int argc, char **argv)
+ {
+     pid_t pid;
+-    int status = 0, go[2], fc, fi;
++    int status = 0, go[2], fc, fi, fb, fl;
+     struct rusage ru;
+     unsigned long long ns;
+-    long long cyc, ins;
++    long long cyc, ins, brm, llc;
+     char c = 'g';
+ 
+     if (argc < 2) {
+@@ -131,6 +132,12 @@ int main(int argc, char **argv)
+     close(go[0]);
+     fc = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
+     fi = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
++    /* Iteration 711 (results/drafts/frostbite-711.md): two more of the work's counters, for a model of the time from
++       counts (Architect Labs' Arcmodel: power and performance as a function fitted over a design's counters) - a
++       branch mispredicted, an interpreter's dispatch's price, and a last-level cache miss. Each on its own: one the
++       PMU does not have is simply absent, as above; at most four events, no multiplexing on the hosts' cores. */
++    fb = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
++    fl = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
+     if (write(go[1], &c, 1) != 1) { say("write failed\n"); return 2; }
+     close(go[1]);
+     if (waitpid(pid, &status, 0) < 0) { say("waitpid failed\n"); return 2; }
+@@ -157,6 +164,10 @@ int main(int argc, char **argv)
+     ins = perf_value(fi);
+     if (cyc > 0) say("CYCLES %lld\n", cyc);
+     if (ins > 0) say("INSTR %lld\n", ins);
++    brm = perf_value(fb);
++    llc = perf_value(fl);
++    if (brm >= 0 && ins > 0) say("BRMISS %lld\n", brm);     /* 0 is a count here: with instructions counted */
++    if (llc >= 0 && ins > 0) say("LLCMISS %lld\n", llc);
+ 
+     if (WIFEXITED(status)) return WEXITSTATUS(status);
+     return 128 + (WIFSIGNALED(status) ? WTERMSIG(status) : 0);
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index ce13895..98f77e9 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -402,6 +402,10 @@ echo "a death by a retired value (lab/evolve/deaths-check.py --self-test - Itera
+ if out=$(python3 "$ROOT/lab/evolve/deaths-check.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' deaths "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
+ else printf '  %-12s FAIL   %s\n' deaths "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+ echo
++echo "the counters' time model (lab/evolve/countfit.py --self-test - Iteration 711):"
++if out=$(python3 "$ROOT/lab/evolve/countfit.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' countfit "$(printf '%s' "$out" | tail -1 | cut -c27-127)"
++else printf '  %-12s FAIL   %s\n' countfit "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
++echo
+ echo "the JIT's value holes (lab/evolve/jitholes-check.py):"
+ if out=$(python3 "$ROOT/lab/evolve/jitholes-check.py" 2>&1); then printf '  %-12s ok     %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c17-117)"
+ else printf '  %-12s FAIL   %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
