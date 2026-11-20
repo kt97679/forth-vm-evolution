@@ -11804,11 +11804,11 @@ built as genes, then a new series (results/drafts/new-roles-plan-705.md, GOALS.m
 
 The sweep (the owner: "proceed", to a systematic search with the evaluator in the loop) - results/drafts/sweep-709.md.
 The smallest engine read by symbol size again, each proposal built and measured on 20-34 designs (rtsc-707.py). Two
-patches into the after-seed-96 batch (six now; batch-check below): sysstubs - the runtime's 19 register-compatible
-system calls as dietlibc's unified stubs, clang's x86-64 engines -176 to -400 bytes; GCC keeps the C wrappers, its LTO
-inlining them (the stubs grew its large -O2 engines by 64-192 bytes), its preprocessed runtime and the i386 one
-byte-identical; imagemsg - the engine's refusals of an image as one message, `not a RelF image (N)` with a check
-digit, -226 to -458 bytes on every design at 8-byte cells, -234 to -336 at 4, ARMv7 10 of 10 under qemu (a user-visible
-change; "not a RelF image" kept for relf's crash fuzzer). The smallest engine 4,768 to 4,230 bytes. The kernel's
-largest words priced (NUMBER?'s prefixes, about 18 bytes), not built; the profiler's top dispatches left for after
-chain A. GOALS.md's register: three rows.
+patches into the after-seed-96 batch (six now; batch-check PASS): results/pending/sysstubs-after-seed96.patch - the
+runtime's 19 register-compatible system calls as dietlibc's unified stubs, clang's x86-64 engines -176 to -400 bytes;
+GCC keeps the C wrappers, its LTO inlining them (the stubs grew its large -O2 engines by 64-192 bytes), its preprocessed
+runtime and the i386 one byte-identical; results/pending/imagemsg-after-seed96.patch - the engine's refusals of an image
+as one message, `not a RelF image (N)` with a check digit, -226 to -458 bytes on every design at 8-byte cells, -234 to
+-336 at 4, ARMv7 10 of 10 under qemu (a user-visible change; "not a RelF image" kept for relf's crash fuzzer). The
+smallest engine 4,768 to 4,230 bytes. The kernel's largest words priced (NUMBER?'s prefixes, about 18 bytes), not built;
+the profiler's top dispatches left for after chain A. GOALS.md's register: three rows.
