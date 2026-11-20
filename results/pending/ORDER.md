@@ -83,11 +83,13 @@ cut header (4), the version raised (2), a feature bit set (3), each exit 2; the 
 ARM list spread by speed, cross-built by clang (tools/arm-cross-check.py, qemu-arm), 10 of 10 alive and identical on fib
 and apps. With sysstubs and rtsc, chain B's x86-64 engines are about 400-1,100 bytes below chain A's for the same designs (GCC's the least).
 
-**wends16-after-seed96.patch** (tools/layout.py) - the JIT's table of the image words' ends (jit_wends, Iteration 489:
+**wends16-after-seed96.patch** (tools/layout.py, forth/cross-cv8.4, tools/selfhost-check.sh) - the JIT's table of the image words' ends (jit_wends, Iteration 489:
 the decoder's end for a word reached without its header) written two bytes a number where every end is under 64 KB, as
 every image is (8-11 KB): it was 2,568 bytes of a jitx engine's 5-6 KB of rodata, 321 rows of two 4-byte numbers. The C
 reads it as before (jit_wends[m][0] == o, cbase + jit_wends[m][1]); an image past 64 KB keeps the 4-byte form. Why: found
 while building the gene jitdead (Iteration 710) - the table appeared in a design without jitx. Tested: ten JIT designs
 (the four smallest, six spread by speed; results/drafts/jitdead-710.md), each built before and after at both widths: the
 six jitx engines -1,120 to -1,152 bytes at 8-byte cells (923951e8ab 33,608 to 32,472), -1,096 to -1,176 at 4-byte, the
-four without jitx unchanged (the table unused there); all 20 alive, fib and apps as s6.
+four without jitx unchanged (the table unused there); all 20 alive, fib and apps as s6. The self-hosting compiler
+writes its image's table the same way (SAVE-JIT-LAYOUT, by the largest end: JW-MAX), and selfhost-check.sh puts either
+form in the engine for A: small-jit's self-hosting check PASS at both widths, its engine for A with the two-byte table.
