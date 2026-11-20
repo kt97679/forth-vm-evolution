@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 710.
+- master: Iteration 711.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -214,7 +214,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   batch; batch-check with BASE=results/pending until that is applied): -700 B of the programs' code, the total -0.3 to
   -2.9 % on ten JIT designs, instructions the same or fewer; not yet in the self-hosting compiler (G-NOT-YET).
   **wends16** into the after-seed-96 batch: -1.1 KB on every jitx engine.
-  **Next: chain A's processing** - first the batch (seven patches now), by hand (ORDER.md: batch-check, git apply, the move to
+  **711 (the owner: "reuse whatever you think is reasonable" from Architect Labs' Frostbite)**: results/drafts/
+  frostbite-711.md. The counters patch into the batch - mispredictions and last-level misses beside instructions and
+  cycles, kept per workload, chain B's lines carrying them, lab/evolve/countfit.py to fit the time to them after
+  chain B (a screen without rounds, if it holds). The held-out check on the screen's pool: the interpreted end's
+  search-set advantage carries about a fifth to the held-out pair - proposed: the roles' held-out pair reported, more
+  held out by group in the reopened search (the owner's call).
+  **Next: chain A's processing** - first the batch (eight patches now), by hand (ORDER.md: batch-check, git apply, the move to
   results/applied-after-seed96); then the plan's "Its processing": process-followup.sh 96-roles with the ten roles (the
   holders' records from the measure-ids pack first), the shortlist (final-pick.py's shortlist, about 60), chain B at 10
   rounds on the three machines (the owner's hours); then the roles, designs/ and the package, self-hosting phase 6 on

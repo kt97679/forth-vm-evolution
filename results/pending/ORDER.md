@@ -95,4 +95,17 @@ four without jitx unchanged (the table unused there); all 20 alive, fib and apps
 writes its image's table the same way (SAVE-JIT-LAYOUT, by the largest end: JW-MAX), and selfhost-check.sh puts either
 form in the engine for A: small-jit's self-hosting check PASS at both widths, its engine for A with the two-byte table.
 
-**counters-after-seed96.patch** (lab/evolve/README.md, lab/evolve/countfit.py, lab/evolve/evolve.py, lab/evolve/loadtest.py, tools/cputime.c, tools/run-tests.sh) - TODO: what it does, why, how it was tested.
+**counters-after-seed96.patch** (lab/evolve/README.md, lab/evolve/countfit.py, lab/evolve/evolve.py,
+lab/evolve/loadtest.py, tools/cputime.c, tools/run-tests.sh) - the PMU's counts kept beside the time: cputime reads
+branches mispredicted and last-level misses too (each absent where the PMU lacks it, as cycles and instructions were);
+evolve.py keeps each run's counters, their medians per workload and side (measure(): LAST_CNT) and a record's "cnt"
+([instructions, cycles, mispredictions, misses] a workload, beside "raw"); loadtest.py's line per design - chain B's -
+carries "cnt", the first idle measure's, the design's and s6's; lab/evolve/countfit.py fits the time to them per
+workload, held out by design, and reports the error and the speed's ranking (--self-test in run-tests). Why: Architect
+Labs' Frostbite searched with Arcmodel, a function over counters fitted to RTL within 5 % (results/drafts/frostbite-711.md);
+a model of our time from one run's counts would be a screen without rounds - chain B's ~60 designs at 10 rounds on
+three machines are the data to fit and judge it (707's "INSTR beside time", set up). Nothing is selected or scored on
+the counts; the timing is unchanged (two more events opened at exec). Tested: here, without a PMU, the lines are absent
+and nothing changes; with a cputime that adds them, measure() keeps the medians per workload and side, through the
+one-round-first state too, and a record's "cnt" comes out [instr, cycles, brmiss, llcmiss]; countfit.py reads both line
+forms (records, loadtest's) and its self-test finds a known model (1.5 % median error, 19 % with instructions alone).

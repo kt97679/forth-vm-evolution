@@ -1,0 +1,13 @@
+944 designs
+all      n= 944  Spearman(search, held-out) 0.908  (search, sieve) 0.905  (search, parse) 0.677
+   top    1% by search: search 0.120  held-out 0.086  (all: 0.146, 0.102) - their median held-out rank 6%
+   top    5% by search: search 0.122  held-out 0.087  (all: 0.146, 0.102) - their median held-out rank 8%
+   top   20% by search: search 0.123  held-out 0.089  (all: 0.146, 0.102) - their median held-out rank 14%
+JIT      n= 530  Spearman(search, held-out) 0.701  (search, sieve) 0.739  (search, parse) 0.107
+   top    1% by search: search 0.119  held-out 0.086  (all: 0.140, 0.094) - their median held-out rank 12%
+   top    5% by search: search 0.121  held-out 0.087  (all: 0.140, 0.094) - their median held-out rank 12%
+   top   20% by search: search 0.122  held-out 0.088  (all: 0.140, 0.094) - their median held-out rank 22%
+not JIT  n= 414  Spearman(search, held-out) 0.585  (search, sieve) 0.481  (search, parse) 0.687
+   top    1% by search: search 0.267  held-out 0.235  (all: 0.305, 0.238) - their median held-out rank 43%
+   top    5% by search: search 0.270  held-out 0.231  (all: 0.305, 0.238) - their median held-out rank 33%
+   top   20% by search: search 0.273  held-out 0.233  (all: 0.305, 0.238) - their median held-out rank 40%

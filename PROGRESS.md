@@ -11831,3 +11831,16 @@ way: results/pending/wends16-after-seed96.patch - jit_wends two bytes a number, 
 engine, the self-hosting compiler's table too (small-jit's selfhost-check PASS at both widths); the after-seed-96 batch
 is seven patches. tools/batch-check.sh BASE= and batch-make.sh TITLE= for a queue on top of a batch not yet applied.
 GOALS.md's register: two rows changed, one new.
+
+## Iteration 711 - 2026-11-20 - Claude
+
+The owner: can we reuse anything from Architect Labs' Frostbite (3DNews, then the company's post) - "reuse whatever you
+think is reasonable". results/drafts/frostbite-711.md. Taken: its fitted model (Arcmodel: a function over counters
+fitted to RTL within 5 %) - results/pending/counters-after-seed96.patch: cputime reads branch mispredictions and
+last-level misses beside instructions and cycles, evolve.py keeps the medians per workload (records' "cnt"), chain B's
+lines carry them, lab/evolve/countfit.py fits the time to them held out by design (--self-test in run-tests) - chain B's
+data will say whether one run's counts can screen designs without rounds. And its held-out check, on the screen's pool
+(results/drafts/heldout-711.py): the interpreted end's top 20 % by the search set sit at the held-out pair's 40th
+percentile, about a fifth of their advantage carried, the JIT's about half - proposed: the roles' held-out pair in their
+write-up, and more held out by group for the reopened search. Not taken: the architecture. The after-seed-96 batch is
+eight patches.
