@@ -11819,14 +11819,15 @@ The owner: "yes" to building the reopened search's genes while chain A runs. Cha
 bytes): every front design has byte headers, whose links are unsigned backward distances - chains by use need signed
 links, +19 to +73 bytes of links on six designs and the engine's walk, the Forth walkers, HEADER and the self-hosting
 compiler changed; the owner told, a prototype to count first. Mechanism 9's V1' built as the gene jitdead
-(results/queued-genes/jitdead-after-seed96.patch, a queue of its own for after the roles;
-results/drafts/jitdead-710.md): the JIT's header [JIT] alone, the end by the converter's rule, the native offset over
-the translated word's dead first four bytes with the trigger JITN (a pinned code), what native code reads there copied
-out (jit_keep), a refused word's trigger a NOOP, bodies padded to four bytes (forth/cv8t-jitd.4). Ten JIT designs at
-both widths: the five programs' code -693 to -741 bytes, the total -0.3 to -2.9 %, all alive, fib and apps as s6,
-fuzz-designs.py 800 runs 0 differ, instructions (callgrind - no PMU here) the same or fewer on every workload; two wrong
-turns the counts caught (a NOOP word through jit_kslot, shellmix +11 %; the room check, gc16 +129 %). Not yet in the
-self-hosting compiler (G-NOT-YET). Found on the way: results/pending/wends16-after-seed96.patch - jit_wends two bytes a
-number, -1,096 to -1,176 bytes on every jitx engine, the self-hosting compiler's table too (small-jit's selfhost-check
-PASS at both widths); the after-seed-96 batch is seven patches. tools/batch-check.sh BASE= and batch-make.sh TITLE= for
-a queue on top of a batch not yet applied. GOALS.md's register: two rows changed, one new.
+(results/queued-genes/jitdead-after-seed96.patch, a queue of its own for after the roles -
+results/queued-genes/ORDER.md, its check PASS on top of the batch; results/drafts/jitdead-710.md): the JIT's header
+[JIT] alone, the end by the converter's rule, the native offset over the translated word's dead first four bytes with
+the trigger JITN (a pinned code), what native code reads there copied out (jit_keep), a refused word's trigger a NOOP,
+bodies padded to four bytes (forth/cv8t-jitd.4). Ten JIT designs at both widths: the five programs' code -693 to -741
+bytes, the total -0.3 to -2.9 %, all alive, fib and apps as s6, fuzz-designs.py 800 runs 0 differ, instructions
+(callgrind - no PMU here) the same or fewer on every workload; two wrong turns the counts caught (a NOOP word through
+jit_kslot, shellmix +11 %; the room check, gc16 +129 %). Not yet in the self-hosting compiler (G-NOT-YET). Found on the
+way: results/pending/wends16-after-seed96.patch - jit_wends two bytes a number, -1,096 to -1,176 bytes on every jitx
+engine, the self-hosting compiler's table too (small-jit's selfhost-check PASS at both widths); the after-seed-96 batch
+is seven patches. tools/batch-check.sh BASE= and batch-make.sh TITLE= for a queue on top of a batch not yet applied.
+GOALS.md's register: two rows changed, one new.
