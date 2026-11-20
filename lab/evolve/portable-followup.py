@@ -77,6 +77,9 @@ gain = []     # 624: --jit - the run's gain re-measured: each design it bred pas
 if JIT and seedN is not None:
     led = stopping.LEDGER
     rr = [r for r in stopping.series(led)[1] if r['seed'] < seedN] + CF.confirmations(led, seedN) + CF.portables(led, seedN)
+if JIT and seedN is not None and not rr:                  # 713: the series' first run - no bar, no gain past it (stopping's
+    print('portable-followup: seed %d is its series\' first run - nothing to beat, no gain listed' % seedN)   # gains(): None)
+if JIT and seedN is not None and rr:
     bar = CF.judge(dict(hv=0.0, fastest=0.0, smallest=0, memory=0, fastest32=0.0), 1.0, rr)[0]
     A = [i for i, r in R.items() if r.get('status') == 'ok' and r.get('speed') and r.get('total') and r.get('rss') and r.get('speed32')]
     names = dict(fastest='the fastest', smallest='the smallest', memory='the least memory', fastest32='the fastest at 32 bits')

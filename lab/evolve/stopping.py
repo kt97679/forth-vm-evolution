@@ -43,6 +43,8 @@ def mem_kb(seed):
 
 def bar(runs, seed=None):
     """What run seed must reach to gain over these runs, criterion by criterion (GOALS.md's thresholds)."""
+    if not runs:                                          # 713: a series' first run has nothing to beat (gains(): None)
+        raise ValueError('stopping.bar: no earlier runs - a series\' first run has nothing to beat')
     return dict(hv=max(r['hv'] for r in runs) * 1.01, fastest=min(r['fastest'] for r in runs) * 0.98,
                 smallest=min(r['smallest'] for r in runs) * 0.99, memory=min(r['memory'] for r in runs) - mem_kb(seed),
                 fastest32=min(r['fastest32'] for r in runs) * 0.98)

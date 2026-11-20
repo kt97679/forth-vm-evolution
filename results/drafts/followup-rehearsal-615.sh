@@ -32,7 +32,8 @@ nl=$(cd "$R/results/chain-followup87" && find . -type f | wc -l)
 sed -n '/^# The final set/,$p' results/followup-pick-seed87.md > "$R/pick.611"; sed -n '/^# The final set/,$p' "$R/results/followup-pick-seed87.md" | sed "s|$R/results/|results/|g" > "$R/pick.here"   # the sessions' paths named as 611's
 python3 results/drafts/followup-roles-611.py > "$R/roles.611" 2>&1
 p1=$([ "$nd" = 0 ] && [ "$nf" = "$nl" ] && echo PASS || echo FAIL); p2=$(cmp -s "$R/pick.611" "$R/pick.here" && echo PASS || echo FAIL)
-p3=$(cmp -s "$R/roles.611" "$R/out/roles.txt" && echo PASS || echo FAIL)
+sed -i 's/^\(## The roles .* memory \)4 KB$/\18 KB/' "$R/roles.611"   # 713: 708's memory rule (8 KB from seed 95, the heading) -
+p3=$(cmp -s "$R/roles.611" "$R/out/roles.txt" && echo PASS || echo FAIL)   # the one line it changes in 611's roles
 # 616: the rule after the follow-up on 611's readings - seed 87's gain confirmed, as 611 found it (the mean -4.2% against
 # 8cc7f60d6b, results/followup-roles-seed87.md; binary + image 0.98%, short of 1%)
 p5=$(cmp -s results/followup-pick-seed87.json "$R/results/followup-pick-seed87.json" && echo PASS || echo FAIL)   # 617: the pick's JSON, 614's

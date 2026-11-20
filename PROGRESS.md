@@ -11891,3 +11891,7 @@ Then the JIT designs (results/drafts/sizes-jit-713.json: the results files' 381 
 smallest JIT design's middle was never screened - one 1 % smaller and within 2 % in-run (13a2b38e1b), four within 5 %,
 added to chain C's candidates; the holders' records in chain A's list are the sandbox's, so in-run comparisons go through
 in-run terms (the e51c01ba10 claim corrected: +19.6 % slower on x86-64, a long shot).
+And the two stale follow-up rehearsals made good: results/drafts/jit-rehearsal-622.py's (5) was a crash, not staleness -
+portable-followup.py --jit on a series' first run called stopping.bar with no earlier runs (max() of nothing); now it lists
+no gain there (stopping.gains' None), and stopping.bar says why it refuses; results/drafts/followup-rehearsal-615.sh
+accepts 708's memory heading (8 KB), the one line it changed. Both PASS; stopping.py and confirm.py self-tests pass.
