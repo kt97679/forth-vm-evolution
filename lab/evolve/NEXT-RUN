@@ -13,6 +13,14 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 717 (chain D - the smallest JIT design's band; the owner: "proceed with setting up next run as you think is most
+#   reasonable"): about 4 hours, the laptop and dream. pool-sizes.py over every database's JIT records up to 39,100 B whose
+#   own run's readings are within 10 % of 15eda54ebd's (0.1924 / 0.2140, seed 96: the ceilings 0.2116 / 0.2354), built and
+#   kept below 35,980 B (1 % under 15eda54ebd's 36,344) - chain C's 40 minutes reached only 35,365 B before the batch; the
+#   seed 95 and 96 results files alone gave 23 (results/followup-seed96-jitband.md, with the role's 5 anchors). It writes
+#   build/evolve/jitband-list.md - the 28 and its best 30 new finds; measure-ids.py on it, then loadtest.py at 10 rounds
+#   (~40 minutes a session at chain C's ~1,300 s + 21 s a design), repeated while another ends by dream's deadline. The
+#   PMU's counts only with `sudo sysctl kernel.perf_event_paranoid=2` before the start.
 # Iteration 716 (chain C processed - results/followup-roles-seed96-roles-c.md): none - the roles next (the owner's
 #   choices first: the smallest, the fastest portable's tie, the x86-32 tie by size), then self-hosting phase 6 on them.
 # Iteration 714 (chain B processed; the owner: 6 hours, "our goal is not to lose any potentially good designs"): chain C -
@@ -374,5 +382,5 @@
 # (ran from 652's bundle at c8c423671f - its archive the rage check, PASS:) experiment rage-designs.py
 # Iteration 654 (the rage check processed - PASS, results/rage-designs-654.md): none - the freeze is the sandbox's; a
 # pull of this bundle must not run the rage check again.
-none
+experiment pool-sizes.py --list results/followup-seed96-jitband.md --free 0 --jit 39100 --below-jit 35980 --jit-speed 0.2116 --jit-speed32 0.2354 --minutes 40 --write build/evolve/jitband-list.md --anchors all --cap 30 then experiment measure-ids.py --ids build/evolve/jitband-list.md --rounds 3 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10
 # Iteration 714's line, chain C: experiment measure-ids.py --ids results/followup-seed96-roles-c.md --rounds 3 then experiment pool-sizes.py --list results/followup-seed96-roles-c.md  ... (loadtest.py 10 times)

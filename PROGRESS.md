@@ -11985,3 +11985,17 @@ results/chain-followup96-roles-c/ (README.md, pool-sizes.md; its sK: dream.lan-p
 dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md, rage.lan-prebuiltarm.md,
 rage.lan-prebuiltarm.out.json), results/drafts/chainC-716.py, results/drafts/jitmiddle-716.py;
 results/followup-seed96-roles-c.md's records from the measure-ids pack.
+
+## Iteration 717 - 2026-11-21 - Claude
+
+The owner: a deep dive into the esoteric languages for reusable ideas, then the next run as I think most reasonable.
+FALSE, the Brainfuck optimisers and self-compilers, Befunge-93 and Funge-98 (befunjit, ff3, bef2c, fingerprints), the
+golfing languages, Joy and Unlambda, sectorforth and milliForth, each against the genes and the register: most here.
+New: literals converted before the lookup (FALSE's first-character dispatch) - literals 28.6 % of the corpus's tokens and
+93 % of its misses, 50 % of parse's - about half their walk for a few tens of bytes: the gene numfirst proposed for the
+reopened search; the one-word IF skip (~50 B) under 713's short branches; the messages as codes (~200 B) the owner's.
+Chain D set (about 4 hours, the laptop and dream): pool-sizes.py --jit-speed/--jit-speed32 (the JIT band screened by its
+own run's readings before building) and --write/--anchors/--cap (a list for the chain's next steps) - the results
+files alone gave 23 JIT designs below 35,980 B within 10 % of 15eda54ebd in-run; measure-ids.py, loadtest.py at 10 rounds.
+Files: results/drafts/esolangs-717.md, results/drafts/esolangs-717.py, results/followup-seed96-jitband.md; GOALS.md's
+register (three rows), lab/evolve/pool-sizes.py, NEXT-RUN, REMOTES, results/predictions.md (chain D's five).

@@ -11,7 +11,13 @@ total - for --minutes (default 40; the JIT-free designs 3/4 of it, then the JIT 
 --below-jit 36805, the smallest JIT design's middle; the processing compares their in-run speeds in in-run terms). stdout: a summary, then each design
 smaller than FILE's smallest after the change (JIT-free, and JIT apart) as one record a line - its record, "bin" and
 "total" master's, "before_batch" the database's - for the processing: a list for the next chain if there are any. FILE's
-records carry master's sizes already (results/drafts/sizes-713.py). Never exits non-zero: a build that fails is a line."""
+records carry master's sizes already (results/drafts/sizes-713.py). Never exits non-zero: a build that fails is a line.
+--jit-speed S / --jit-speed32 S (Iteration 717): only the JIT records whose own run's readings (speed, speed32) are at
+most these are built - the band chain C's 40 minutes did not reach screened by the database's readings first, so only
+the few that could beat a role are built (a missing speed32 does not exclude). --write FILE [--anchors ID,...] [--cap N]:
+a list for the chain's next steps (loadtest.py --ids FILE, measure-ids.py) - the anchors' records from --list (all: every one), then
+the designs found below the threshold, the best by their own readings against the ceilings first, at most N (default
+40; the rest counted on stdout); FILE relative to the repository, as loadtest.py resolves --ids."""
 import json, os, shutil, sys, tempfile, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 A = sys.argv[1:]
@@ -19,6 +25,8 @@ def opt(n, d=None):
     if n not in A: return d
     i = A.index(n); v = A[i + 1]; del A[i:i + 2]; return v
 lst = opt('--list'); mf, mj = int(opt('--free', '22700')), int(opt('--jit', '34300')); mins = float(opt('--minutes', '40'))
+sj, sj32 = opt('--jit-speed'), opt('--jit-speed32')    # 717: the JIT band screened by in-run readings before building
+wr, anc, cap = opt('--write'), opt('--anchors'), int(opt('--cap', '40'))
 bf, bj = opt('--below-free'), opt('--below-jit')        # 713: report below these, not the list's smallest (chain C: the
                                                         # smallest JIT design's middle - below its holder, 36,805 B)
 if not lst: sys.exit(__doc__)
@@ -45,11 +53,16 @@ for db in dbs:
     except OSError as e:
         print('pool-sizes: %s unread (%s)' % (db, e))
 J = {i: isjit(r['genome']) for i, r in P.items()}
+def fast(r):                                            # 717: within the in-run ceilings (no ceiling: every record)
+    if sj is not None and not (r.get('speed') or 1e9) <= float(sj): return False
+    return sj32 is None or r.get('speed32') is None or r['speed32'] <= float(sj32)
+nj = sum(1 for i in P if J[i] and P[i]['total'] <= mj)
 want = {False: sorted((i for i in P if not J[i] and P[i]['total'] <= mf), key=lambda i: (P[i]['total'], i)),
-        True: sorted((i for i in P if J[i] and P[i]['total'] <= mj), key=lambda i: (P[i]['total'], i))}
+        True: sorted((i for i in P if J[i] and P[i]['total'] <= mj and fast(P[i])), key=lambda i: (P[i]['total'], i))}
 print('# pool-sizes.py --list %s: %d databases, %d records off the list - %d JIT-free up to %d B, %d JIT up to %d B; the list\'s '
       'smallest or --below: %s (JIT-free) and %s (JIT), master\'s sizes\n' % (os.path.basename(lst), len(dbs), len(P), len(want[False]), mf,
       len(want[True]), mj, small[False], small[True]), flush=True)
+if sj or sj32: print('JIT in-run ceilings %s / %s: %d of the %d JIT records up to %d B\n' % (sj, sj32, len(want[True]), nj, mj), flush=True)
 t0 = time.time(); done = {False: 0, True: 0}; found = []; died = 0
 tmp = tempfile.mkdtemp(prefix='pool-sizes-')
 try:
@@ -77,3 +90,15 @@ for j in (False, True):
           ', up to %d B before the batch' % last if last else ''))
 print('built in %.0f s; %d failed; %d below the threshold\n' % (time.time() - t0, died, len(found)))
 for r in found: print(json.dumps(r, sort_keys=True))
+if wr:                                                  # 717: the chain's next steps read this list
+    out = wr if os.path.isabs(wr) else os.path.join(os.path.dirname(os.path.dirname(HERE)), wr)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    A_ = list(L.values()) if anc == 'all' else [L[i] for i in (anc.split(',') if anc else []) if i in L]   # all: every record of --list
+    key = lambda r: max((r.get('speed') or 1e9) / float(sj or 1), (r.get('speed32') or 0) / float(sj32 or 1e9))
+    F_ = sorted(found, key=key)
+    with open(out, 'w') as f:
+        f.write('# pool-sizes.py --write (Iteration 717): %d anchors from %s, then %d of the %d found, the best by their own run\'s readings first\n\n'
+                % (len(A_), os.path.basename(lst), min(len(F_), cap), len(F_)))
+        for r in A_ + F_[:cap]: f.write(json.dumps(r, sort_keys=True) + '\n')
+    print('\nwritten %s: %d anchors, %d found%s' % (wr, len(A_), min(len(F_), cap), ' (%d past --cap %d left out)' % (len(F_) - cap, cap) if len(F_) > cap else ''))
+    print('written ids: ' + ','.join(r['id'] for r in A_ + F_[:cap]))

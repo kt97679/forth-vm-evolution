@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 716.
+- master: Iteration 717.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -285,7 +285,23 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   48a012411a, small and fast on ARMv7 ae99617f06, least memory fb0d57c8a2, smallest (the trade), fastest on x86-64
   9b15ba26f7, fastest on x86-32 (the tie), best all-round df097ba2e2, the smallest JIT design 15eda54ebd.
   results/drafts/chainC-716.py: the open pairs in chains B and C and pooled.
-  **Next: the roles** (results/drafts/new-roles-plan-705.md, step 6), the owner's answers first - designs/ and the
+  **717 (the owner: a deep dive into the esoteric languages, then the next run as I think most reasonable)**:
+  results/drafts/esolangs-717.md - FALSE, the Brainfuck optimisers, Befunge-93/Funge-98 (befunjit, ff3, bef2c), the
+  golfing languages, Joy, sectorforth and milliForth against the genes and the register: most here. New: **literals
+  converted before the lookup** (FALSE's first-character dispatch; results/drafts/esolangs-717.py): literals 28.6 % of
+  the corpus's tokens and 93 % of its misses, 50 % of parse's - about half their dictionary walk for a few tens of bytes;
+  the gene numfirst proposed for the reopened search (the owner's call). **Chain D is NEXT-RUN and REMOTES** (about 4
+  hours, the laptop and dream; the owner left the run to me): the smallest JIT design's band chain C's 40 minutes did not
+  reach - pool-sizes.py --jit-speed 0.2116 --jit-speed32 0.2354 (15eda54ebd's seed 96 readings + 10 %, the records
+  screened before building) --below-jit 35980 --write build/evolve/jitband-list.md --anchors all --cap 30; the results
+  files alone gave 23 (results/followup-seed96-jitband.md, with the role's 5 anchors - dream measures these 28);
+  measure-ids.py and loadtest.py at 10 rounds on the written list. The PMU's counts need `sudo sysctl
+  kernel.perf_event_paranoid=2` first. **Its processing**: the written list's records not in
+  results/followup-seed96-jitband.md appended to it first (the pool-sizes pack's records; its "written ids" line), then
+  `HANDOFF=results/handoff-relf-657.md PRED=717 sh lab/evolve/process-followup.sh 96-jitband ITERATION
+  smalljit=15eda54ebd` (the laptop and dream only: the JIT designs' two classes), results/drafts/chainB-714.py and
+  chainC-716.py's pairing on its readings; a beater by the rule replaces 15eda54ebd.
+  **Then the roles** (results/drafts/new-roles-plan-705.md, step 6), the owner's answers first - designs/ and the
   package made again (`sh results/drafts/freeze-build-645.sh . RECORDS NAME=ID,...`), self-hosting phase 6 on them (the
   gate: a design the cross compiler cannot build ships translator-built, named - d727605472 and 5f7e66b12d need the fused
   =I?BRANCH / DUP?NBRANCH), relf told how to fetch them. From the early games (results/drafts/early-games-713.md): a fixed
@@ -394,12 +410,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): none (NEXT-RUN none). Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
+- **Predictions due** (results/predictions.md): chain D (717) - five. Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first
   run); remote hosts cleaned after every chain (628: `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
-- **Files a new chat needs**: the newest bundle (no chain archive pending: NEXT-RUN none). appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle and chain D's archive (forth-vm-evolution-chain-*_tar.gz). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

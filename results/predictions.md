@@ -1601,3 +1601,15 @@ with 99; the Tegra about 7,100 s fixed plus ~65 s a design). (2) wrong - each of
 e51c01ba10 +70 %, 4acee9a48e +38 % on ARMv7. (6) right - 1,054 (32,044-34,714 B), none within 20 % in in-run terms. (7)
 wrong - 15eda54ebd, fa38596098 and 13a2b38e1b beat c6f1c1331b (-1.08 to -1.25 %, no class slower by more than 0.3 %). (8) right -
 none died. 4 of 8. No prediction for a next chain: NEXT-RUN none (the roles next, the owner's choices first).
+
+## Chain D - the smallest JIT design's band (about 4 hours; the laptop and dream) - predicted (Iteration 717)
+
+results/followup-seed96-jitband.md (the role's 5 anchors and the 23 JIT designs 1 % or more below 15eda54ebd that the seed 95
+and 96 results files gave, within 10 % of it by their own run) on dream, and on the laptop with pool-sizes.py's best 30 new
+finds from every database (in-run ceilings 0.2116 / 0.2354). (1) Every line returns whole sessions and none fails: the
+laptop 4 or more loadtest sessions, dream 8 a width - 65/35 (chain C's ~1,300 s + 21 s a design; dream ~900 s). (2)
+pool-sizes.py finds 10 or more new designs below 35,980 B - 75/25 (the two results files: 23 of the 44 within the
+ceilings). (3) A listed design beats 15eda54ebd by the rule (1 % smaller, no class 2 % slower, memory within 8 KB) - 55/45
+(in-run f13b982631 +0.9 % / +0.6 % at 208 KB, 8ddaa8f03a +1.7 % / -0.1 % at 204; chain C's three beat c6f1c1331b from
+in-run +0.3-3.9 %). (4) A design that beats it is among the pool-sizes finds, not the results files' 23 - 30/70. (5) No
+listed design dies on any line - 85/15.
