@@ -262,7 +262,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   after the ROLES fix below). **The ship step's fallback** (the owner: "yes"): tools/selfhost-ship.sh no longer stops at a
   design the cross compiler cannot build - it keeps the converter's images, named in TRANSLATOR-BUILT with the reason;
   `make selfhost`, run-tests and freeze-build-645.sh follow it; rehearsed with chain B's leaders
-  (results/drafts/ship-rehearsal-714.sh: nine shipped, portable-fastest named - PASS). The lean end's 4 KB between chains A and B: the
+  (results/drafts/ship-rehearsal-714.sh: nine shipped, portable-fastest named - PASS).
+  Offered for the time between runs, not started (none is needed before chain C's processing or the roles step): the
+  gate's speed half - an experiment timing each design's self-built image against its translator-built one on the
+  laptop, for the first laptop run after the roles (so far the gate is the deterministic half: results/selfhost-fusions-714.md);
+  the fused =I?BRANCH / DUP?NBRANCH in the cross compiler; a plan for --factor. The lean end's 4 KB between chains A and B: the
   after-seed-96 batch's layout, one page up or down by design (results/drafts/memshift-714.md) - pre-batch memory records
   do not compare page for page with chain B's.
   **Next: chain C's processing** - `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh
