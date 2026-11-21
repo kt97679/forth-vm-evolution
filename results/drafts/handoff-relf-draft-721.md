@@ -22,9 +22,9 @@ documents - the genes section from each design's expression).
   results/new-roles-718.md, with every near design kept on record there. Seven of the ten changed.
 - **The images are self-built** (666-718, relf's way): forth/cross-cv8.4, a CV8 cross compiler in Forth run by each
   design's own engine, writes the design's image from source - designs/forth/ (kernel.4, extend.4, cross-cv8.4 and the
-  overlays its genes name) and designs/NAME/genes.4; `make selfhost` in a design rebuilds its image byte for byte. Nine
-  of the ten ship self-built; portable-fastest (d727605472) ships the converter's images (designs/TRANSLATOR-BUILT: the
-  cross compiler has not the fused =I?BRANCH and DUP?NBRANCH yet). **[chain D: the speed half's verdict]**
+  overlays its genes name) and designs/NAME/genes.4; `make selfhost` in a design rebuilds its image byte for byte. All
+  ten ship self-built (722: the cross compiler does the fused =I?BRANCH and DUP?NBRANCH, so portable-fastest, d727605472,
+  no longer ships the converter's images). **[chain D: the speed half's verdict]**
 
 ## The designs
 

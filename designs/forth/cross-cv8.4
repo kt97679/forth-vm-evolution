@@ -427,6 +427,7 @@ CREATE SPOOL 8192 ALLOT  VARIABLE SPOOL#       \ the definition's strings
 11 CONSTANT O-IMM    \ a: ADDI, EQI or their X forms; b: n
 12 CONSTANT O-LITX   \ a: the value - a literal and the EXIT after it
 13 CONSTANT O-RB     \ a: a rebound name's record
+16 CONSTANT O-EQBR   \ a: the target operation; b: n; c: the short opcode or 0 - EQI n ?BRANCH as =I?BRANCH (722)
 
 : OP# ( i --- a-addr ) 4 * CELLS OPS + ;
 : OP-K ( i --- k ) OP# @ ;
@@ -437,6 +438,7 @@ CREATE SPOOL 8192 ALLOT  VARIABLE SPOOL#       \ the definition's strings
 : OP+ ( k a b c --- )
   #OPS @ #OPS-MAX 1- < 0= ABORT" cross: a definition too long"
   #OPS @ OP! 1 #OPS +! ;
+: BR? ( i --- f ) OP-K DUP O-BR = SWAP O-EQBR = OR ;   \ 722: a branch - its a the target operation
 : KILL ( i --- ) >R O-DEAD 0 0 0 R> OP! ;
 : MARK ( i --- ) TGTS + 1 SWAP C! ;
 : TGT? ( i --- f ) TGTS + C@ ;
@@ -456,7 +458,7 @@ CREATE TGTS2 #OPS-MAX 1+ ALLOT
   #OPS @ 1+ 0 ?DO I TGT? IF 1 I NEW# TGTS2 + C! THEN LOOP
   #OPS @ 0 ?DO
     I OP-K O-DEAD = 0= IF
-      I OP-K O-BR = IF I OP-A DUP 0< 0= IF NEW# THEN I OP# CELL+ ! THEN
+      I BR? IF I OP-A DUP 0< 0= IF NEW# THEN I OP# CELL+ ! THEN
       I OP-K O-LOOPC = IF I OP-B NEW# I OP# 2 CELLS + ! THEN
       I OP# I NEW# OP# 4 CELLS CMOVE
     THEN
@@ -710,13 +712,34 @@ GA-GENE CONSTANT GUARD-ABORT?
     THEN
   LOOP ;
 
+\ Iteration 722: tools/sod16.py's eqibranch - EQI n then a ?BRANCH nothing
+\ lands on, as =I?BRANCH (=I?BRANCH8 where it fits and the design has it):
+\ the opcode, n's byte, the offset from itself (vm-lab.c's L_x_eqibr). One
+\ operation here, O-EQBR, where the translator keeps two in place (EQIH,
+\ EQIT) - the same bytes. After the tests, as there: the EQI is not one.
+S" =I?BRANCH" OPS10-OF CONSTANT X-EQIBR
+S" =I?BRANCH8" OPS10-OF X-EQIBR 0= 0= AND CONSTANT X-EQIBR8   \ the short needs the long, as shorten()'s
+: EQI-PASS ( --- )
+  X-EQIBR 0= IF EXIT THEN
+  #OPS @ 1 > 0= IF EXIT THEN
+  #OPS @ 1- 0 ?DO
+    I OP-K O-IMM = I OP-A 122 = AND
+    I 1+ OP-K O-BR = AND I 1+ OP-B 4 = AND I 1+ TGT? 0= AND IF
+      O-EQBR I 1+ OP-A I OP-B X-EQIBR8 I OP! I 1+ KILL
+    THEN
+  LOOP ;
+
 \ tools/sod16.py's keepbranch: SWAP or DUP before an ADDI, as SWAP+I and
-\ DUP+I; DUP n < as DUP<I (n in -128..127) - where nothing lands on what
-\ is taken in. (DUP before a fused 0= ?BRANCH and EQI n ?BRANCH, the
-\ translator's other two, are in no design here: G-NOT-YET has them.)
+\ DUP+I; DUP n < as DUP<I (n in -128..127); DUP before the fused 0=
+\ ?BRANCH, as DUP?NBRANCH (722; DUP?NBRANCH8 where it fits) - where nothing
+\ lands on what is taken in.
 S" SWAP+I" OPS10-OF CONSTANT X-SADDI
 S" DUP+I" OPS10-OF CONSTANT X-DADDI
 S" DUP<I" OPS10-OF CONSTANT X-DLTI
+S" 0=" TEST-OPS DROP CONSTANT X-NQBR            \ the fused 0= ?BRANCH's long opcode, or 0
+S" DUP?NBRANCH" OPS10-OF X-NQBR 0= 0= AND CONSTANT X-DNBR
+S" DUP?NBRANCH8" OPS10-OF X-DNBR 0= 0= AND CONSTANT X-DNBR8
+: DNBR-AT? ( i --- f ) DUP OP-K O-BR = SWAP OP-B X-NQBR = AND X-DNBR 0= 0= AND ;
 : ADDI-AT? ( i --- f ) DUP OP-K O-IMM = SWAP OP-A 120 = AND ;
 : DLTI-AT? ( i --- f )
 \ DUP at i - n < after it, nothing landing on them.
@@ -726,18 +749,20 @@ S" DUP<I" OPS10-OF CONSTANT X-DLTI
   DUP 2 + TGT? IF DROP 0 EXIT THEN
   DUP 2 + OP-K O-P = SWAP 2 + OP-A 6 SPECIAL = AND ;
 : KEEP-PASS ( --- )
-  X-SADDI X-DADDI OR X-DLTI OR 0= IF EXIT THEN
+  X-SADDI X-DADDI OR X-DLTI OR X-DNBR OR 0= IF EXIT THEN
   #OPS @ 1 > 0= IF EXIT THEN
   #OPS @ 1- 0 ?DO
     I OP-K O-P = I 1+ TGT? 0= AND IF
       I OP-A 5 SPECIAL = I 1+ ADDI-AT? AND X-SADDI AND IF
         O-IMM X-SADDI I 1+ OP-B 0 I OP! I 1+ KILL
       ELSE I OP-A 4 SPECIAL = IF
-        I 1+ ADDI-AT? X-DADDI AND IF
+        I 1+ DNBR-AT? IF
+          O-BR I 1+ OP-A X-DNBR X-DNBR8 I OP! I 1+ KILL
+        ELSE I 1+ ADDI-AT? X-DADDI AND IF
           O-IMM X-DADDI I 1+ OP-B 0 I OP! I 1+ KILL
         ELSE I DLTI-AT? X-DLTI AND IF
           O-IMM X-DLTI I 1+ OP-A 0 I OP! I 1+ KILL I 2 + KILL
-        THEN THEN
+        THEN THEN THEN
       THEN THEN
     THEN
   LOOP ;
@@ -797,13 +822,23 @@ S" DUP<I" OPS10-OF CONSTANT X-DLTI
 : E-LIT ( i --- ) OP-A LIT,-T ;
 : E-LITX ( i --- ) OP-A LITX,-T ;
 : BR-OFFSET ( i op --- offset )
-\ A branch's offset, from its operand - past the opcode's bytes.
-  OPSIZE-T OVER ADDR + SWAP OP-A ADDR SWAP - ;
+\ A branch's offset, from its operand - past the opcode's bytes (and
+\ =I?BRANCH's immediate byte: 722).
+  OPSIZE-T OVER ADDR + OVER OP-K O-EQBR = IF 1+ THEN SWAP OP-A ADDR SWAP - ;
 : E-BR ( i --- )
   >R R@ SHORT? IF
     R@ R@ OP-C BR-OFFSET R> OP-C OP,-T 255 AND C,-T
   ELSE
     R@ R@ OP-B BR-OFFSET R> OP-B OP,-T DUP -32768 < OVER 32767 > OR ABORT" cross: branch too long" W,-T
+  THEN ;
+: S-EQBR ( addr i --- n ) SWAP DROP SHORT? IF X-EQIBR8 OPSIZE-T 2 + ELSE X-EQIBR OPSIZE-T 3 + THEN ;
+: E-EQBR ( i --- )
+\ 722: =I?BRANCH, n's byte, the offset from itself.
+  >R R@ SHORT? IF
+    R@ X-EQIBR8 BR-OFFSET X-EQIBR8 OP,-T R> OP-B 255 AND C,-T 255 AND C,-T
+  ELSE
+    R@ X-EQIBR BR-OFFSET X-EQIBR OP,-T R> OP-B 255 AND C,-T
+    DUP -32768 < OVER 32767 > OR ABORT" cross: branch too long" W,-T
   THEN ;
 : E-SLOT ( i --- ) DUP OP-A OP,-T OP-B SLOT,-T ;
 : E-IMM ( i --- ) DUP OP-A OP,-T OP-B 255 AND C,-T ;
@@ -824,8 +859,8 @@ VARIABLE LIT32-AT
 : S-5 ( addr i --- n ) 2DROP 68 OPSIZE-T 4 + ;
 : E-LIT32 ( i --- ) DROP 68 OP,-T THERE LIT32-AT ! 0 32,-T ;
 
-CREATE SIZERS 16 CELLS ALLOT
-CREATE ENCODERS 16 CELLS ALLOT
+CREATE SIZERS 17 CELLS ALLOT
+CREATE ENCODERS 17 CELLS ALLOT
 : KIND! ( sizer encoder kind --- ) CELLS DUP >R ENCODERS + ! R> SIZERS + ! ;
 ' S-0 ' E-DEAD O-DEAD KIND!
 ' S-P ' E-P O-P KIND!
@@ -842,6 +877,7 @@ CREATE ENCODERS 16 CELLS ALLOT
 ' S-LITX ' E-LITX O-LITX KIND!
 ' S-RB ' E-RB O-RB KIND!
 ' S-5 ' E-LIT32 O-LIT32 KIND!
+' S-EQBR ' E-EQBR O-EQBR KIND!
 \ 715: the gene factor's genes (export-genes.py; 0 in genes written before
 \ it) and its call: O-FB, a call to a factored body - chained, the bodies
 \ laid after the last word (the factor section, below END-DEF's).
@@ -875,7 +911,7 @@ VARIABLE CHANGED
   BEGIN
     DUP LAYOUT 0 CHANGED !
     #OPS @ 0 ?DO
-      I OP-K O-BR = IF
+      I BR? IF
         I OP-A 0< ABORT" cross: a branch never resolved"
         I SHORT? IF
           I I OP-C BR-OFFSET DUP -128 < SWAP 127 > OR IF 1 I LONG + C! -1 CHANGED ! THEN
@@ -1131,7 +1167,7 @@ CREATE LTG #OPS-MAX 1+ ALLOT
 \ What something lands on: the marks, a branch's target, a loop's start.
   TGTS LTG #OPS-MAX 1+ CMOVE
   #OPS @ 0 ?DO
-    I OP-K O-BR = IF I OP-A DUP 0< 0= IF LTG + 1 SWAP C! ELSE DROP THEN THEN
+    I BR? IF I OP-A DUP 0< 0= IF LTG + 1 SWAP C! ELSE DROP THEN THEN
     I OP-K O-LOOPC = IF 1 I OP-B LTG + C! THEN
   LOOP ;
 : FAC-WORD? ( --- f )
@@ -1366,7 +1402,7 @@ VARIABLE FB-BYTES
   DEAD-NOW @ IF 0 #OPS ! 0 HS-ON ! 0 HS-STORE ! 0 HS-FINAL ! EXIT THEN
   HS-STORE @ ?DUP IF RAW-KEEP THEN  0 HS-ON ! 0 HS-STORE !
   FAC-ON @ PASS @ 2 = AND IF RS-KEEP THEN
-  SPECIALISE COMPACT FOLD-PASS COMPACT PAIR-PASS COMPACT TEST-PASS COMPACT KEEP-PASS COMPACT
+  SPECIALISE COMPACT FOLD-PASS COMPACT PAIR-PASS COMPACT TEST-PASS COMPACT EQI-PASS COMPACT KEEP-PASS COMPACT
   FAC-ON @ IF PASS @ 2 = IF FAC-KEEP THEN FAC-APPLY THEN
   COUNTING @ IF COUNT-SITES THEN
   JH-NAMED? IF JH-PLAIN? ELSE 0 THEN IF

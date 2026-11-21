@@ -1,0 +1,22 @@
+# Self-built against the translator's build, instructions (results/drafts/selfspeed-counts-721.py)
+
+portable-fastest (d727605472), 8-byte cells - engines 19376 / 16336 B, images 9977 / 10256 B (self / translator)
+  kernel     self     22,770,395  translator     22,898,797  0.9944
+  fib        self    342,120,332  translator    342,120,401  1.0000
+  corpus     self     63,705,414  translator     64,300,733  0.9907
+  loop       self    136,378,757  translator    136,378,908  1.0000
+  bubble     self     49,782,557  translator     49,788,361  0.9999
+  ackermann  self     78,866,481  translator     78,866,544  1.0000
+  apps       self    302,166,420  translator    302,680,370  0.9983
+  all        self    995,790,356  translator    997,034,114  0.9988
+
+portable-fastest (d727605472), 4-byte cells - engines 19480 / 17056 B, images 9341 / 9604 B (self / translator)
+  kernel     self     21,405,158  translator     21,493,038  0.9959
+  fib        self    358,292,546  translator    358,292,641  1.0000
+  corpus     self     68,855,089  translator     69,523,426  0.9904
+  loop       self    136,398,925  translator    136,399,159  1.0000
+  bubble     self     53,646,863  translator     53,653,424  0.9999
+  ackermann  self     81,798,806  translator     81,798,948  1.0000
+  apps       self    314,605,999  translator    315,135,109  0.9983
+  all        self  1,035,003,386  translator  1,036,295,745  0.9988
+

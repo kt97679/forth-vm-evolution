@@ -135,7 +135,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
     ny = [k for k in ('--opcall-file',) if k in args]       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it)
-    ny += [n for n in ('=I?BRANCH', '=I?BRANCH8', 'DUP?NBRANCH', 'DUP?NBRANCH8') if n in dict(o10)]
+    # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
     open(out, 'w').write('\n'.join(L) + '\n')

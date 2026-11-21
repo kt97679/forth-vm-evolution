@@ -1,4 +1,0 @@
-# Designs whose image.img and image32.img are the converter's (tools/layout.py), not self-built: the
-# self-hosting check (tools/selfhost-check.sh) failed - the cross compiler cannot yet build them; written by
-# tools/selfhost-ship.sh. NAME, then the check's reason. `make selfhost` and the tests skip these.
-portable-fastest cross: not yet: =I?BRANCH DUP?NBRANCH 
