@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 714.
+- master: Iteration 715.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -256,7 +256,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   probes the same, the programs' code differing only by A's smaller layout (results/drafts/selfhost-ids-714.sh,
   fusetab-714.py). **Then (the owner: "yes" again) --guard-abort**: the cross compiler guards ABORT" as guard_aborts
   does (G-GUARD-ABORT in the genes; 0 for the shipped ten's) - 9b15ba26f7 and df097ba2e2 self-host, and ca04ccb8ec, the
-  first real rtvar design to (VAR-OPS the translator's); 11 designs PASS. Still not done (G-NOT-YET): --factor and the
+  first real rtvar design to (VAR-OPS the translator's); 11 designs PASS. Still not done (G-NOT-YET): --factor (done at 715, below) and the
   fused =I?BRANCH / DUP?NBRANCH - d727605472 and 5f7e66b12d, the fastest portable's pair; before the roles ship, or the
   gate ships those two translator-built. Chain C's processing rehearsed (results/drafts/chainC-rehearsal-714.sh: PASS
   after the ROLES fix below). **The ship step's fallback** (the owner: "yes"): tools/selfhost-ship.sh no longer stops at a
@@ -266,9 +266,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   Offered for the time between runs, not started (none is needed before chain C's processing or the roles step): the
   gate's speed half - an experiment timing each design's self-built image against its translator-built one on the
   laptop, for the first laptop run after the roles (so far the gate is the deterministic half: results/selfhost-fusions-714.md);
-  the fused =I?BRANCH / DUP?NBRANCH in the cross compiler; a plan for --factor. The lean end's 4 KB between chains A and B: the
+  the fused =I?BRANCH / DUP?NBRANCH in the cross compiler. The lean end's 4 KB between chains A and B: the
   after-seed-96 batch's layout, one page up or down by design (results/drafts/memshift-714.md) - pre-batch memory records
   do not compare page for page with chain B's.
+  **715 (the owner: "start --factor now")**: the gene factor in the cross compiler - forth/cross-cv8.4 finds and
+  chooses the runs itself by layout.py's rules (pass 2 keeps the cold words' operations, the search between passes 2
+  and 3, pass 3 the uses as chained calls checked against pass 2, the bodies after the last word); the genes G-FACTOR,
+  G-FACTOR-ANY, G-FACTOR-COLD, G-FACTOR-NOT (export-genes.py), --factor out of G-NOT-YET. The fastest portable pair
+  without the fused branches and one at factor=3 self-host at both widths, the gate passed; the runs considered the
+  translator's exactly, the choice a body short, the net bytes within 1 (factor=3: 182 against 197) -
+  results/selfhost-factor-715.md. Left for the pair: the fused =I?BRANCH / DUP?NBRANCH.
   **Next: chain C's processing** - `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh
   96-roles-c ITERATION ROLES` with ROLES=fastest=d727605472,smallarm=ae99617f06,smallest=219878ec89,fast64=9b15ba26f7,
   fast32=ea782c6094,smalljit=c6f1c1331b - **not** 713's: the Tegra has only the JIT-free designs a size or ARMv7 question

@@ -11956,3 +11956,16 @@ self-hosting check: the converter's images kept at both widths, no `make selfhos
 TRANSLATOR-BUILT with the cross compiler's reason; the top Makefile, tools/run-tests.sh, designs/README.md and
 results/drafts/freeze-build-645.sh follow it. Rehearsed by results/drafts/ship-rehearsal-714.sh with chain B's leaders
 under the ten role names: nine shipped self-built, portable-fastest (d727605472) named translator-built - PASS.
+
+## Iteration 715 - 2026-11-21 - Claude
+
+The owner: "start --factor now" (while chain C runs). The gene factor in the cross compiler: forth/cross-cv8.4 finds
+and chooses the runs as tools/layout.py's --factor does - pass 2 keeps the cold words' operations and each word's
+return-stack walk, the search between passes 2 and 3 (the positions merge-sorted by their runs, greedy by net bytes),
+pass 3 makes each use a chained call (O-FB) checked against pass 2 and lays the bodies after the last word;
+lab/evolve/export-genes.py writes G-FACTOR, G-FACTOR-ANY, G-FACTOR-COLD, G-FACTOR-NOT and drops --factor from
+G-NOT-YET; ['] marks its literal an address, VF/VS keep their shadow (no image byte moved). On d727605472 and
+5f7e66b12d without the fused branches and the first at factor=3: A = B at both widths, the gate passed; the
+translator 18/20/39 bodies, net 63/71/197 B, the cross compiler 17/19/36, net 64/72/182 B, the runs considered the
+same (136, 147) where the profile decides. run-tests PASS. Left: the fused =I?BRANCH / DUP?NBRANCH.
+Files: results/selfhost-factor-715.md, results/drafts/factor-variants-715.py, results/drafts/factor-translator-715.py.
