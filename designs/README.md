@@ -57,7 +57,7 @@ engine as measured (`make tight`). Memory: peak resident.
 - `make selfhost` (`make selfhost32`) - the image rebuilt from its source by its own engine: `image.img` runs the CV8
   cross compiler (`forth/cross-cv8.4`) on the kernel and overlays in `forth/` with the design's genes (`genes.4`,
   `genes32.4`), and the image it writes must be `image.img` byte for byte (`selfhost.sh`); `make selfhost` from the
-  top checks all ten at both widths.
+  top checks all ten at both widths - all but those `TRANSLATOR-BUILT` names, if any.
 
 Warnings about an optimize attribute and an RWX segment are expected. Each engine here is byte for byte the one the
 project measured once tightened, checked when these directories were generated - but for the four JIT designs' layout
@@ -80,3 +80,5 @@ The images are self-built (Iteration 675; results/drafts/selfhost-plan-666.md): 
 the successor rebuilt itself byte for byte - 16-304 bytes smaller than the converter's; the converter's are the
 ones the search measured. `tools/selfhost-ship.sh designs` makes them, after `export-designs.py` and
 `lab/evolve/export-arm.py`.
+A design the cross compiler cannot yet build keeps the converter's images, and `TRANSLATOR-BUILT` here names it
+with the reason (`make selfhost` and the tests skip it); with no such design there is no such file.

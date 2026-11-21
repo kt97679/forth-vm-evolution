@@ -595,11 +595,15 @@ done
 echo
 echo "the designs rebuilt from source (make selfhost; designs/selfhost.sh):"
 SH=$(mktemp -d)
+TB="$ROOT/designs/TRANSLATOR-BUILT"     # 714: designs shipped with the converter's images (tools/selfhost-ship.sh) - named, not rebuilt
 for d in "$ROOT"/designs/*/; do [ -f "$d/record.json" ] && basename "$d"; done |
-    xargs -P 2 -I{} sh -c 'make -s -C "$1/designs/$2" selfhost selfhost32 > "$3/$2.log" 2>&1; echo $? > "$3/$2.rc"' x "$ROOT" {} "$SH"
+    xargs -P 2 -I{} sh -c 'if grep -q "^$2 " "$4" 2> /dev/null; then echo 0 > "$3/$2.rc"; echo translator-built > "$3/$2.tb"
+        else make -s -C "$1/designs/$2" selfhost selfhost32 > "$3/$2.log" 2>&1; echo $? > "$3/$2.rc"; fi' x "$ROOT" {} "$SH" "$TB"
 for f in "$SH"/*.rc; do
     n=$(basename "$f" .rc)
-    if [ "$(cat "$f")" = 0 ] && [ "$(grep -c ' ok - rebuilt' "$SH/$n.log")" = 2 ]; then
+    if [ -f "$SH/$n.tb" ]; then
+        printf '  %-17s ok     %s\n' "$n" "translator-built, named: $(grep "^$n " "$TB" | cut -d' ' -f2- | cut -c1-80)"
+    elif [ "$(cat "$f")" = 0 ] && [ "$(grep -c ' ok - rebuilt' "$SH/$n.log")" = 2 ]; then
         printf '  %-17s ok     %s\n' "$n" "$(grep ' ok - rebuilt' "$SH/$n.log" | sed 's/.* bytes//; s/^; its JIT layout.*/both widths, the JIT layouts too/' | head -1 | sed 's/^$/both widths/')"
     else printf '  %-17s FAIL   %s\n' "$n" "$(grep FAIL "$SH/$n.log" | head -1 | cut -c1-100)"; rc=1; fi
 done

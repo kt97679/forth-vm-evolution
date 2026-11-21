@@ -11951,3 +11951,8 @@ DUP?NBRANCH (the fastest portable's pair). Chain C's processing rehearsed (resul
 results/drafts/chainC-rehearsal-714.py, a stand-in archive from chain B's): followup-roles.py stopped - the -c-arm list
 leaves the handoff's portable holders without ARMv7 - so lab/evolve/followup-roles.py now judges only the roles --roles
 names, and chain C's ROLES are the roles it can judge, held by chain B's leaders; then PASS.
+Then (the owner: "yes"): the ship step's fallback - tools/selfhost-ship.sh keeps going past a design that fails the
+self-hosting check: the converter's images kept at both widths, no `make selfhost` rules, the design named in
+TRANSLATOR-BUILT with the cross compiler's reason; the top Makefile, tools/run-tests.sh, designs/README.md and
+results/drafts/freeze-build-645.sh follow it. Rehearsed by results/drafts/ship-rehearsal-714.sh with chain B's leaders
+under the ten role names: nine shipped self-built, portable-fastest (d727605472) named translator-built - PASS.

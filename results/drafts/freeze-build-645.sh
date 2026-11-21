@@ -38,6 +38,7 @@ for nm in $(echo "$NAMES" | tr ',' '\n' | sed 's/=.*//'); do
 done
 st "designs/ against the export: $same the same${diff:+, differ:$diff}"
 for nm in $(echo "$NAMES" | tr ',' '\n' | sed 's/=.*//'); do rm -rf "designs/$nm" && cp -r "$O/designs/$nm" "designs/$nm"; done
+rm -f designs/TRANSLATOR-BUILT; [ -f "$O/designs/TRANSLATOR-BUILT" ] && cp "$O/designs/TRANSLATOR-BUILT" designs/   # 714: the roles shipped translator-built, named
 SOURCES=1 sh tools/selfhost-ship.sh designs > $O/sources.log 2>&1; st "designs/forth=$? $(tail -n 1 $O/sources.log | cut -c1-80)"
 make > $O/make.log 2>&1; st "make=$?"
 make test > $O/test.log 2>&1; st "make test=$? $(grep -c ': ok' $O/test.log) ok"

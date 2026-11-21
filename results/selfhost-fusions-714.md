@@ -66,6 +66,18 @@ cross-cv8.4 reads it by FIND, 0 for genes written before (the ten shipped design
   leaves one body of each. A site costs A at most 4.4 B (40 B over 9 or more live sites), the translator about 7 (64 over
   9): its guard's -1 is the all-ones cell, the cross compiler's the literal -1, laid in its short form.
 
+## The ship step's fallback (714's fourth part)
+
+tools/selfhost-ship.sh stopped at the first design that failed the check, shipping none after it - and the fastest
+portable's leader, d727605472, cannot yet be built by the cross compiler. Now, as the pre-mortem's gate says, such a
+design keeps the converter's images at both widths (an 8-byte image shipped before a 4-byte failure is put back), gets
+no `make selfhost` rules (a stale pair removed), and DIR/TRANSLATOR-BUILT names it with the cross compiler's own reason
+("cross: not yet: --factor =I?BRANCH DUP?NBRANCH"); the rest ship. The top Makefile's `make selfhost`, run-tests'
+"designs rebuilt from source" and results/drafts/freeze-build-645.sh (which now copies TRANSLATOR-BUILT into designs/)
+follow it; STRICT=1 keeps the old stop. Rehearsed (results/drafts/ship-rehearsal-714.sh): chain B's leaders exported
+under the ten role names, shipped twice - nine self-built, portable-fastest translator-built and named, its images the
+converter's, no rules; a second ship changes nothing; each of the nine's `make selfhost` passes. PASS.
+
 ## What the new roles still need of the cross compiler (export-genes.py's G-NOT-YET)
 
 - **--factor, and the fused =I?BRANCH / DUP?NBRANCH** (and =I?BRANCH8): d727605472 and 5f7e66b12d (the fastest
