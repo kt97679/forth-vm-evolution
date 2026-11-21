@@ -376,6 +376,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-roles-seed96-roles-b.md` - The new roles' shortlist processed (Iteration 714): four roles settled, the holder kept for least memory, the fastest portable and x86-32 ties and the smallest to chain C.
 - `followup-seed96-roles-c.md` - Chain C's list (Iteration 714): 66 - pool-sizes.py's 23, chain C's candidates, the holders, chain B's leaders and near-ties (-c-arm.md: the Tegra's 34).
 - `followup-seed96-roles-c-arm.md` - Chain C on the Tegra (714): the 34 JIT-free designs a size or ARMv7 question needs.
+- `chain-followup96-roles-c/README.md` - Chain C's readings by session (Iteration 716): the laptop s1-s6, dream s1-s11 a width, the Tegra s1-s2; pool-sizes.md (the JIT finds, trimmed) beside them.
+- `followup-pick-seed96-roles-c.md` - Chain C's pooled pick (716): the 66 on three machines, every session (its set: followup-pick-seed96-roles-c.json).
+- `followup-pick-seed96-roles-c.json` - followup-pick-seed96-roles-c.md's set as JSON (final-pick.py --json, Iteration 716).
+- `followup-roles-seed96-roles-c.md` - Chain C processed (Iteration 716): small-and-fast-on-ARMv7 kept, the smallest JIT design to 15eda54ebd; the smallest's trade and two ties left for the owner.
 - `selfhost-fusions-714.md` - Self-hosting phase 6's first parts (Iteration 714): the cross compiler fills VAR-OPS and INL-OPS as the translator does, and guards ABORT" (the gene abortif); what the new roles still need of it.
 - `selfhost-factor-715.md` - The gene factor in the cross compiler (Iteration 715): the runs found and chosen by layout.py's rules, three test designs self-host at both widths, the choice against the translator's.
 - `followup-seed96-roles-b.md` - Chain B's 99 (Iteration 713, results/drafts/shortlist-713.py): final-pick.py's 40, the holders, each role's leaders, the near-ties, 219878ec89 - master's sizes; one record a line.

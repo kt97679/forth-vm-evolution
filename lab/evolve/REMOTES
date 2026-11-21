@@ -7,6 +7,9 @@
 # "run": all the time the evolution leaves (Iteration 429, remote-checks.sh), so the chain never waits on a host.
 #
 # host       how       designs  rounds  minutes  sample options
+#   Iteration 716 (chain C processed - results/followup-roles-seed96-roles-c.md): none - the roles next, no chain set. Chain
+#   C's sessions ran short of these lines' (dream 11 a width, the Tegra 2): a session's length barely follows the
+#   list's (dream ~900 s with 66 designs as with 99; the Tegra about 7,100 s plus ~65 s a design).
 #   Iteration 714 (chain C - the designs chain B could not settle; the owner: 6 hours): the Tegra the 34 of
 #   results/followup-seed96-roles-c-arm.md (chain B's 23 pool-sizes.py finds, the 5 JIT-free candidates, the smallest's,
 #   small-and-fast's and the fastest portable's anchors), 10 rounds - chain B's rate (171 s a design a session) about 1.8
@@ -163,6 +166,6 @@
 # lab/evolve/rage-designs.py on the laptop, which uses rage itself (tools/rage-check.sh); a measuring line beside it
 # would time the Tegra under a build.
 
-rage.lan     prebuiltarm 4       10      350      --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed96-roles-c-arm.md
-dream.lan    prebuilt32  4       10      175      --cell 4 --rejected 6 --sessions 16 --also @results/followup-seed96-roles-c.md
-dream.lan    prebuilt64  4       10      175      --from prebuilt32 --sessions 16
+# rage.lan     prebuiltarm 4       10      350      --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed96-roles-c-arm.md
+# dream.lan    prebuilt32  4       10      175      --cell 4 --rejected 6 --sessions 16 --also @results/followup-seed96-roles-c.md
+# dream.lan    prebuilt64  4       10      175      --from prebuilt32 --sessions 16

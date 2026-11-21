@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 716 (chain C processed - results/followup-roles-seed96-roles-c.md): none - the roles next (the owner's
+#   choices first: the smallest, the fastest portable's tie, the x86-32 tie by size), then self-hosting phase 6 on them.
 # Iteration 714 (chain B processed; the owner: 6 hours, "our goal is not to lose any potentially good designs"): chain C -
 #   the 66 of results/followup-seed96-roles-c.md (results/drafts/chainC-list-714.py): chain B's pool-sizes.py finds (23
 #   JIT-free designs at 21,666-21,670 B, 3-7 B below 219878ec89, never timed), results/drafts/chainC-candidates-713.md's 9
@@ -372,4 +374,5 @@
 # (ran from 652's bundle at c8c423671f - its archive the rage check, PASS:) experiment rage-designs.py
 # Iteration 654 (the rage check processed - PASS, results/rage-designs-654.md): none - the freeze is the sandbox's; a
 # pull of this bundle must not run the rage check again.
-experiment measure-ids.py --ids results/followup-seed96-roles-c.md --rounds 3 then experiment pool-sizes.py --list results/followup-seed96-roles-c.md --free 0 --jit 39100 --below-jit 36805 --minutes 40 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10 then experiment loadtest.py --ids results/followup-seed96-roles-c.md --rounds 10
+none
+# Iteration 714's line, chain C: experiment measure-ids.py --ids results/followup-seed96-roles-c.md --rounds 3 then experiment pool-sizes.py --list results/followup-seed96-roles-c.md  ... (loadtest.py 10 times)

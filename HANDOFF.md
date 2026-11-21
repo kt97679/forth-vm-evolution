@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 715.
+- master: Iteration 716.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -243,12 +243,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   21,679 B 11 % faster on x86-64 (a trade), and **pool-sizes.py found 23 designs at 21,666-21,670 B, never timed**; small
   and fast on ARMv7 and the smallest JIT design kept, their long shots in chain C. results/drafts/chainB-714.py (the
   near-ties, the smallest's contenders, the stalls, the ticker).
-  **Chain C is NEXT-RUN and REMOTES** (the owner: 6 hours): results/followup-seed96-roles-c.md, 66
-  (results/drafts/chainC-list-714.py - the 23, chainC-candidates-713.md's 9, the holders, chain B's leaders with their
-  near-ties and trades); -c-arm 34 (the ARMv7 pre-flight 27 of 27 clang builds alive). The laptop measure-ids.py, then
-  `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle), then
-  loadtest.py at 10 rounds (~8 sessions); the Tegra 3 sessions in 350 minutes, dream 16 a width, 175 + 175. The PMU's
-  counts need `sudo sysctl kernel.perf_event_paranoid=2` by hand before the start.
+  Chain C (the owner: 6 hours): results/followup-seed96-roles-c.md, 66 (results/drafts/chainC-list-714.py); -c-arm 34.
   **714, while chain C runs (the owner: "yes")**: self-hosting phase 6's first part - forth/cross-cv8.4 fills VAR-OPS
   and INL-OPS as layout.py does (VAR-OPS!, INL-OPS!), and does FILL outside a definition and ?DO, which
   cv8-fuse-inline.4 needed: every rtinline design failed to self-host before. results/selfhost-fusions-714.md: the
@@ -276,19 +271,27 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   without the fused branches and one at factor=3 self-host at both widths, the gate passed; the runs considered the
   translator's exactly, the choice a body short, the net bytes within 1 (factor=3: 182 against 197) -
   results/selfhost-factor-715.md. Left for the pair: the fused =I?BRANCH / DUP?NBRANCH.
-  **Next: chain C's processing** - `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh
-  96-roles-c ITERATION ROLES` with ROLES=fastest=d727605472,smallarm=ae99617f06,smallest=219878ec89,fast64=9b15ba26f7,
-  fast32=ea782c6094,smalljit=c6f1c1331b - **not** 713's: the Tegra has only the JIT-free designs a size or ARMv7 question
-  needs, so the handoff's portable holders lack a class there and followup-roles.py stopped (the rehearsal,
-  results/drafts/chainC-rehearsal-714.sh, found it; followup-roles.py now judges only the roles --roles names) - then
-  results/drafts/chainB-714.py on its readings (its ARMv7 and all-round lines over chain C's Tegra subset only - chain B
-  settled those) and pool-sizes.md's JIT finds compared in in-run terms; **then
-  the roles** (the owner's trades: the smallest - strict bytes or the 21,679 B four's speed; the ties) - designs/ and the
-  package made again, self-hosting phase 6 on them, relf told how to fetch them. From the early games
-  (results/drafts/early-games-713.md): a fixed layout of the engine's writable data, a prototype for the reopened search;
-  queued genes (results/queued-genes: jitdead, fixenv - results/drafts/fixenv-713.md -, jitfew -
-  results/drafts/early-computers-713.md) applied after the roles, chainorder if its prototype pays, then the reopened
-  search's series; the article.
+  **716: chain C processed** (results/followup-roles-seed96-roles-c.md): the laptop 6 sessions, dream 11 a width, the
+  Tegra 2 (a session's length barely follows the list's: dream ~900 s with 66 as with 99), none died, no stall, no PMU
+  counts; predictions 4 of 8. Settled: small and fast on ARMv7 the holder ae99617f06; **the smallest JIT design
+  15eda54ebd** (36,344 B, -1.25 %; x86-64 -0.69 %, x86-32 +0.27 %, -4 KB; fa38596098 and 13a2b38e1b beat c6f1c1331b too).
+  pool-sizes.py's 1,054 JIT finds (32,044-34,714 B) all trades, none within 20 % in in-run terms
+  (results/drafts/jitmiddle-716.py); the band up to ~38,600 B before the batch not reached. **Waiting for the owner**:
+  the smallest - 3456fc28b2 (21,666 B, the fewest: x86-64 -11.3 %, x86-32 +5.5 %, ARMv7 +3.6 % against 219878ec89),
+  219878ec89 (21,673 B, the rule's: none smaller beats it) or 90273721a1 (21,679 B: -11.3 %, -2.1 %, -0.2 %, pooled over
+  chains B and C); the fastest portable still tied (5f7e66b12d +0.21 % +/- 0.14 % pooled, 4.2 % smaller, x86-32 +2.7 %);
+  the x86-32 tie by size - 11f956db93 (714's assumption) to confirm; whether the unreached JIT band is screened (in-run
+  speed first, then a build). The ten then: fastest portable (the tie), fastest on ARMv7 a8d35bdccc, the knee
+  48a012411a, small and fast on ARMv7 ae99617f06, least memory fb0d57c8a2, smallest (the trade), fastest on x86-64
+  9b15ba26f7, fastest on x86-32 (the tie), best all-round df097ba2e2, the smallest JIT design 15eda54ebd.
+  results/drafts/chainC-716.py: the open pairs in chains B and C and pooled.
+  **Next: the roles** (results/drafts/new-roles-plan-705.md, step 6), the owner's answers first - designs/ and the
+  package made again (`sh results/drafts/freeze-build-645.sh . RECORDS NAME=ID,...`), self-hosting phase 6 on them (the
+  gate: a design the cross compiler cannot build ships translator-built, named - d727605472 and 5f7e66b12d need the fused
+  =I?BRANCH / DUP?NBRANCH), relf told how to fetch them. From the early games (results/drafts/early-games-713.md): a fixed
+  layout of the engine's writable data, a prototype for the reopened search; queued genes (results/queued-genes:
+  jitdead, fixenv - results/drafts/fixenv-713.md -, jitfew - results/drafts/early-computers-713.md) applied after the
+  roles, chainorder if its prototype pays, then the reopened search's series; the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -391,12 +394,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): chain C (714) - eight. Scored: chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
+- **Predictions due** (results/predictions.md): none (NEXT-RUN none). Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first
   run); remote hosts cleaned after every chain (628: `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
-- **Files a new chat needs**: the newest bundle and chain C's archive (forth-vm-evolution-chain-*_tar.gz). appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle (no chain archive pending: NEXT-RUN none). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

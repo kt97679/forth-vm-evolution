@@ -11969,3 +11969,19 @@ G-NOT-YET; ['] marks its literal an address, VF/VS keep their shadow (no image b
 translator 18/20/39 bodies, net 63/71/197 B, the cross compiler 17/19/36, net 64/72/182 B, the runs considered the
 same (136, 147) where the profile decides. run-tests PASS. Left: the fused =I?BRANCH / DUP?NBRANCH.
 Files: results/selfhost-factor-715.md, results/drafts/factor-variants-715.py, results/drafts/factor-translator-715.py.
+
+## Iteration 716 - 2026-11-21 - Claude
+
+Chain C processed (the 66 at 10 rounds; the laptop 6 sessions, dream 11 a width, the Tegra 2 - a session's length
+barely follows the list's; none died, no stall, no PMU counts). Small and fast on ARMv7: the holder ae99617f06 kept.
+The smallest JIT design: c6f1c1331b beaten by three, 15eda54ebd the smallest (36,344 B, -1.25 %; x86-64 -0.69 %, x86-32
++0.27 %, -4 KB). Left for the owner: the smallest - 3456fc28b2 21,666 B (x86-64 -11.3 %, x86-32 +5.5 %, ARMv7 +3.6 %
+against 219878ec89), 219878ec89 the rule's, or 90273721a1 21,679 B (-11.3 %, -2.1 %, -0.2 %, pooled over chains B and C);
+the fastest portable still tied (5f7e66b12d +0.21 % +/- 0.14 % pooled, 4.2 % smaller); x86-32 tied, by size 11f956db93.
+pool-sizes.py's 1,054 JIT finds (32,044-34,714 B) none within 20 % of c6f1c1331b in in-run terms; the band up to ~38,600 B
+before the batch not reached. Predictions 4 of 8. NEXT-RUN none, REMOTES none.
+Files: results/followup-roles-seed96-roles-c.md, results/followup-pick-seed96-roles-c.md (.json),
+results/chain-followup96-roles-c/ (README.md, pool-sizes.md; its sK: dream.lan-prebuilt32.md,
+dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md, rage.lan-prebuiltarm.md,
+rage.lan-prebuiltarm.out.json), results/drafts/chainC-716.py, results/drafts/jitmiddle-716.py;
+results/followup-seed96-roles-c.md's records from the measure-ids pack.

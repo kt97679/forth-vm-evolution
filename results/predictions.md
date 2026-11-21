@@ -1592,3 +1592,12 @@ c6f1c1331b in seed 96's database - 85/15 (the results files' 381 gave 4). (7) A 
 3) beats c6f1c1331b by the rule (1 % smaller, no class 2 % slower) - 30/70 (in-run +0.3-4.9 %; chain B's nearest trades
 +7-8 % re-measured). (8) No listed design dies on any line - 85/15 (27 of 27 clang ARMv7 builds alive under qemu).
 
+
+**Scored at chain C (Iteration 716)**, results/followup-roles-seed96-roles-c.md: (1) wrong - whole sessions, none failed,
+but the laptop 6, dream 11 a width, the Tegra 2: a session's length does not follow the list's (dream ~900 s with 66 as
+with 99; the Tegra about 7,100 s fixed plus ~65 s a design). (2) wrong - each of the 23 is 3.7-6.3 % slower than
+219878ec89 in its slowest class. (3) wrong - the four at 21,666 B within 0.07-1.2 % of 90273721a1 on x86-64 (3456fc28b2
++0.07 % +/- 0.15 %). (4) right, the coin - +0.14 % +/- 0.30 % (pooled with chain B +0.21 % +/- 0.14 %). (5) right -
+e51c01ba10 +70 %, 4acee9a48e +38 % on ARMv7. (6) right - 1,054 (32,044-34,714 B), none within 20 % in in-run terms. (7)
+wrong - 15eda54ebd, fa38596098 and 13a2b38e1b beat c6f1c1331b (-1.08 to -1.25 %, no class slower by more than 0.3 %). (8) right -
+none died. 4 of 8. No prediction for a next chain: NEXT-RUN none (the roles next, the owner's choices first).

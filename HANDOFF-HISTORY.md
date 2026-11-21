@@ -1102,3 +1102,26 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   engines +224 to +544 bytes); then designs/ and the package, self-hosting phase 6 on
   them; then results/queued-genes (jitdead, fixenv, jitfew) applied, chainorder if its prototype pays, and the reopened search's series;
   the article.
+
+## The card's chain C and next-step text at Iteration 715 (replaced at 716, chain C processed)
+
+  **Chain C is NEXT-RUN and REMOTES** (the owner: 6 hours): results/followup-seed96-roles-c.md, 66
+  (results/drafts/chainC-list-714.py - the 23, chainC-candidates-713.md's 9, the holders, chain B's leaders with their
+  near-ties and trades); -c-arm 34 (the ARMv7 pre-flight 27 of 27 clang builds alive). The laptop measure-ids.py, then
+  `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle), then
+  loadtest.py at 10 rounds (~8 sessions); the Tegra 3 sessions in 350 minutes, dream 16 a width, 175 + 175. The PMU's
+  counts need `sudo sysctl kernel.perf_event_paranoid=2` by hand before the start.
+  ...
+  **Next: chain C's processing** - `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh
+  96-roles-c ITERATION ROLES` with ROLES=fastest=d727605472,smallarm=ae99617f06,smallest=219878ec89,fast64=9b15ba26f7,
+  fast32=ea782c6094,smalljit=c6f1c1331b - **not** 713's: the Tegra has only the JIT-free designs a size or ARMv7 question
+  needs, so the handoff's portable holders lack a class there and followup-roles.py stopped (the rehearsal,
+  results/drafts/chainC-rehearsal-714.sh, found it; followup-roles.py now judges only the roles --roles names) - then
+  results/drafts/chainB-714.py on its readings (its ARMv7 and all-round lines over chain C's Tegra subset only - chain B
+  settled those) and pool-sizes.md's JIT finds compared in in-run terms; **then
+  the roles** (the owner's trades: the smallest - strict bytes or the 21,679 B four's speed; the ties) - designs/ and the
+  package made again, self-hosting phase 6 on them, relf told how to fetch them. From the early games
+  (results/drafts/early-games-713.md): a fixed layout of the engine's writable data, a prototype for the reopened search;
+  queued genes (results/queued-genes: jitdead, fixenv - results/drafts/fixenv-713.md -, jitfew -
+  results/drafts/early-computers-713.md) applied after the roles, chainorder if its prototype pays, then the reopened
+  search's series; the article.
