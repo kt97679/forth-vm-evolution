@@ -254,14 +254,21 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   cv8-fuse-inline.4 needed: every rtinline design failed to self-host before. results/selfhost-fusions-714.md: the
   tables the translator's to the byte in five designs (both headers, the JIT, rtvar on two variants made for it), the
   probes the same, the programs' code differing only by A's smaller layout (results/drafts/selfhost-ids-714.sh,
-  fusetab-714.py). Still not done for the new roles (G-NOT-YET): --guard-abort (9b15ba26f7, df097ba2e2), --factor and
-  the fused =I?BRANCH / DUP?NBRANCH (d727605472, 5f7e66b12d - and every JIT-free rtvar design) - the next part, before
-  the roles ship, or the gate ships those four translator-built. The lean end's 4 KB between chains A and B: the
+  fusetab-714.py). **Then (the owner: "yes" again) --guard-abort**: the cross compiler guards ABORT" as guard_aborts
+  does (G-GUARD-ABORT in the genes; 0 for the shipped ten's) - 9b15ba26f7 and df097ba2e2 self-host, and ca04ccb8ec, the
+  first real rtvar design to (VAR-OPS the translator's); 11 designs PASS. Still not done (G-NOT-YET): --factor and the
+  fused =I?BRANCH / DUP?NBRANCH - d727605472 and 5f7e66b12d, the fastest portable's pair; before the roles ship, or the
+  gate ships those two translator-built. Chain C's processing rehearsed (results/drafts/chainC-rehearsal-714.sh: PASS
+  after the ROLES fix below). The lean end's 4 KB between chains A and B: the
   after-seed-96 batch's layout, one page up or down by design (results/drafts/memshift-714.md) - pre-batch memory records
   do not compare page for page with chain B's.
   **Next: chain C's processing** - `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh
-  96-roles-c ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command - the holders are in the
-  list), then results/drafts/chainB-714.py on its readings and pool-sizes.md's JIT finds compared in in-run terms; **then
+  96-roles-c ITERATION ROLES` with ROLES=fastest=d727605472,smallarm=ae99617f06,smallest=219878ec89,fast64=9b15ba26f7,
+  fast32=ea782c6094,smalljit=c6f1c1331b - **not** 713's: the Tegra has only the JIT-free designs a size or ARMv7 question
+  needs, so the handoff's portable holders lack a class there and followup-roles.py stopped (the rehearsal,
+  results/drafts/chainC-rehearsal-714.sh, found it; followup-roles.py now judges only the roles --roles names) - then
+  results/drafts/chainB-714.py on its readings (its ARMv7 and all-round lines over chain C's Tegra subset only - chain B
+  settled those) and pool-sizes.md's JIT finds compared in in-run terms; **then
   the roles** (the owner's trades: the smallest - strict bytes or the 21,679 B four's speed; the ties) - designs/ and the
   package made again, self-hosting phase 6 on them, relf told how to fetch them. From the early games
   (results/drafts/early-games-713.md): a fixed layout of the engine's writable data, a prototype for the reopened search;

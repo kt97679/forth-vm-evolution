@@ -689,6 +689,13 @@ CREATE PAIRS 64 3 * CELLS ALLOT  VARIABLE #PAIRS 0 #PAIRS !  VARIABLE PAIRS-OPEN
   G-NOT-YET DUP IF S" cross: not yet: " TYPE TYPE CR -1 ABORT" cross: the design needs what this compiler does not do yet" THEN 2DROP ;
 NOT-YET?
 
+\ Iteration 714: the gene abortif (the translator's --guard-abort,
+\ sod16.py's guard_aborts) - the genes' G-GUARD-ABORT, 0 for genes written
+\ before it (designs/*/genes.4 of the ten shipped designs).
+CREATE GA-NAME 13 C, 71 C, 45 C, 71 C, 85 C, 65 C, 82 C, 68 C, 45 C, 65 C, 66 C, 79 C, 82 C, 84 C,
+: GA-GENE ( --- f ) GA-NAME FIND IF EXECUTE ELSE DROP 0 THEN ;
+GA-GENE CONSTANT GUARD-ABORT?
+
 : TEST-PASS ( --- )
 \ A test, then a ?BRANCH nothing lands on: the fused branch, where the
 \ design has it - the test's shadow carries the opcodes.
@@ -1476,7 +1483,21 @@ FORWARD (POSTPONE)
 : LOOP ( j --- | j-skip j -2 --- )
   DUP -2 = IF DROP [ TRANSIENT ] LOOP-OP [ FORTH ] >RESOLVE EXIT THEN [ TRANSIENT ] LOOP-OP [ FORTH ] ;
 : ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE STR+ ;
-: ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ ;
+: ABORT" ( "ccc<quote>" --- )
+\ (ABORT") and its string. Under the gene abortif (GUARD-ABORT?) the
+\ translator's guard_aborts: ?BRANCH past the string and -1 before the
+\ call, so a false flag skips it - except after a literal -1, where the
+\ call always aborts. (Its other exception, a word with a DOES> tail
+\ inside, cannot arise: no target definition here has one.) A branch to
+\ the site lands on the guard, as there.
+  GUARD-ABORT? IF
+    #OPS @ DUP IF 1- DUP OP-K O-LIT = SWAP OP-A -1 = AND ELSE DROP 0 THEN
+    0= IF
+      4 QBR8-OP >FWD-BR -1 LIT+
+      [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ >RESOLVE EXIT
+    THEN
+  THEN
+  [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ ;
 : POSTPONE ( "name" --- )
   BL WORD COUNT T-SHADOW 0= ABORT" cross: POSTPONE of no target word"
   REDIRECTED DUP REF!

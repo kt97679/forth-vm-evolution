@@ -111,7 +111,8 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     L += lst('G-T2-ONE', ['%d %d' % p for p in o1], "the engine's map: logical operation, one-byte code")
     L += lst('G-T2-ESC', ['%d %d' % p for p in e1], "...logical operation, escape selector")
     L += ['%d CONSTANT G-JIT           \\ the lazy JIT (engine/jit.c): its opcode a tag-2 code' % (-1 if '--jit' in args else 0),
-          '%d CONSTANT G-JITIMG        \\ 1: the outer interpreter\'s words given the JIT header' % int(opt(args, '--jitimg', 0))]
+          '%d CONSTANT G-JITIMG        \\ 1: the outer interpreter\'s words given the JIT header' % int(opt(args, '--jitimg', 0)),
+          '%d CONSTANT G-GUARD-ABORT   \\ the gene abortif: ABORT\" guarded by ?BRANCH (sod16.guard_aborts; 714)' % (-1 if '--guard-abort' in args else 0)]
     m = re.search(r'^hot-inline: \d+ sites - (.*)$', tout, re.M)
     assert ('--hot-inline' not in args) or m, 'hot-inline: the translator named no sites'
     # The sites it printed, caller>callee#k - ambiguous where a name holds '>' (?STACK>U>#1): matched against
@@ -121,7 +122,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     hs = [(c_, t_, str(k_)) for c_, t_, k_, _ in prof if '%s>%s#%d' % (c_, t_, k_) in said]
     assert len(hs) == len(said), ('hot-inline: sites not in the profile', len(hs), len(said))
     L += lst('G-HOT-INLINE', ['%s %s %s' % h for h in hs], 'calls inlined: caller callee k (the k-th call), as the translator chose them')
-    ny = [k for k in ('--opcall-file', '--guard-abort', '--factor') if k in args]
+    ny = [k for k in ('--opcall-file', '--factor') if k in args]       # 714: --guard-abort done
     ny += [n for n in ('=I?BRANCH', '=I?BRANCH8', 'DUP?NBRANCH', 'DUP?NBRANCH8') if n in dict(o10)]
     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'

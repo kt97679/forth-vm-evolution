@@ -181,19 +181,21 @@ for s in SOURCES:
                                      (statistics.fmean(sh[-t3:]) - statistics.fmean(sh[:t3])) * 100))
 
 print('\n## The roles (%s) - speed 2%%, binary + image 1%%, memory %d KB' % (HAND, M))
-inc = R['fastest']; bm = min(PD, key=lambda i: CL[i]['mean']); m, se = mdiff(bm, inc)
-print('  fastest portable (the best mean): %s %.4f against %s %.4f: %s +/- %.2f%%' % (bm, CL[bm]['mean'], inc,
-                                                                                     CL[inc]['mean'], pct(m), se * 100))
-if bm != inc and math.exp(m) - 1 <= -T and cand(bm): CH.setdefault('fastest portable', []).append(bm)
-for k in PARTS:
-    m, se = cdiff(k, bm, inc)
-    print('    %s %s %.4f, %s %.4f: %s +/- %.2f%%' % (k, bm, CL[bm][k], inc, CL[inc][k], pct(m), se * 100))
-inc = R['arm']; arm = sorted(PD, key=lambda i: CL[i]['ARMv7'])
-print('  fastest on ARMv7: %s' % ', '.join('%s %.4f' % (i, CL[i]['ARMv7']) for i in arm[:5]))
-for i in arm[:4]:
-    if i != inc:
-        m, se = cdiff('ARMv7', i, inc); print('    %s against %s: %s +/- %.2f%%' % (i, inc, pct(m), se * 100))
-        if math.exp(m) - 1 <= -T and cand(i): CH.setdefault('fastest on ARMv7', []).append(i)
+if 'fastest' in R:                                      # 714: a role left out of --roles is not judged
+    inc = R['fastest']; bm = min(PD, key=lambda i: CL[i]['mean']); m, se = mdiff(bm, inc)
+    print('  fastest portable (the best mean): %s %.4f against %s %.4f: %s +/- %.2f%%' % (bm, CL[bm]['mean'], inc,
+                                                                                         CL[inc]['mean'], pct(m), se * 100))
+    if bm != inc and math.exp(m) - 1 <= -T and cand(bm): CH.setdefault('fastest portable', []).append(bm)
+    for k in PARTS:
+        m, se = cdiff(k, bm, inc)
+        print('    %s %s %.4f, %s %.4f: %s +/- %.2f%%' % (k, bm, CL[bm][k], inc, CL[inc][k], pct(m), se * 100))
+if 'arm' in R:                                      # 714: a role left out of --roles is not judged
+    inc = R['arm']; arm = sorted(PD, key=lambda i: CL[i]['ARMv7'])
+    print('  fastest on ARMv7: %s' % ', '.join('%s %.4f' % (i, CL[i]['ARMv7']) for i in arm[:5]))
+    for i in arm[:4]:
+        if i != inc:
+            m, se = cdiff('ARMv7', i, inc); print('    %s against %s: %s +/- %.2f%%' % (i, inc, pct(m), se * 100))
+            if math.exp(m) - 1 <= -T and cand(i): CH.setdefault('fastest on ARMv7', []).append(i)
 
 
 def role(inc, keys, name):
@@ -209,21 +211,23 @@ def role(inc, keys, name):
             if cand(i): CH.setdefault(name, []).append(i)
 
 
-role(R['knee'], ('x86-64', 'x86-32'), 'the knee')
-role(R['smallarm'], ('ARMv7',), 'small, fast on ARMv7')
-inc = R['memory']; lm = [i for i in sorted(C, key=lambda i: C[i]['rss']) if i != inc and not jit(i)]
-print('  least memory - %s %d KB; the next %s' % (inc, C[inc]['rss'], ', '.join('%s %d KB' % (i, C[i]['rss']) for i in lm[:2])))
-CH.update({'least memory': [i for i in lm if C[i]['rss'] <= C[inc]['rss'] - M and cand(i)]} if any(
-    C[i]['rss'] <= C[inc]['rss'] - M and cand(i) for i in lm) else {})
-inc = R['smallest']
-print('  smallest - %s %s B; smaller:' % (inc, format(C[inc]['total'], ',')))
-for i in sorted(PD, key=lambda i: C[i]['total']):
-    if C[i]['total'] >= C[inc]['total']: break
-    print('    %s %s B (%+.2f%%): %s, memory %+d KB' % (i, format(C[i]['total'], ','),
-          (C[i]['total'] / C[inc]['total'] - 1) * 100,
-          ', '.join('%s %s +/- %.2f%%' % ((k,) + (lambda d: (pct(d[0]), d[1] * 100))(cdiff(k, i, inc))) for k in PARTS),
-          C[i]['rss'] - C[inc]['rss']))
-    if cand(i): CH.setdefault('smallest', []).append(i)
+if 'knee' in R: role(R['knee'], ('x86-64', 'x86-32'), 'the knee')
+if 'smallarm' in R: role(R['smallarm'], ('ARMv7',), 'small, fast on ARMv7')
+if 'memory' in R:                                      # 714: a role left out of --roles is not judged
+    inc = R['memory']; lm = [i for i in sorted(C, key=lambda i: C[i]['rss']) if i != inc and not jit(i)]
+    print('  least memory - %s %d KB; the next %s' % (inc, C[inc]['rss'], ', '.join('%s %d KB' % (i, C[i]['rss']) for i in lm[:2])))
+    CH.update({'least memory': [i for i in lm if C[i]['rss'] <= C[inc]['rss'] - M and cand(i)]} if any(
+        C[i]['rss'] <= C[inc]['rss'] - M and cand(i) for i in lm) else {})
+if 'smallest' in R:                                      # 714: a role left out of --roles is not judged
+    inc = R['smallest']
+    print('  smallest - %s %s B; smaller:' % (inc, format(C[inc]['total'], ',')))
+    for i in sorted(PD, key=lambda i: C[i]['total']):
+        if C[i]['total'] >= C[inc]['total']: break
+        print('    %s %s B (%+.2f%%): %s, memory %+d KB' % (i, format(C[i]['total'], ','),
+              (C[i]['total'] / C[inc]['total'] - 1) * 100,
+              ', '.join('%s %s +/- %.2f%%' % ((k,) + (lambda d: (pct(d[0]), d[1] * 100))(cdiff(k, i, inc))) for k in PARTS),
+              C[i]['rss'] - C[inc]['rss']))
+        if cand(i): CH.setdefault('smallest', []).append(i)
 for key, name in (('fast64', 'fastest on x86-64'), ('fast32', 'fastest on x86-32'), ('allround', 'best all-round (the best mean)')):
     inc = R.get(key)                                 # 622: the x86 roles, over every design with the class
     if not inc: continue

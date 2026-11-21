@@ -11943,3 +11943,11 @@ variants: the tables the translator's in all five that have them, the probes the
 (the control), the programs' code differing only by A's 248-320 B smaller layout. Left for the new roles: --guard-abort,
 --factor, =I?BRANCH / DUP?NBRANCH. The lean end's 4 KB between chains: the after-seed-96 batch's layout, +1 page for
 fb0d57c8a2 and 71005d8a0d, -1 for d180351903 here (results/drafts/memshift-714.md, results/drafts/memshift-714.py); the designs checked: results/drafts/vartest-714.py.
+Then (the owner: "yes"): the gene abortif in the cross compiler - its ABORT" guarded as sod16.guard_aborts does when the
+genes' G-GUARD-ABORT says so (lab/evolve/export-genes.py writes it and drops --guard-abort from G-NOT-YET; 0 for genes
+before it): 9b15ba26f7, df097ba2e2 and ca04ccb8ec (the first real rtvar design) self-host, 11 designs PASS
+(results/selfhost-fusions-714.md; the guards' bytes: results/drafts/guardsize-714.py). Left: --factor, =I?BRANCH /
+DUP?NBRANCH (the fastest portable's pair). Chain C's processing rehearsed (results/drafts/chainC-rehearsal-714.sh and
+results/drafts/chainC-rehearsal-714.py, a stand-in archive from chain B's): followup-roles.py stopped - the -c-arm list
+leaves the handoff's portable holders without ARMv7 - so lab/evolve/followup-roles.py now judges only the roles --roles
+names, and chain C's ROLES are the roles it can judge, held by chain B's leaders; then PASS.

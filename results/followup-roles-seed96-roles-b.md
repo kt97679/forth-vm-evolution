@@ -76,5 +76,8 @@ design's three nearest trades; -c-arm 34 (the JIT-free designs a size or ARMv7 q
 `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle), then
 loadtest.py at 10 rounds (about 38 minutes a session: ~8). The Tegra 3 sessions in 350 minutes; dream 16 a width, 175 +
 175. Its processing: `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh 96-roles-c ITERATION
-ROLES` (ROLES as above - the holders are in the list), then results/drafts/chainB-714.py on chain C's readings; a design
+ROLES` - ROLES the roles chain C can judge, held by chain B's leaders (fastest=d727605472, smallarm=ae99617f06,
+smallest=219878ec89, fast64=9b15ba26f7, fast32=ea782c6094, smalljit=c6f1c1331b): the -c-arm list leaves the handoff's
+portable holders without ARMv7 (corrected at 714's third part - results/drafts/chainC-rehearsal-714.sh found
+followup-roles.py stopping) -, then results/drafts/chainB-714.py on chain C's readings; a design
 measured in both chains compared in its chain's terms against the anchors both carry; then the roles, the owner's trades.

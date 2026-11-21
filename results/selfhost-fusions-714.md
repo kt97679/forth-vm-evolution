@@ -28,7 +28,7 @@ export-genes.py, selfhost-check.sh - A = B, the gate), then fusetab-714.py on th
 its engine (a JIT design's A on the engine rebuilt with A's layout): both tables printed from inside each image, two
 probes compiled (a call of a one-operation word; a variable's @ and !), and the five selection programs' code
 (evolve.app_size) with the tables as they are and with each zeroed - the fusion off in the same image, the control.
-The eight designs' records: results/drafts/vartest-714.py (its docstring has the command).
+The designs' records: results/drafts/vartest-714.py (its docstring has the command; eleven since 714's third part).
 
 | design | A | VAR-OPS | INL-OPS | probes | the five programs' code: the translator's / A's |
 |---|---|---|---|---|---|
@@ -47,14 +47,33 @@ byte header shows it plainly: the rtvar variant's -10 B stays -10 B with either 
 table at all, differs by -31 B. VAR-OPS is checked on two variants made for it (rtvar=1, varslot=1 on 48a012411a and
 11f956db93): no rtvar design in chains B and C self-hosts yet (below).
 
+## The gene abortif - --guard-abort (714's third part)
+
+The translator's guard_aborts (sod16.py): before each ABORT" - a call of (ABORT") and its string - ?BRANCH past the string
+and -1, so a false flag skips the call; not after a literal -1 (the call always aborts), nor in a word with a DOES> tail
+inside (none in these sources). The cross compiler's ABORT" (TRANSIENT) now does the same where it compiles the site
+when the genes say so: export-genes.py writes G-GUARD-ABORT (-1 or 0) and no longer lists --guard-abort in G-NOT-YET;
+cross-cv8.4 reads it by FIND, 0 for genes written before (the ten shipped designs' designs/*/genes.4).
+
+- **9b15ba26f7 and df097ba2e2 self-host**: A = B, the gate; INL-OPS the translator's (39 bytes nonzero), the probes
+  the same, the code by A's layout only (the two-bit tag).
+- **ca04ccb8ec** (chain A's list; the byte header, rtvar, rtinline, abortif): the first real rtvar design to self-host -
+  VAR-OPS the translator's (7 of 12 nonzero), INL-OPS (60), the probes the same, the code 8,484 / 8,483 B: the same -1 B
+  with either table zeroed.
+- **The guards' bytes** (results/drafts/guardsize-714.py): the translator's image of ca04ccb8ec 11,001 B with abortif,
+  10,937 without (+64 B, 9 sites); A 10,673 B with G-GUARD-ABORT, 10,633 with 0 (+40 B). The cross compiler guards every
+  ABORT" not after -1 in what it compiles, the X8 overlays' (HEADER8, REFILL8) among them; the translator's X8 swap
+  leaves one body of each. A site costs A at most 4.4 B (40 B over 9 or more live sites), the translator about 7 (64 over
+  9): its guard's -1 is the all-ones cell, the cross compiler's the literal -1, laid in its short form.
+
 ## What the new roles still need of the cross compiler (export-genes.py's G-NOT-YET)
 
-- **--guard-abort**: 9b15ba26f7 (the fastest on x86-64), df097ba2e2 (best all-round).
 - **--factor, and the fused =I?BRANCH / DUP?NBRANCH** (and =I?BRANCH8): d727605472 and 5f7e66b12d (the fastest
-  portable's pair). Every JIT-free rtvar design in chains A and B's lists needs one of the three: 127 have the gene
-  factor, 5 a fused =I?BRANCH among their format-10 operations, ca04ccb8ec the gene abortif (--guard-abort).
-- Self-hosting now: a8d35bdccc, 219878ec89, 90273721a1 (no tables to fill), 48a012411a, ea782c6094, 11f956db93.
+  portable's pair). Of the JIT-free rtvar designs in chains A and B's lists, 127 have the gene factor and 5 a fused
+  =I?BRANCH among their format-10 operations.
+- Self-hosting now: a8d35bdccc, 219878ec89, 90273721a1 (no tables to fill), 48a012411a, ea782c6094, 11f956db93,
+  9b15ba26f7, df097ba2e2.
 
-Until those are built the gate ships the translator-built images for the four roles that need them, named so. The
+Until those are built the gate ships the translator-built images for the two roles that need them, named so. The
 speed half of the gate - the self-built images timed against the translator's - is the laptop's (phase 6's
 re-measure). The ten shipped designs rebuild their images byte for byte as before (run-tests' make selfhost).

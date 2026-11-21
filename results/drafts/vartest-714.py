@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""results/drafts/vartest-714.py LIST OUT - the designs results/selfhost-fusions-714.md checks, one record a line for
-results/drafts/selfhost-ids-714.sh: from LIST (results/followup-seed96-roles-b.md) 48a012411a, 11f956db93, ea782c6094,
-a8d35bdccc, 219878ec89 and 90273721a1 as they are, and two made for VAR-OPS - no rtvar design in chains B and C
-self-hosts yet (--factor, =I?BRANCH or --guard-abort) - 48a012411a and 11f956db93 with rtvar=1 and varslot=1 (rtvar needs
-varslot: express() drops it without), ids v48a012411 and v11f956db9. Then:
-  sh results/drafts/selfhost-ids-714.sh OUT knee=48a012411a x32=ea782c6094 x32b=11f956db93 kneevar=v48a012411 \\
-     x32bvar=v11f956db9 arm=a8d35bdccc small=219878ec89 small2=90273721a1"""
+"""results/drafts/vartest-714.py OUT LIST ... - the designs results/selfhost-fusions-714.md checks, one record a line for
+results/drafts/selfhost-ids-714.sh, looked up in each LIST (results/followup-seed96-roles-b.md, then
+results/followup-seed96-roles.md): 48a012411a, 11f956db93, ea782c6094, a8d35bdccc, 219878ec89 and 90273721a1 as they
+are; two made for VAR-OPS, 48a012411a and 11f956db93 with rtvar=1 and varslot=1 (rtvar needs varslot: express() drops
+it without), ids v48a012411 and v11f956db9; and the gene abortif's (--guard-abort, done at 714's second part):
+9b15ba26f7, df097ba2e2, and ca04ccb8ec (chain A's list) - an rtvar design, so VAR-OPS on a real one. Then:
+  sh results/drafts/selfhost-ids-714.sh OUT knee=48a012411a x32=ea782c6094 x32b=11f956db93 kneevar=v48a012411 \
+     x32bvar=v11f956db9 arm=a8d35bdccc small=219878ec89 small2=90273721a1 x64=9b15ba26f7 allround=df097ba2e2 \
+     abvar=ca04ccb8ec"""
 import json, os, sys
-lst, out = sys.argv[1:3]
+out, lsts = sys.argv[1], sys.argv[2:]
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'lab', 'evolve')); sys.argv = ['x']
 import evolve as E
-C = {r['id']: r for r in (json.loads(l) for l in open(lst) if l.startswith('{"'))}
-R = [C[i] for i in ('48a012411a', '11f956db93', 'ea782c6094', 'a8d35bdccc', '219878ec89', '90273721a1')]
+C = {}
+for lst in reversed(lsts):
+    C.update({r['id']: r for r in (json.loads(l) for l in open(lst) if l.startswith('{"'))})
+R = [C[i] for i in ('48a012411a', '11f956db93', 'ea782c6094', 'a8d35bdccc', '219878ec89', '90273721a1',
+                    '9b15ba26f7', 'df097ba2e2', 'ca04ccb8ec')]
 for i, nid in (('48a012411a', 'v48a012411'), ('11f956db93', 'v11f956db9')):
     r = dict(C[i]); g = dict(r['genome']); g['rtvar'] = 1; g['varslot'] = 1
     assert E.express(E.canon(g)).get('rtvar'), i
