@@ -1570,3 +1570,25 @@ ee34931cd7, 06b188f45b) beaten by 2 % at 2 SE on its class - 80/20 (chain A: -10
 recorded (paranoid 2 set by hand - results/followup-roles-seed96-roles.md), countfit.py on them, the laptop alone at 8-byte cells: the time fitted to the four counts within 5 % median error held out by
 design - 55/45 (its self-test 1.5 % on a known model; Frostbite's Arcmodel 5 % to RTL). (8) No listed design dies on any
 line - 85/15 (the ARMv7 pre-flight: 39 of 39 clang builds alive and identical under qemu).
+
+**Scored at chain B (Iteration 714)**, results/followup-roles-seed96-roles-b.md: (1) right - the laptop 18 sessions, dream
+34 a width, the Tegra 5, none failed. (1b) wrong - 23 JIT-free designs 3-7 B below 21,673 B (21,666 and 21,670); no JIT
+design below 32,044. (2) right - each of the four at 21,679 B beats d180351903 (-1.94 %, 27.7-29.7 % faster in every
+class). (3) right - d727605472 -7.46 % +/- 0.10 %. (4) right - a8d35bdccc -2.63 % +/- 0.39 %. (5) right - none below
+fb0d57c8a2's 112 KB. (6) right - -10.65 %, -5.49 %, -7.53 %. (7) not scored - no counts (paranoid not set). (8) right -
+none died. 7 of 8.
+
+## Chain C - the designs chain B could not settle (6 hours; the laptop, dream and the Tegra) - predicted (Iteration 714)
+
+The 66 of results/followup-seed96-roles-c.md at 10 rounds (the Tegra the 34 of -c-arm): chain B's 23 pool-sizes.py finds,
+chainC-candidates-713.md's 9, the holders and chain B's leaders with their near-ties. (1) Every line returns whole
+sessions and none fails: the laptop 7 or more, dream 16 a width, the Tegra 3 - 65/35 (the Tegra's third session ends
+about 10 minutes inside its 350 at chain B's rate). (2) One of the 23 is no class 2 % slower than 219878ec89 at 2 SE -
+60/40 (in-run 1.17-1.25 against its 1.18). (3) One of the 23 within 2 % of 90273721a1 (the 21,679 B four's fastest) on
+x86-64 - 35/65 (the four run 11 % ahead of 219878ec89 there). (4) The fastest portable's two stay within 2 SE on the mean
+- 50/50 (+0.24 % +/- 0.16 % in chain B). (5) e51c01ba10 or 4acee9a48e beats ae99617f06 for small and fast on ARMv7 by
+the rule - 20/80 (in-run +19.6 % and +38 % slower). (6) pool-sizes.py --below-jit 36805 names a JIT design below
+c6f1c1331b in seed 96's database - 85/15 (the results files' 381 gave 4). (7) A design of the JIT middle (13a2b38e1b and
+3) beats c6f1c1331b by the rule (1 % smaller, no class 2 % slower) - 30/70 (in-run +0.3-4.9 %; chain B's nearest trades
++7-8 % re-measured). (8) No listed design dies on any line - 85/15 (27 of 27 clang ARMv7 builds alive under qemu).
+

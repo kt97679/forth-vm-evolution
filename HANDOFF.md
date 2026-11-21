@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 713.
+- master: Iteration 714.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -230,31 +230,34 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   followup-roles.py fixed (the list had no "jit" mark: the portable roles had taken JIT designs - now the JIT expressed).
   On the screen seven of ten holders beaten by the rule - the smallest to one of six at 21,679 B (25-29 % faster), least
   memory tied at 108 KB (five reads in chain B), small-and-fast-on-ARMv7 kept, the smallest JIT design's contenders all
-  trades (the owner's). **Chain B is NEXT-RUN and REMOTES** (the owner: 19 hours; restarted for "not losing good
-  designs"): results/followup-seed96-roles-b.md (99; -arm 61, -lean 14 - results/drafts/shortlist-713.py; the records
-  carry master's sizes) - the 76 first made, then the 22 within 1.5 % of a speed role's best in chain A (by the mean or
-  the median; the median's best portable 25a6fc9a9e had been left out) and 219878ec89 (21,673 B after the batch, 6 below
-  the six - off chain A's list; fbuf=2). measure-ids.py first, the lean 14 four times more, lab/evolve/pool-sizes.py
-  (new: every database's small end built at master for 40 minutes - seed 96's database is the laptop's), then loadtest.py
-  at 10 rounds (about 14 sessions); the Tegra 5 sessions, dream 34 a width. The
-  PMU's counts need `sudo sysctl kernel.perf_event_paranoid=2` by hand before the start (the hold is taken for
-  counters.py, missmap.py, clockcheck.py only) - else none, the timing the same.
-  **Next: chain B's processing** - `HANDOFF=results/handoff-relf-657.md sh lab/evolve/process-followup.sh 96-roles-b
-  ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command), the list's records first from
-  the measure-ids packs (lab/evolve/ids-records.py LIST PACK ..., oldest first: the lean 14's memory the
-  median of five), then the roles (process-followup.sh does the packs itself now and prints pool-sizes.md's findings - rehearsed:
-  results/drafts/chainB-rehearsal-713.sh PASS); then **chain C** - results/drafts/chainC-candidates-713.md (e51c01ba10
-  and 4acee9a48e - long shots for small-and-fast-on-ARMv7; three small-end trades; 13a2b38e1b and 3 more for the smallest
-  JIT design - its middle, which chain A's screen never covered; in-run comparisons need in-run terms: the list's holder
-  records are the sandbox's), pool-sizes.py's finds, and anchors, a few hours on the three machines - its laptop steps measure-ids.py, then
-  `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle; the
-  results files' gave 4 of 381), then loadtest.py - the roles the owner's trades. From the early games (results/drafts/early-games-713.md): a fixed layout of the engine's
-  writable data, a prototype for the reopened search (memory's layout luck, 1-4 pages); memory with a fixed environment -
-  built and queued (results/queued-genes/fixenv-after-seed96.patch, the owner's yes; results/drafts/fixenv-713.md), as at 611 and 649; from the early
-  computers (results/drafts/early-computers-713.md): the gene jitfew queued (jitfew-after-seed96.patch - JIT designs' memory -11 to -23 %,
-  engines +224 to +544 bytes); then designs/ and the package, self-hosting phase 6 on
-  them; then results/queued-genes (jitdead, fixenv, jitfew) applied, chainorder if its prototype pays, and the reopened search's series;
-  the article.
+  trades (the owner's). Chain B (the owner's 19 hours, restarted for "not losing good designs"): the 99 of results/followup-seed96-roles-b.md.
+  **714: chain B processed** (results/followup-roles-seed96-roles-b.md): the laptop 18 sessions, dream 34 a width, the
+  Tegra 5 at 10 rounds, none died, no stall (the ticker's one load spike, session 6, inside the noise); no PMU counts
+  (paranoid not set); predictions 7 of 8 ((1b) wrong, (7) void). Settled: the fastest on ARMv7 a8d35bdccc (-2.63 % +/-
+  0.39 %), the knee 48a012411a (bytes -1.38 %, speed within 1 %), the fastest on x86-64 9b15ba26f7 (-10.65 %), best
+  all-round df097ba2e2 (-7.53 %); least memory the holder fb0d57c8a2 (four at 112 KB, every contender an ARMv7 trade - the
+  laptop reads the lean end 4 KB above chain A). Led, not settled - **the owner (714): "our goal is not to lose any
+  potentially good designs"**, so a tie keeps both: the fastest portable d727605472 (-7.46 %) with 5f7e66b12d (+0.24 % +/-
+  0.16 %, 4.2 % smaller), the fastest on x86-32 ea782c6094 (-5.49 %) with five within 2 SE (11f956db93 3.8 % smaller,
+  16 KB leaner - assumed: broken by size if still tied after chain C). The smallest: 219878ec89 21,673 B, the four at
+  21,679 B 11 % faster on x86-64 (a trade), and **pool-sizes.py found 23 designs at 21,666-21,670 B, never timed**; small
+  and fast on ARMv7 and the smallest JIT design kept, their long shots in chain C. results/drafts/chainB-714.py (the
+  near-ties, the smallest's contenders, the stalls, the ticker).
+  **Chain C is NEXT-RUN and REMOTES** (the owner: 6 hours): results/followup-seed96-roles-c.md, 66
+  (results/drafts/chainC-list-714.py - the 23, chainC-candidates-713.md's 9, the holders, chain B's leaders with their
+  near-ties and trades); -c-arm 34 (the ARMv7 pre-flight 27 of 27 clang builds alive). The laptop measure-ids.py, then
+  `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle), then
+  loadtest.py at 10 rounds (~8 sessions); the Tegra 3 sessions in 350 minutes, dream 16 a width, 175 + 175. The PMU's
+  counts need `sudo sysctl kernel.perf_event_paranoid=2` by hand before the start.
+  **Next: chain C's processing** - `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh
+  96-roles-c ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command - the holders are in the
+  list), then results/drafts/chainB-714.py on its readings and pool-sizes.md's JIT finds compared in in-run terms; **then
+  the roles** (the owner's trades: the smallest - strict bytes or the 21,679 B four's speed; the ties) - designs/ and the
+  package made again, self-hosting phase 6 on them, relf told how to fetch them. From the early games
+  (results/drafts/early-games-713.md): a fixed layout of the engine's writable data, a prototype for the reopened search;
+  queued genes (results/queued-genes: jitdead, fixenv - results/drafts/fixenv-713.md -, jitfew -
+  results/drafts/early-computers-713.md) applied after the roles, chainorder if its prototype pays, then the reopened
+  search's series; the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -357,12 +360,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): the new roles' shortlist, chain B (713) - eight. Scored: chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
+- **Predictions due** (results/predictions.md): chain C (714) - eight. Scored: chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first
   run); remote hosts cleaned after every chain (628: `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
-- **Files a new chat needs**: the newest bundle and chain B's archive (forth-vm-evolution-chain-*_tar.gz). appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle and chain C's archive (forth-vm-evolution-chain-*_tar.gz). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

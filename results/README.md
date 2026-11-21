@@ -369,6 +369,12 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed96-roles.md` - Chain A's pooled pick (713): the 944 on three machines, every session (its set: followup-pick-seed96-roles.json).
 - `followup-pick-seed96-roles.json` - followup-pick-seed96-roles.md's set as JSON (final-pick.py --json, Iteration 713).
 - `followup-roles-seed96-roles.md` - The new roles' screen processed (Iteration 713): seven of the ten holders beaten by the rule, the smallest to one of six at 21,679 B; the after-seed-96 batch's sizes; chain B's shortlist.
+- `chain-followup96-roles-b/README.md` - Chain B's readings by session (Iteration 714): the laptop s1-s18, dream s1-s34 a width, the Tegra s1-s5; pool-sizes.md beside them.
+- `followup-pick-seed96-roles-b.md` - Chain B's pooled pick (714): the 99 on three machines, every session (its set: followup-pick-seed96-roles-b.json).
+- `followup-pick-seed96-roles-b.json` - followup-pick-seed96-roles-b.md's set as JSON (final-pick.py --json, Iteration 714).
+- `followup-roles-seed96-roles-b.md` - The new roles' shortlist processed (Iteration 714): four roles settled, the holder kept for least memory, the fastest portable and x86-32 ties and the smallest to chain C.
+- `followup-seed96-roles-c.md` - Chain C's list (Iteration 714): 66 - pool-sizes.py's 23, chain C's candidates, the holders, chain B's leaders and near-ties (-c-arm.md: the Tegra's 34).
+- `followup-seed96-roles-c-arm.md` - Chain C on the Tegra (714): the 34 JIT-free designs a size or ARMv7 question needs.
 - `followup-seed96-roles-b.md` - Chain B's 99 (Iteration 713, results/drafts/shortlist-713.py): final-pick.py's 40, the holders, each role's leaders, the near-ties, 219878ec89 - master's sizes; one record a line.
 - `followup-seed96-roles-b-arm.md` - Chain B on the Tegra (713): the shortlist's 54 JIT-free designs, the JIT designs leading across machines and the all-round holder - 61.
 - `followup-seed96-roles-b-lean.md` - Chain B's lean end (713): the 14 within 8 KB of 108 KB, their memory read five times (measure-ids.py).

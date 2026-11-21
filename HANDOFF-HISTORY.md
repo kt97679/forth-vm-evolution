@@ -1074,3 +1074,31 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   fastest-x86-64=c7c35f9c97,fastest-x86-32=ee34931cd7,best-all-round=06b188f45b,small-jit=c6f1c1331b,portable-fastest=782f3ad7ff,
   portable-arm=3eb59b271d,portable-knee=11a56ff9e4,portable-small=ae99617f06,least-memory=fb0d57c8a2,smallest=d180351903`
   (no spaces in the list), then /tmp/fz/pkg/SHA256SUMS against that file. At the freeze: on master after `git apply`, with the final roles' records (results/relf-designs-649.md) and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
+
+## The card's chain B and next-step text at Iteration 713 (replaced at 714, chain B processed)
+
+**Chain B is NEXT-RUN and REMOTES** (the owner: 19 hours; restarted for "not losing good
+  designs"): results/followup-seed96-roles-b.md (99; -arm 61, -lean 14 - results/drafts/shortlist-713.py; the records
+  carry master's sizes) - the 76 first made, then the 22 within 1.5 % of a speed role's best in chain A (by the mean or
+  the median; the median's best portable 25a6fc9a9e had been left out) and 219878ec89 (21,673 B after the batch, 6 below
+  the six - off chain A's list; fbuf=2). measure-ids.py first, the lean 14 four times more, lab/evolve/pool-sizes.py
+  (new: every database's small end built at master for 40 minutes - seed 96's database is the laptop's), then loadtest.py
+  at 10 rounds (about 14 sessions); the Tegra 5 sessions, dream 34 a width. The
+  PMU's counts need `sudo sysctl kernel.perf_event_paranoid=2` by hand before the start (the hold is taken for
+  counters.py, missmap.py, clockcheck.py only) - else none, the timing the same.
+  **Next: chain B's processing** - `HANDOFF=results/handoff-relf-657.md sh lab/evolve/process-followup.sh 96-roles-b
+  ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command), the list's records first from
+  the measure-ids packs (lab/evolve/ids-records.py LIST PACK ..., oldest first: the lean 14's memory the
+  median of five), then the roles (process-followup.sh does the packs itself now and prints pool-sizes.md's findings - rehearsed:
+  results/drafts/chainB-rehearsal-713.sh PASS); then **chain C** - results/drafts/chainC-candidates-713.md (e51c01ba10
+  and 4acee9a48e - long shots for small-and-fast-on-ARMv7; three small-end trades; 13a2b38e1b and 3 more for the smallest
+  JIT design - its middle, which chain A's screen never covered; in-run comparisons need in-run terms: the list's holder
+  records are the sandbox's), pool-sizes.py's finds, and anchors, a few hours on the three machines - its laptop steps measure-ids.py, then
+  `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle; the
+  results files' gave 4 of 381), then loadtest.py - the roles the owner's trades. From the early games (results/drafts/early-games-713.md): a fixed layout of the engine's
+  writable data, a prototype for the reopened search (memory's layout luck, 1-4 pages); memory with a fixed environment -
+  built and queued (results/queued-genes/fixenv-after-seed96.patch, the owner's yes; results/drafts/fixenv-713.md), as at 611 and 649; from the early
+  computers (results/drafts/early-computers-713.md): the gene jitfew queued (jitfew-after-seed96.patch - JIT designs' memory -11 to -23 %,
+  engines +224 to +544 bytes); then designs/ and the package, self-hosting phase 6 on
+  them; then results/queued-genes (jitdead, fixenv, jitfew) applied, chainorder if its prototype pays, and the reopened search's series;
+  the article.

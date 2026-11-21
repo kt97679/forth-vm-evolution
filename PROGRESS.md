@@ -11920,3 +11920,18 @@ tricks (Mesa, Smalltalk-80, the Transputer, BCPL, the B5000, SOAP, the AGC) here
 a scratch clone sharing build/ copies its overlays through build/work's links into the sandbox's forth/.
 The queue with jitfew checked: batch-check on 6f91bb0, 3 patches - PASS (run-tests with engines-check.py's 118 paths,
 validate 7 of 7 identical, the jail; recorded in results/queued-genes/ORDER.md).
+
+## Iteration 714 - 2026-11-21 - Claude
+
+Chain B processed (results/followup-roles-seed96-roles-b.md): the 99 at 10 rounds - the laptop 18 sessions, dream 34 a
+width, the Tegra 5, none died, no stall, no PMU counts (paranoid not set); predictions 7 of 8. Settled: the fastest on
+ARMv7 a8d35bdccc (-2.63 % +/- 0.39 %), the knee 48a012411a (bytes -1.38 %), the fastest on x86-64 9b15ba26f7 (-10.65 %),
+best all-round df097ba2e2 (-7.53 %), least memory the holder (four at 112 KB, the contenders ARMv7 trades). Led, not
+settled (the owner: "our goal is not to lose any potentially good designs" - a tie keeps both): the fastest portable
+d727605472 (-7.46 %) with 5f7e66b12d, the fastest on x86-32 ea782c6094 (-5.49 %) with five; the smallest 219878ec89
+(21,673 B) against the 21,679 B four's 11 % on x86-64, and pool-sizes.py's 23 designs at 21,666-21,670 B, never timed.
+Chain C is NEXT-RUN and REMOTES (the owner: 6 hours): results/followup-seed96-roles-c.md (66) and -c-arm.md (34; the
+ARMv7 pre-flight 27 of 27 clang builds alive) by results/drafts/chainC-list-714.py; results/drafts/chainB-714.py (the
+near-ties, the smallest's contenders, the stalls, the ticker). The readings: results/chain-followup96-roles-b (README.md,
+pool-sizes.md); the pick: results/followup-pick-seed96-roles-b.md and .json.
+Files: results/chain-followup96-roles-b/ (README.md, pool-sizes.md; its sK: dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md, rage.lan-prebuiltarm.md, rage.lan-prebuiltarm.out.json), results/followup-pick-seed96-roles-b.json, results/followup-seed96-roles-c-arm.md.

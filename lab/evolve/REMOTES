@@ -7,15 +7,21 @@
 # "run": all the time the evolution leaves (Iteration 429, remote-checks.sh), so the chain never waits on a host.
 #
 # host       how       designs  rounds  minutes  sample options
+#   Iteration 714 (chain C - the designs chain B could not settle; the owner: 6 hours): the Tegra the 34 of
+#   results/followup-seed96-roles-c-arm.md (chain B's 23 pool-sizes.py finds, the 5 JIT-free candidates, the smallest's,
+#   small-and-fast's and the fastest portable's anchors), 10 rounds - chain B's rate (171 s a design a session) about 1.8
+#   hours a session: 3 in 350 minutes; dream the 66 of results/followup-seed96-roles-c.md at both widths, 10 rounds, about
+#   10 minutes a session a width, 16 a width, stacked: 175 + 175 minutes. ARMv7 pre-flight (tools/arm-cross-check.py,
+#   qemu-arm): the 28 new JIT-free designs - results/followup-roles-seed96-roles-b.md.
+# rage.lan     prebuiltarm 4       10      1110     --cell 4 --rejected 4 --sessions 5 --also @results/followup-seed96-roles-b-arm.md
+# dream.lan    prebuilt32  4       10      555      --cell 4 --rejected 6 --sessions 34 --also @results/followup-seed96-roles-b.md
+# dream.lan    prebuilt64  4       10      555      --from prebuilt32 --sessions 34
 #   Iteration 713 (chain B - the new roles' shortlist; the owner: 19 hours; restarted with the near-ties - 99, -arm 61):
 #   the Tegra the 61 of results/followup-seed96-roles-b-arm.md (the shortlist's JIT-free designs and the JIT designs
 #   leading across machines - their JIT-off builds - with the all-round holder), 10 rounds - chain A's rate (17.2 s a
 #   design-round) about 3.1 hours a session: 5 in 1,110 minutes; dream the 99 of results/followup-seed96-roles-b.md at
 #   both widths, 10 rounds, about 16 minutes a session a width, 34 a width, stacked: 555 + 555 minutes. Master with the
 #   after-seed-96 batch: the ARMv7 engines with arm2at and imagemsg, the x86-64 ones 482-2,224 bytes smaller.
-rage.lan     prebuiltarm 4       10      1110     --cell 4 --rejected 4 --sessions 5 --also @results/followup-seed96-roles-b-arm.md
-dream.lan    prebuilt32  4       10      555      --cell 4 --rejected 6 --sessions 34 --also @results/followup-seed96-roles-b.md
-dream.lan    prebuilt64  4       10      555      --from prebuilt32 --sessions 34
 #   Iteration 705 (the new roles' screen - the owner: "let's go straight to the new designs", 5 %, two chains, 21 hours,
 #   both hosts): the Tegra the 437 of results/followup-seed96-roles-arm.md (the JIT-free candidates, the JIT-free front, the
 #   pool's set - a JIT design as its JIT-off build - and the ten holders), at 3 rounds - the final check's 438 took 9.3
@@ -156,3 +162,7 @@ dream.lan    prebuilt64  4       10      555      --from prebuilt32 --sessions 3
 # Iteration 647 (the owner: "please include rage check into next run"): no remote line - the next chain is
 # lab/evolve/rage-designs.py on the laptop, which uses rage itself (tools/rage-check.sh); a measuring line beside it
 # would time the Tegra under a build.
+
+rage.lan     prebuiltarm 4       10      350      --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed96-roles-c-arm.md
+dream.lan    prebuilt32  4       10      175      --cell 4 --rejected 6 --sessions 16 --also @results/followup-seed96-roles-c.md
+dream.lan    prebuilt64  4       10      175      --from prebuilt32 --sessions 16
