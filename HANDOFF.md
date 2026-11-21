@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 720.
+- master: Iteration 721.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -307,8 +307,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (new: the gate's speed half - each self-built role on its own engine against the translator's build, 5 alternations of
   10 rounds, both widths; at most 1.02 keeps it self-built, else the processing ships its translator-built images and
   names it in designs/TRANSLATOR-BUILT with the ratio; here on the VM, 2 rounds: small-jit's 4-byte image 1.07-1.09 - the
-  laptop decides), then loadtest.py's repeats (dream 150 + 150 minutes). **Its processing**: the written list's records not in
-  results/followup-seed96-jitband.md appended to it first (the pool-sizes pack's records; its "written ids" line), then
+  laptop decides), then loadtest.py's repeats (dream 150 + 150 minutes). **721 (while chain D runs)**: the VM's 1.07-1.09
+  is no defect - cachegrind's instructions (results/drafts/selfspeed-counts-721.py; the 4-byte engines under `setarch -L`,
+  their legacy-layout re-exec otherwise lands on valgrind's tool) self / translator 0.998-0.999 for small-jit and smallest
+  at both widths, every workload within 1 %; a gate FAIL ships translator-built by `TRANSLATOR='NAME:REASON' sh
+  tools/selfhost-ship.sh` (new) in roles-build-718.sh's phase 2; relf's handoff drafted
+  (results/drafts/handoff-relf-draft-721.md - [chain D] marks what is left). **Its processing** (rehearsed at 721:
+  results/drafts/chainD-rehearsal-721.sh PASS - it found and fixed followup-roles.py's crash on a chain without the Tegra;
+  process-followup.sh merges the pool-sizes --write list into the list itself, lab/evolve/written-list.py): the Tegra's
+  rage-designs.md PASS, selfhost-speed.md's gate, then
   `HANDOFF=results/handoff-relf-657.md PRED=717 sh lab/evolve/process-followup.sh 96-jitband ITERATION
   smalljit=15eda54ebd` (the laptop and dream only: the JIT designs' two classes), results/drafts/chainB-714.py and
   chainC-716.py's pairing on its readings; a beater by the rule replaces 15eda54ebd.

@@ -285,6 +285,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/fixenv-713.md` - The fixed environment for engine runs, tested (Iteration 713): memory the same whatever the caller's environment; queued with the reopened search (queued-genes/fixenv-after-seed96.patch).
 - `drafts/memshift-714.md` - The lean end's 4 KB between chains A and B (Iteration 714): the after-seed-96 batch's layout, one page up or down by design - not the environment.
 - `drafts/early-computers-713.md` - What the early computers lend the search (Iteration 713, the owner's idea): working sets - the JIT translator's frame, 10-19 pages, the gene jitfew built and queued; demand-zero FILL and more priced.
+- `drafts/handoff-relf-draft-721.md` - relf's handoff for the new roles, drafted while chain D runs (Iteration 721): what changed since 657, the ten, the adoption notes; [chain D] marks what its processing fills in.
 - `drafts/esolangs-717.md` - What the esoteric languages lend the search (Iteration 717, the owner's idea): most is here; literals converted before the lookup (FALSE's first-character dispatch) priced - about half the corpus's and parse's walk for a few tens of bytes - and proposed as a gene.
 - `drafts/jitfew-test-713.py` - The gene jitfew off and on, interleaved: time, pages, outputs, bytes (Iteration 713).
 - `drafts/stack-pages-713.py` - Pages per selection workload from a root, outputs hashed (Iteration 713).

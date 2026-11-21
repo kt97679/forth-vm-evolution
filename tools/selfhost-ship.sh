@@ -28,6 +28,10 @@ for f in kernel.4 extend.4 cross-cv8.4 $(grep -h '^S" .*" G+$' "$DS"/*/genes.4 "
 # holding the others back. It gets no `make selfhost` rules (a stale pair removed), both widths stay the converter's (an
 # 8-byte image shipped before a 4-byte failure is put back), and DIR/TRANSLATOR-BUILT names it with the check's reason -
 # the top Makefile's `make selfhost` and run-tests skip what it names. STRICT=1: stop at the first failure, as before.
+# Iteration 721: TRANSLATOR='NAME:REASON|NAME:REASON' - the gate's speed half (lab/evolve/selfhost-speed.py): a design
+# whose self-built image runs slower than its translator's ships translator-built, named with REASON, its check not run
+# (on a fresh export, whose images are the translator's - a build-out's order).
+forced() { echo "${TRANSLATOR:-}" | tr '|' '\n' | sed -n "s/^$1://p" | head -n 1; }
 TB=$DS/TRANSLATOR-BUILT; KEPT=; SHIPPED=0
 [ -f "$TB" ] && grep -v -E "^($(echo $NAMES | tr ' ' '|')) " "$TB" > "$TB.new"; mv -f "$TB.new" "$TB" 2> /dev/null
 why() {     # the check's output: its reason - the cross compiler's own words where its log has them ("cross: not yet: ...")
@@ -39,13 +43,15 @@ keep() {    # NAME REASON: the converter's images stay
     [ -n "${STRICT:-}" ] && die "$1: $2"
     sed -i '/^# `make selfhost` (`selfhost32`)/,/^\.PHONY: selfhost selfhost32/d' "$DS/$1/Makefile"
     [ -s "$TB" ] || printf '%s\n' '# Designs whose image.img and image32.img are the converter'"'"'s (tools/layout.py), not self-built: the' \
-        '# self-hosting check (tools/selfhost-check.sh) failed - the cross compiler cannot yet build them; written by' \
+        '# self-hosting check (tools/selfhost-check.sh) failed - the cross compiler cannot yet build them - or the gate'"'"'s' \
+        '# speed half found the self-built image slower (TRANSLATOR=, Iteration 721); written by' \
         '# tools/selfhost-ship.sh. NAME, then the check'"'"'s reason. `make selfhost` and the tests skip these.' > "$TB"
     echo "$1 $2" >> "$TB"; KEPT="$KEPT $1"
     echo "selfhost-ship: $1 keeps its translator-built images - $2"
 }
 for n in $NAMES; do
     M=$DS/$n/Makefile; [ -f "$M" ] || die "no $M"
+    f=$(forced "$n"); if [ -n "$f" ]; then keep "$n" "$f"; continue; fi     # 721: by the gate's speed half
     BK=$(mktemp -d) || die "mktemp"
     cp -p "$DS/$n/image.img" "$DS/$n/image32.img" "$BK/" && for s in src src32; do
         [ -f "$DS/$n/$s/vm-jit-ops.h" ] && { mkdir -p "$BK/$s"; cp -p "$DS/$n/$s/vm-jit-ops.h" "$BK/$s/"; }; done

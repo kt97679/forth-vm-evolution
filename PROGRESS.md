@@ -12032,3 +12032,16 @@ loadtest.py's repeats; dream 150 + 150 minutes, about 5 hours in all; sudo once 
 here on three designs (portable-fastest skipped, translator-built): it works; the VM's 2-round readings (small-jit 4-byte
 1.07-1.09) are for the laptop to decide. Files: lab/evolve/selfhost-speed.py, NEXT-RUN, REMOTES, lab/evolve/README.md,
 results/predictions.md (chain D's (7) and (8)).
+
+## Iteration 721 - 2026-11-21 - Claude
+
+While chain D runs (the owner: "yes"). (1) small-jit's 4-byte self-built image read 1.07-1.09 of the translator's on the VM:
+no defect - cachegrind's instructions (the 4-byte engines under setarch -L: their legacy-layout re-exec lands on valgrind's
+tool otherwise) self / translator 0.9983-0.9987 for small-jit and smallest at both widths, every workload within 1 %; the
+laptop's timing decides the gate. (2) Chain D's processing made ready: lab/evolve/written-list.py (the pool-sizes --write
+list merged into the list, run by process-followup.sh), tools/selfhost-ship.sh TRANSLATOR='NAME:REASON' (a gate FAIL ships
+translator-built, named; the default path unchanged - checked), followup-roles.py's crash on a chain without the Tegra
+fixed (found by the rehearsal, results/drafts/chainD-rehearsal-721.sh: PASS), relf's handoff drafted. run-tests PASS.
+Files: results/drafts/selfspeed-counts-721.py, results/drafts/chainD-rehearsal-721.sh,
+results/drafts/handoff-relf-draft-721.md; lab/evolve/written-list.py, process-followup.sh, followup-roles.py,
+tools/selfhost-ship.sh.

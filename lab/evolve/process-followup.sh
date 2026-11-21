@@ -46,6 +46,11 @@ for p in "$O"/*-pool-sizes-*/pack/pool-sizes.md; do [ -f "$p" ] || continue   # 
   grep '^- ' "$p" | head -n 8 | sed 's/^/  /'; done
 echo
 } > "$S"
+w=$(grep -l '^written ids: ' "$O"/*-pool-sizes-*/pack/pool-sizes.md 2>/dev/null)  # 721: a pool-sizes.py --write list (chain D) - its
+if [ -n "$w" ]; then                                                          # finds the laptop measured beside C's, into C first
+  python3 lab/evolve/written-list.py "$C" $w > "$O/written-list.log" 2>&1 || die "written-list.py ($O/written-list.log)"
+  cat "$O/written-list.log" >> "$S"
+fi
 m=$(ls "$O"/*-measure-ids-*/pack/measure-ids.md 2>/dev/null | sort)            # 713: the laptop's sizes and memory into the list
 if [ -n "$m" ]; then                                                           # (oldest first: a design read more than once -
   python3 lab/evolve/ids-records.py "$C" $m > "$O/ids-records.log" 2>&1 \

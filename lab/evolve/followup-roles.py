@@ -282,7 +282,8 @@ for k in sorted(g):
     print('  factor %d, compiler %d: %2d designs, %.3f %.3f %.3f' % (k + (len(g[k]),) + tuple(
         statistics.median(x[j] for x in g[k]) for j in range(3))))
 x = [y for v in g.values() for y in v]
-print('  all %d: %.3f %.3f %.3f' % ((len(x),) + tuple(statistics.median(y[j] for y in x) for j in range(3))))
+if x: print('  all %d: %.3f %.3f %.3f' % ((len(x),) + tuple(statistics.median(y[j] for y in x) for j in range(3))))
+else: print('  none - no design read by the laptop, dream and the Tegra all three')   # 721: chain D has no Tegra line
 
 
 def gain():
