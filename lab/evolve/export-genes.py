@@ -122,7 +122,19 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     hs = [(c_, t_, str(k_)) for c_, t_, k_, _ in prof if '%s>%s#%d' % (c_, t_, k_) in said]
     assert len(hs) == len(said), ('hot-inline: sites not in the profile', len(hs), len(said))
     L += lst('G-HOT-INLINE', ['%s %s %s' % h for h in hs], 'calls inlined: caller callee k (the k-th call), as the translator chose them')
-    ny = [k for k in ('--opcall-file', '--factor') if k in args]       # 714: --guard-abort done
+    # 715: the gene factor (layout.py --factor, under the tag and byte headers only, as there): the words it may
+    # factor by the reference profile - a word missing from it kept, unless --factor-share is above 1 (every word) -
+    # and never the bodies layout.py patches after reading them (T2_CONSTS) or the dump tool (DUMPTOOL).
+    fac = '--factor' in args and '--tag2' in args and '--bytehdr' in args
+    share = float(opt(args, '--factor-share') or 1e-3)
+    hotw = json.load(open(opt(args, '--factor-hot'))) if fac and '--factor-hot' in args else {}
+    lsrc = open('tools/layout.py').read()
+    never = [n for v in ('T2_CONSTS', 'DUMPTOOL') for n in re.findall(r"'([^']*)'", re.search(v + r' = \(([^)]*)\)', lsrc).group(1))]
+    L += ['%d CONSTANT G-FACTOR        \\ the gene factor: repeated cold code in headerless bodies (layout.py --factor; 715)' % (-1 if fac else 0),
+          '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
+    L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
+    L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
+    ny = [k for k in ('--opcall-file',) if k in args]       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it)
     ny += [n for n in ('=I?BRANCH', '=I?BRANCH8', 'DUP?NBRANCH', 'DUP?NBRANCH8') if n in dict(o10)]
     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
