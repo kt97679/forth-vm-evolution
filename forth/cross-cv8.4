@@ -1122,6 +1122,8 @@ VARIABLE SH-KIND
 : I-, ,-T ;
 : I-C, C,-T ;
 : I-ALLOT ALLOT-T ;
+: I-FILL ( t-addr u c --- )   \ 714: cv8-fuse-inline.4 zeroes INL-OPS so
+  SWAP 0 ?DO OVER I + OVER SWAP C!-T LOOP 2DROP ;
 : I-ALIGN ALIGN-T ;
 : I-CELLS CELLS-T ;
 : I-CHARS ;
@@ -1459,12 +1461,20 @@ FORWARD (ABORT")
 FORWARD (POSTPONE)
 
 : DO ( --- j ) [ TRANSIENT ] (DO) [ FORTH ] #OPS @ DUP MARK ;
-: LOOP ( j --- )
+: LOOP-OP ( j --- )
 \ (LOOP) and the cell after it - or (LOOP)'s format-10 opcode with a
 \ branch's offset, where the design has it (ops10_rewrite's LOOPKIND).
   [ TRANSIENT ] ['] (LOOP) [ FORTH ] >BODY DUP FWD-SHADOW ?DUP IF
     DUP CELL+ @ K-COLON = OVER 2 CELLS + @ AND IF 2 CELLS + @ SWAP DROP 0 BR+ EXIT THEN DROP
   THEN FWD-REF >R O-LOOPC R> ROT 0 OP+ ;
+\ Iteration 714: ?DO, for cv8-fuse-inline.4 (the gene rtinline) - (?DO)'s
+\ format-10 opcode, a branch past the loop's end as the translator lays
+\ it (sod16.py's LOOPKIND: QDO); its LOOP resolves it (-2 marks a ?DO's).
+: ?DO ( --- j-skip j -2 )
+  S" (?DO)" OPS10-OF DUP 0= ABORT" cross: not yet: ?DO without (?DO)'s format-10 opcode"
+  0 >FWD-BR #OPS @ DUP MARK -2 ;
+: LOOP ( j --- | j-skip j -2 --- )
+  DUP -2 = IF DROP [ TRANSIENT ] LOOP-OP [ FORTH ] >RESOLVE EXIT THEN [ TRANSIENT ] LOOP-OP [ FORTH ] ;
 : ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE STR+ ;
 : ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ ;
 : POSTPONE ( "name" --- )
@@ -1637,6 +1647,157 @@ VARIABLE LT-AT
     OVER I + C!-T
   LOOP DROP ;
 
+\ Iteration 714 (self-hosting phase 6): cv8-fuse-var.4's VAR-OPS and
+\ cv8-fuse-inline.4's INL-OPS, byte for byte as tools/layout.py writes
+\ them - before, both stayed zeros here and the run-time fusions (the genes
+\ rtvar and rtinline) were off in every self-built image (697). An
+\ operation's names are sod16.py's t2_names: later kinds name over earlier
+\ ones - the primitives, the fixed operations, the specialisations, the
+\ folds (name;EXIT), the pairs ("A B"), the format-10 operations.
+: BYTE-OF ( op --- code -1 | 0 )
+\ The operation's one-byte code where it has one (layout.py's _byte); -1
+\ (no such operation) has none.
+  DUP 0< IF DROP 0 EXIT THEN
+  G-TAG2 IF
+    DUP 65533 = IF DROP T2JIT @ DUP 0< IF DROP 0 ELSE -1 THEN EXIT THEN
+    >L2 DUP 256 < IF T2ONE + C@ DUP IF 1- -1 ELSE DROP 0 THEN ELSE DROP 0 THEN EXIT
+  THEN
+  DUP 128 < IF -1 ELSE DROP 0 THEN ;
+: SPEC-OP ( c-addr u --- op | -1 )
+\ A specialisation's opcode by its t2_names name - named whenever the
+\ design has any (G-SPEC), as sod16.py names them.
+  G-SPEC 0= IF 2DROP -1 EXIT THEN
+  2DUP S" lit0 lit1 litm1 vf vs LSAVE LRESTORE L! LZERO " LIST-INDEX DUP 0< 0= IF SWAP DROP SWAP DROP 96 + EXIT THEN DROP
+  2DUP TINY-SET LIST-INDEX DUP 0< 0= IF SWAP DROP SWAP DROP TINY-BASE + EXIT THEN DROP
+  S" ADDI ADDIX EQI EQIX " LIST-INDEX DUP 0< 0= IF 120 + THEN ;
+: FIXED-OP ( c-addr u --- op | -1 )
+  S" LIT32 68 DOVAR 69 DODOES 70 LIT8 71 LIT8X 72 LIT64 124 " LIST-VALUE ;
+: LAST-OP ( c-addr u --- op | -1 )
+\ The last operation bearing the name, by t2_names' order (layout.py's
+\ _inv: VAR-OPS's DOES> @ tail).
+  2DUP OPS10-OF ?DUP IF SWAP DROP SWAP DROP EXIT THEN
+  2DUP SPEC-OP DUP 0< 0= IF SWAP DROP SWAP DROP EXIT THEN DROP
+  2DUP FIXED-OP DUP 0< 0= IF SWAP DROP SWAP DROP EXIT THEN DROP
+  PRIM-OP ;
+: CODE-OF ( c-addr u --- code -1 | 0 )
+\ The last code bearing the name among those with a byte (INL-OPS's _code).
+  2DUP OPS10-OF ?DUP IF BYTE-OF IF SWAP DROP SWAP DROP -1 EXIT THEN THEN
+  2DUP SPEC-OP BYTE-OF IF SWAP DROP SWAP DROP -1 EXIT THEN
+  2DUP FIXED-OP BYTE-OF IF SWAP DROP SWAP DROP -1 EXIT THEN
+  PRIM-OP BYTE-OF ;
+: FOLD-OP-OF ( c-addr u --- op | -1 )
+\ The fold-set primitive's folded opcode (name;EXIT), if it is in the set.
+  G-FOLDS LIST-INDEX DUP 0< IF EXIT THEN FOLD-BASE + ;
+: PAIR-OP-OF ( c-addr1 u1 c-addr2 u2 --- op | -1 )
+\ The fused pair "first second"'s opcode, if the design has it.
+  G-SUPERS LIST-COUNT 3 / 0 ?DO
+    2OVER I 3 * G-SUPERS LIST-TOKEN COMPARE 0= IF
+      2DUP I 3 * 1+ G-SUPERS LIST-TOKEN COMPARE 0= IF
+        2DROP 2DROP I 3 * 2 + G-SUPERS LIST-TOKEN TOKEN>N UNLOOP EXIT
+      THEN
+    THEN
+  LOOP 2DROP 2DROP -1 ;
+: VAR-OPS! ( --- )
+\ vf, vs, @ and ! (all four or none - the fusion off), VARSLOT, SCALE 0;
+\ the tag; DOES> @'s tail - R>, @;EXIT, the pair R> @, in one-byte codes -
+\ and which of the three the design has.
+  S" VAR-OPS" T-SHADOW 0= IF EXIT THEN @ >BODY-T >R
+  4 SPEC? G-VARSLOT AND IF
+    99 100 S" @" PRIM-OP S" !" PRIM-OP
+    G-TAG2 IF
+      >R >R >R T2C R> T2C R> T2C R> T2C
+      2OVER 2OVER * * * 0= IF 2DROP 2DROP 0 0 0 0 THEN
+    ELSE
+      DUP 255 > IF DROP 125 THEN >R DUP 255 > IF DROP 125 THEN R>
+    THEN
+  ELSE 0 0 0 0 THEN
+  R@ 3 + C!-T R@ 2 + C!-T R@ 1+ C!-T R@ C!-T
+  G-VARSLOT IF 1 ELSE 0 THEN R@ 4 + C!-T  0 R@ 5 + C!-T
+  G-TAG2 IF 1 ELSE 0 THEN R@ 6 + C!-T  0 R@ 7 + C!-T
+  0 R@ 11 + C!-T
+  4 SPEC? G-VARSLOT AND IF
+    S" R>" LAST-OP BYTE-OF IF R@ 8 + C!-T R@ 11 + DUP C@-T 1 OR SWAP C!-T THEN
+    S" @" FOLD-OP-OF BYTE-OF IF R@ 9 + C!-T R@ 11 + DUP C@-T 2 OR SWAP C!-T THEN
+    S" R>" S" @" PAIR-OP-OF BYTE-OF IF R@ 10 + C!-T R@ 11 + DUP C@-T 4 OR SWAP C!-T THEN
+  THEN
+  R> DROP ;
+
+\ INL-OPS: two bits a code, the length with its operand of what code
+\ compiled at run time may copy for a call - layout.py's whitelist of the
+\ operations that cannot tell where they sit; which codes are folds; the
+\ JIT's code and header; the folds and their plain forms.
+: INL-PURE ( --- c-addr u )
+  S" NOOP DROP DUP SWAP ROT OVER C@ @ C! ! AND OR XOR = U< < + NEGATE LSHIFT RSHIFT UM* UM/MOD D+ SP@ 0= - <> 0< > 2DUP 2DROP CHAR+ 1+ CELL+ CELLS 1- INVERT COUNT ALIGNED lit0 lit1 litm1 +! ?DUP 2@ 2! FILL CMOVE " ;
+: INL-OPND ( --- c-addr u ) S" LIT8 2 LIT 3 ADDI 2 EQI 2 SWAP+I 2 DUP+I 2 DUP<I 2 " ;
+: PURE? ( c-addr u --- f ) INL-PURE LIST-INDEX 0< 0= ;
+: ILEN ( c-addr u --- n )
+  2DUP PURE? IF 2DROP 1 EXIT THEN INL-OPND LIST-VALUE 0 MAX ;
+CREATE INL-BITS 256 ALLOT  VARIABLE IA
+: BIT! ( n op --- ) BYTE-OF IF INL-BITS + C! ELSE DROP THEN ;
+CREATE NBUF 32 ALLOT                              \ a fold's name: name;EXIT
+: FOLD-NAME ( c-addr u --- c-addr' u' )
+  DUP >R NBUF SWAP CMOVE S" ;EXIT" NBUF R@ + SWAP CMOVE NBUF R> 5 + ;
+CREATE FP 26 20 * ALLOT  VARIABLE #FP          \ the folds: [name 16][u][fold code][plain code]
+: FP# ( i --- addr ) 20 * FP + ;
+: FP+ ( c-addr u fold-code plain-code --- )
+  #FP @ FP# >R R@ 19 + C! R@ 18 + C! DUP R@ 16 + C! R> SWAP CMOVE 1 #FP +! ;
+: FP-NAME ( i --- c-addr u ) FP# DUP 16 + C@ ;
+CREATE FP-T 20 ALLOT
+: FP-SORT ( --- )
+\ By the fold's name, as Python's sorted() orders strings.
+  #FP @ 2 < IF EXIT THEN
+  #FP @ 1 DO
+    I BEGIN DUP 0> WHILE
+      DUP 1- FP-NAME 2 PICK FP-NAME COMPARE 0> 0= IF DROP 0 ELSE
+        DUP FP# FP-T 20 CMOVE DUP 1- FP# OVER FP# 20 CMOVE FP-T OVER 1- FP# 20 CMOVE 1-
+      THEN
+    REPEAT DROP
+  LOOP ;
+: FOLD-CAND ( c-fold u-fold c-plain u-plain fold-op --- )
+\ A fold and its plain form: kept if both have a code and the plain form
+\ a length.
+  BYTE-OF 0= IF 2DROP 2DROP EXIT THEN >R
+  2DUP ILEN 0= IF 2DROP 2DROP R> DROP EXIT THEN
+  CODE-OF 0= IF 2DROP R> DROP EXIT THEN          ( c-fold u-fold plain-code )
+  OVER 16 > ABORT" cross: INL-OPS: a fold's name too long"
+  R> SWAP FP+ ;
+: INL-BITS! ( --- )
+  INL-BITS 256 0 FILL
+  INL-PURE LIST-COUNT 0 ?DO I INL-PURE LIST-TOKEN 2DUP ILEN ROT ROT PRIM-OP BIT! LOOP
+  INL-OPND LIST-COUNT 2 / 0 ?DO I 2 * INL-OPND LIST-TOKEN 2DUP ILEN ROT ROT PRIM-OP BIT! LOOP
+  0 68 BIT!  0 69 BIT!  0 70 BIT!  2 71 BIT!  0 72 BIT!  0 124 BIT!
+  G-SPEC IF
+    1 96 BIT! 1 97 BIT! 1 98 BIT!  105 99 DO 0 I BIT! LOOP
+    TINY-SET LIST-COUNT 0 ?DO I TINY-SET LIST-TOKEN ILEN I TINY-BASE + BIT! LOOP
+    2 120 BIT! 0 121 BIT! 2 122 BIT! 0 123 BIT!
+  THEN
+  G-FOLDS LIST-COUNT 0 ?DO 0 I FOLD-BASE + BIT! LOOP
+  G-SUPERS LIST-COUNT 3 / 0 ?DO
+    I 3 * G-SUPERS LIST-TOKEN PURE? I 3 * 1+ G-SUPERS LIST-TOKEN PURE? AND 1 AND
+    I 3 * 2 + G-SUPERS LIST-TOKEN TOKEN>N BIT!
+  LOOP
+  G-OPS10 LIST-COUNT 2 / 0 ?DO
+    I 2 * G-OPS10 LIST-TOKEN ILEN I 2 * 1+ G-OPS10 LIST-TOKEN TOKEN>N BIT!
+  LOOP
+  G-TAG2 G-JIT AND IF 0 65533 BIT! THEN ;
+: INL-OPS! ( --- )
+\ (The table's address in a variable: R@ inside DO ... LOOP is the loop's.)
+  S" INL-OPS" T-SHADOW 0= IF EXIT THEN @ >BODY-T IA !
+  INL-BITS!
+  64 0 DO 0 4 0 DO J 4 * I + INL-BITS + C@ I 2* LSHIFT OR LOOP IA @ I + C!-T LOOP
+  0 #FP !
+  G-FOLDS LIST-COUNT 0 ?DO I G-FOLDS LIST-TOKEN 2DUP FOLD-NAME 2SWAP I FOLD-BASE + FOLD-CAND LOOP
+  S" LIT8X" S" LIT8" 72 FOLD-CAND
+  G-SPEC IF S" ADDIX" S" ADDI" 121 FOLD-CAND  S" EQIX" S" EQI" 123 FOLD-CAND THEN
+  FP-SORT
+  96 64 DO 0 IA @ I + C!-T LOOP
+  #FP @ 0 ?DO
+    I FP# 18 + C@ DUP 3 RSHIFT 64 + IA @ + DUP C@-T ROT 7 AND 1 SWAP LSHIFT OR SWAP C!-T
+    I FP# 18 + C@ IA @ 99 + I 2* + C!-T  I FP# 19 + C@ IA @ 100 + I 2* + C!-T
+  LOOP
+  G-TAG2 G-JIT AND T2JIT @ 0< 0= AND IF T2JIT @ 5 ELSE 0 0 THEN IA @ 97 + C!-T IA @ 96 + C!-T
+  #FP @ IA @ 98 + C!-T ;
+
 \ PART 9: THE IMAGE FILE (engine/vm-lab.c, load_image): the magic, the
 \ thread heads (one empty one, the design's thin header), no DOES> tails,
 \ an empty locals block if the engine has the specialisations, THROW's
@@ -1775,7 +1936,7 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
 \ 256 MB of their own (engine/vm-lab.c's MEMMAX; kernel.4's DICT-MAX, which the
 \ translator wrote too - tools/layout.py, Iteration 184).
   268435456 S" DICT-MAX" TXT >BODY-T !-T
-  FOLD-OPS! FOLD-TABLE! SUPER-TABLE! IMM-OPS! LOOPTAB! ;
+  FOLD-OPS! FOLD-TABLE! SUPER-TABLE! IMM-OPS! LOOPTAB! VAR-OPS! INL-OPS! ;
 
 \ After a pass: the dead words (to leave out of the next), the one-byte
 \ calls' targets (for the next) - each the same as the pass before found,

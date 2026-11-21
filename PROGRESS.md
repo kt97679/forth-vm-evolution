@@ -11935,3 +11935,11 @@ ARMv7 pre-flight 27 of 27 clang builds alive) by results/drafts/chainC-list-714.
 near-ties, the smallest's contenders, the stalls, the ticker). The readings: results/chain-followup96-roles-b (README.md,
 pool-sizes.md); the pick: results/followup-pick-seed96-roles-b.md and .json.
 Files: results/chain-followup96-roles-b/ (README.md, pool-sizes.md; its sK: dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md, rage.lan-prebuiltarm.md, rage.lan-prebuiltarm.out.json), results/followup-pick-seed96-roles-b.json, results/followup-seed96-roles-c-arm.md.
+While chain C runs (the owner: "yes"): self-hosting phase 6's first part (results/selfhost-fusions-714.md) - forth/cross-cv8.4
+fills VAR-OPS and INL-OPS byte for byte as tools/layout.py does, and takes FILL outside a definition (I-FILL) and ?DO
+(a TRANSIENT twin, LOOP's body now LOOP-OP), which cv8-fuse-inline.4 needed - every rtinline design failed to self-host
+before. Checked by results/drafts/selfhost-ids-714.sh and results/drafts/fusetab-714.py on 8 designs, two of them rtvar
+variants: the tables the translator's in all five that have them, the probes the same, zeroed tables change the code
+(the control), the programs' code differing only by A's 248-320 B smaller layout. Left for the new roles: --guard-abort,
+--factor, =I?BRANCH / DUP?NBRANCH. The lean end's 4 KB between chains: the after-seed-96 batch's layout, +1 page for
+fb0d57c8a2 and 71005d8a0d, -1 for d180351903 here (results/drafts/memshift-714.md, results/drafts/memshift-714.py); the designs checked: results/drafts/vartest-714.py.

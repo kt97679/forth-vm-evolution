@@ -283,6 +283,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/chainC-candidates-713.md` - Chain C's candidates so far (Iteration 713): 5 designs off chain A's list the batch moved onto the JIT-free front - e51c01ba10 and 4acee9a48e (long shots, small-and-fast-on-ARMv7), 4 for the smallest JIT design; chain C adds pool-sizes.py's finds.
 - `drafts/early-games-713.md` - What early games lend the search (Iteration 713, the owner's idea): most of their tricks are here; memory's layout luck measured (1-4 pages by data order alone) - a fixed layout proposed; the environment's pages; short branches priced.
 - `drafts/fixenv-713.md` - The fixed environment for engine runs, tested (Iteration 713): memory the same whatever the caller's environment; queued with the reopened search (queued-genes/fixenv-after-seed96.patch).
+- `drafts/memshift-714.md` - The lean end's 4 KB between chains A and B (Iteration 714): the after-seed-96 batch's layout, one page up or down by design - not the environment.
 - `drafts/early-computers-713.md` - What the early computers lend the search (Iteration 713, the owner's idea): working sets - the JIT translator's frame, 10-19 pages, the gene jitfew built and queued; demand-zero FILL and more priced.
 - `drafts/jitfew-test-713.py` - The gene jitfew off and on, interleaved: time, pages, outputs, bytes (Iteration 713).
 - `drafts/stack-pages-713.py` - Pages per selection workload from a root, outputs hashed (Iteration 713).
@@ -375,6 +376,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-roles-seed96-roles-b.md` - The new roles' shortlist processed (Iteration 714): four roles settled, the holder kept for least memory, the fastest portable and x86-32 ties and the smallest to chain C.
 - `followup-seed96-roles-c.md` - Chain C's list (Iteration 714): 66 - pool-sizes.py's 23, chain C's candidates, the holders, chain B's leaders and near-ties (-c-arm.md: the Tegra's 34).
 - `followup-seed96-roles-c-arm.md` - Chain C on the Tegra (714): the 34 JIT-free designs a size or ARMv7 question needs.
+- `selfhost-fusions-714.md` - Self-hosting phase 6's first part (Iteration 714): the cross compiler fills VAR-OPS and INL-OPS as the translator does; what the new roles still need of it.
 - `followup-seed96-roles-b.md` - Chain B's 99 (Iteration 713, results/drafts/shortlist-713.py): final-pick.py's 40, the holders, each role's leaders, the near-ties, 219878ec89 - master's sizes; one record a line.
 - `followup-seed96-roles-b-arm.md` - Chain B on the Tegra (713): the shortlist's 54 JIT-free designs, the JIT designs leading across machines and the all-round holder - 61.
 - `followup-seed96-roles-b-lean.md` - Chain B's lean end (713): the 14 within 8 KB of 108 KB, their memory read five times (measure-ids.py).

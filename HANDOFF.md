@@ -249,6 +249,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   `pool-sizes.py --list LIST --free 0 --jit 39100 --below-jit 36805 --minutes 40` (seed 96's database's JIT middle), then
   loadtest.py at 10 rounds (~8 sessions); the Tegra 3 sessions in 350 minutes, dream 16 a width, 175 + 175. The PMU's
   counts need `sudo sysctl kernel.perf_event_paranoid=2` by hand before the start.
+  **714, while chain C runs (the owner: "yes")**: self-hosting phase 6's first part - forth/cross-cv8.4 fills VAR-OPS
+  and INL-OPS as layout.py does (VAR-OPS!, INL-OPS!), and does FILL outside a definition and ?DO, which
+  cv8-fuse-inline.4 needed: every rtinline design failed to self-host before. results/selfhost-fusions-714.md: the
+  tables the translator's to the byte in five designs (both headers, the JIT, rtvar on two variants made for it), the
+  probes the same, the programs' code differing only by A's smaller layout (results/drafts/selfhost-ids-714.sh,
+  fusetab-714.py). Still not done for the new roles (G-NOT-YET): --guard-abort (9b15ba26f7, df097ba2e2), --factor and
+  the fused =I?BRANCH / DUP?NBRANCH (d727605472, 5f7e66b12d - and every JIT-free rtvar design) - the next part, before
+  the roles ship, or the gate ships those four translator-built. The lean end's 4 KB between chains A and B: the
+  after-seed-96 batch's layout, one page up or down by design (results/drafts/memshift-714.md) - pre-batch memory records
+  do not compare page for page with chain B's.
   **Next: chain C's processing** - `HANDOFF=results/handoff-relf-657.md PRED=714 sh lab/evolve/process-followup.sh
   96-roles-c ITERATION ROLES` (ROLES as at 713: results/followup-roles-seed96-roles.md's command - the holders are in the
   list), then results/drafts/chainB-714.py on its readings and pool-sizes.md's JIT finds compared in in-run terms; **then
