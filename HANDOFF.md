@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 717.
+- master: Iteration 718.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -301,7 +301,21 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   `HANDOFF=results/handoff-relf-657.md PRED=717 sh lab/evolve/process-followup.sh 96-jitband ITERATION
   smalljit=15eda54ebd` (the laptop and dream only: the JIT designs' two classes), results/drafts/chainB-714.py and
   chainC-716.py's pairing on its readings; a beater by the rule replaces 15eda54ebd.
-  **Then the roles** (results/drafts/new-roles-plan-705.md, step 6), the owner's answers first - designs/ and the
+  **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
+  each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
+  smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
+  d727605472** (5f7e66b12d: x86-32 +2.7 %), **fastest-x86-32 11f956db93** (3.8 % smaller, 16 KB leaner, tied); every
+  near one kept on record there (3456fc28b2, 90273721a1, 5f7e66b12d, 69cebcaed9, 262a51bc6c, 13a2b38e1b, ...). **The ten
+  built into designs/** (results/drafts/roles-build-718.sh - 645's build-out in two phases around the cross GCC, which
+  removes gcc-multilib; records results/relf-designs-718.md): validate 7 of 7, the export, the clang and the GCC ARM
+  rules the lab's bytes, nine self-built (portable-fastest translator-built, TRANSLATOR-BUILT: the fused branches), make
+  test, selfhost, 32 and libc, pack-designs 20 of 20 right (results/drafts/designs-sha256-718.txt), run-tests PASS;
+  designs/README.md's table from chains B and C (results/drafts/designs-table-718.py). small-jit 15eda54ebd provisional
+  until chain D. **The owner, beside chain D**: `RAGECHECK_CMD='sh tools/rage-designs-check.sh' sh tools/rage-check.sh`
+  - the Tegra's GCC 16 on the GCC designs' forth-arm (a8d35bdccc new; 17 minutes at 654); chain D does not use the Tegra.
+  **After chain D**: small-jit made again if it changes (roles-build-718.sh with that one NAME=ID - a JIT design, no ARM
+  build, so no cross GCC), the package, relf told how to fetch the ten (a new results/handoff-relf-NNN.md). Then the rest
+  of the plan (the roles were step 6 - results/drafts/new-roles-plan-705.md): designs/ and the
   package made again (`sh results/drafts/freeze-build-645.sh . RECORDS NAME=ID,...`), self-hosting phase 6 on them (the
   gate: a design the cross compiler cannot build ships translator-built, named - d727605472 and 5f7e66b12d need the fused
   =I?BRANCH / DUP?NBRANCH), relf told how to fetch them. From the early games (results/drafts/early-games-713.md): a fixed

@@ -1,4 +1,4 @@
-\ designs/smallest/genes.4 - smallest's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ ../../../tmp/fz/designs/smallest/genes.4 - smallest's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
 \ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
 \ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
 \ A list is a word giving its text ( --- c-addr u ), names and numbers each followed by one space.
@@ -8,14 +8,15 @@ VARIABLE G-AT
 : G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;
 8 CONSTANT G-CELL          \ the target's cell, bytes
 G-LIST: G-OVERLAYS  \ after kernel.4, in this order
-S" cv8.4 cv8b.4 cv8b-kfast.4 file-sysc.4 file-sysc2.4 file-sysc3.4 " G+
+S" cv8.4 cv8b.4 cv8b-kfast.4 cv8-fuse-loopall.4 file-sysc.4 file-sysc2.4 file-sysc3.4 " G+
 G-LIST: G-FOLDS  \ the fold set: FOLD-BASE + place
-S" + @ RSHIFT C! XOR LIT AND DROP OR ! DUP " G+
+S" + LIT DROP ! " G+
 0 CONSTANT G-SPEC          \ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc
 G-LIST: G-SUPERS  \ fused pairs: first second opcode
-S" SWAP R> 92 " G+
+S" @ + 87 R> DROP 88 " G+
 G-LIST: G-OPS10  \ format-10 operations: name opcode
-S" ?BRANCH8 126 BRANCH8 127 0<?BRANCH 84 I 85 UNLOOP 86 FILL 87 CMOVE 88 2@ 89 0= 90 0<?BRANCH8 91 " G+
+S" (DO) 126 (LOOP) 127 (+LOOP) 77 (?DO) 78 (LEAVE) 79 I 80 J 81 UNLOOP 82 ?BRANCH8 83 BRANCH8 84 0= 85 " G+
+S" +! 86 " G+
 32 CONSTANT G-HOTCALLS      \ one-byte calls, at most
 -1 CONSTANT G-OP-BODIES     \ the format-10 words' bodies their opcode
 -1 CONSTANT G-OP-INLINE     \ ...placed among the primitives
@@ -40,5 +41,10 @@ G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
 G-LIST: G-T2-ESC  \ ...logical operation, escape selector
 0 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
 0 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+0 CONSTANT G-GUARD-ABORT   \ the gene abortif: ABORT" guarded by ?BRANCH (sod16.guard_aborts; 714)
 G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
+0 CONSTANT G-FACTOR        \ the gene factor: repeated cold code in headerless bodies (layout.py --factor; 715)
+0 CONSTANT G-FACTOR-ANY    \ ...every word, the profile aside (--factor-share above 1)
+G-LIST: G-FACTOR-COLD  \ ...the words below --factor-share of the reference dispatches
+G-LIST: G-FACTOR-NOT  \ ...never: what layout.py patches after reading it, the dump tool
 G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet

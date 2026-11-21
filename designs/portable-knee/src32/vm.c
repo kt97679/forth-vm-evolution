@@ -1,4 +1,3 @@
-#define TR_TOP3 tos, CELL(dsp), CELL(dsp + CELL_BYTES)
 /*
  *  sod16.c - RelF's engine with SOD16 code: one 16-bit token per
  *  operation instead of one host cell.
@@ -130,10 +129,6 @@ static int g_argc;
 static char **g_argv;
 
 #define FOLDBASE 128
-#define TOSCACHE 1
-#if ENC != 3
-#error "vm-lab-tos.c: its hand-written cached bodies are CV8's - compile it with -DENC=3"
-#endif
 #ifndef ESCAPE
 /*  ESCAPE: the 32 OS/libc primitives move behind ESC + a selector,
  *  which renumbers the primitive band. Both the engine and the
@@ -336,6 +331,14 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
  */
 
 #define CELL(reg) (*(UNS64*)(reg))
+/*  Iteration 706: 2@ and 2! read and write a cell pair at any address. Two cell loads through UNS64* let GCC
+ *  join them into one doubleword load (LDRD/STRD on ARMv7), which traps on an address not word aligned - the
+ *  corpus's `HERE 1 ALLOT  HERE 1 ,  ... 1ST 2@` (Forth 2012 leaves an unaligned `,` ambiguous; the Hayes test
+ *  does it). Linux on the Tegra fixes the access up; qemu-user and a kernel set to signal do not
+ *  (results/drafts/arm-preflight-705.md). A one-byte-aligned type keeps the two accesses apart there; on x86
+ *  the same instructions (results/drafts/arm2at-706.md). */
+typedef UNS64 __attribute__((aligned(1), may_alias)) UNS64U;
+#define CELLU(reg) (*(UNS64U*)(reg))
 #define BYTE(reg) (*(UNS8*)(reg))
 #if BFIND
 /*  Iteration 316, the gene bfind: THREAD-FIND's and (FIND)'s walk with fewer branches to
@@ -734,6 +737,16 @@ int rt_open(const char *p, int flags, int mode);
 #define OPEN3(p, f, m) open((p), (f), (m))
 #endif
 
+/*  Iteration 707 (the ideation pilot, results/drafts/ideation-707.md): the engine's system calls through rt_syscall6
+ *  where the runtime is linked - six arguments, no va_list, as rt_open (257): the variadic syscall made the runtime save
+ *  every argument register - 241 bytes of the smallest design's 4,784 bytes of code. Errors as syscall's: -1, errno. */
+#if RTLIB && defined(__x86_64__)   /* i386's and ARMv7's runtimes keep their variadic syscall for their own calls: there +16 */
+long rt_syscall6(long n, long a, long b, long c, long d, long e, long f);
+#define SYSCALL6(n, a, b, c, d, e, f) rt_syscall6((n), (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
+#else
+#define SYSCALL6(n, a, b, c, d, e, f) syscall((n), (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
+#endif
+
 static void stack_fault(int which) {
     write_str(2, which ? "relf: return stack overflow\n"
                        : "relf: data stack overflow\n");
@@ -845,6 +858,28 @@ static UNS64 throw_off;    /* Iteration 229: THROW's body (offset), from the hea
 static UNS64 hot_tab[32];  /* one-byte calls: image offsets, from the header */
 #endif
 
+/*  Iteration 709 (the sweep, results/drafts/sweep-709.md): every refusal of
+ *  the image's contents in one message and one call, its check a digit - the
+ *  seven messages were 374 of the smallest engine's 1,072 bytes of rodata.
+ *  "not a RelF image" stays the message's start: relf's crash fuzzer
+ *  (vendor/relf/tree/tools/crashfuzz.py) matches it. The digit says which:
+ *    1 not this encoding or cell width (the magic)   2 a newer CV8 format
+ *    3 CV8 features this engine was built without    4 the header truncated
+ *    5 an impossible thread count                    6 too many DOES> tails
+ *    7 the escaped band, the engine built without it
+ *    8 byte-granular headers (SOD16)                 9 a DOES> tail outside the chain (SOD16)
+ *  Not here: the file not opened or not read, and memory (not the image's).  */
+/*  Not cold: GCC then moved its caller in virtual_machine (L_esc) to
+ *  .text.unlikely, out of reach of the dispatch table's label differences
+ *  ("can't resolve .text.unlikely - .L135").  */
+static void bad_image(int why) __attribute__((noreturn, noinline));
+static void bad_image(int why) {
+    static char m[] = "not a RelF image (0)\n";
+    m[18] = (char)('0' + why);
+    write_str(2, m);
+    exit(2);
+}
+
 static void load_image(const char *name) {
     int fd;
     long len;
@@ -869,22 +904,17 @@ static void load_image(const char *name) {
         || ((uint32_t)magic[0] | (uint32_t)magic[1] << 8 | (uint32_t)magic[2] << 16 | (uint32_t)magic[3] << 24)
            != ((uint32_t)IMAGE_MAGIC[0] | (uint32_t)IMAGE_MAGIC[1] << 8 | (uint32_t)IMAGE_MAGIC[2] << 16 | (uint32_t)IMAGE_MAGIC[3] << 24)
         || magic[4] != IMAGE_MAGIC[4]) {
-        write_str(2, "not a RelF image, or built for a different encoding "
-                     "or cell width.\n");
-        exit(2);
+        bad_image(1);
     }
     /*  Bytes 6-7 are a format version and a FEATURE BITMAP. The engine
      *  runs any image whose required features it implements, so adding
      *  a feature later does not invalidate older images, and an older
      *  engine refuses a newer image cleanly instead of misreading it. */
     if (magic[6] > IMAGE_MAGIC[6]) {
-        write_str(2, "image is a newer CV8 format version than this engine\n");
-        exit(2);
+        bad_image(2);
     }
     if (magic[7] & ~IMAGE_MAGIC[7]) {
-        write_str(2, "image needs CV8 features this engine was not built "
-                     "with (varcall/varslot/spec/lit64)\n");
-        exit(2);
+        bad_image(3);
     }
     /*
      *  Header, after the magic: the newest word's NFA as an offset, the
@@ -906,26 +936,21 @@ static void load_image(const char *name) {
      *  encoding that names a call by word NUMBER - but the header has
      *  one shape for every encoding.  */
     if (full_read(fd, (UNS8*)&nthreads, CELL_BYTES) != CELL_BYTES) {
-        write_str(2, "Truncated image header.\n");
-        exit(2);
+        bad_image(4);
     }
     if (nthreads < 1 || nthreads > MAX_THREADS) {
-        write_str(2, "Image declares an impossible thread count.\n");
-        exit(2);
+        bad_image(5);
     }
     for (i = 0; i < nthreads; i++)
         if (full_read(fd, (UNS8*)&heads[i], CELL_BYTES) != CELL_BYTES) {
-            write_str(2, "Truncated image header.\n");
-            exit(2);
+            bad_image(4);
         }
     head_nfa = heads[0];
     if (full_read(fd, (UNS8*)&ntails, CELL_BYTES) != CELL_BYTES) {
-        write_str(2, "Truncated image header.\n");
-        exit(2);
+        bad_image(4);
     }
     if (ntails > MAX_TAILS) {
-        write_str(2, "Image declares too many DOES> tails.\n");
-        exit(2);
+        bad_image(6);
     }
 #if SPEC
     /* locals opcodes: save-stack variable, buffer, limit, fallback words */
@@ -944,16 +969,14 @@ static void load_image(const char *name) {
     for (i = 0; i < ntails; i++) {
         if (full_read(fd, (UNS8*)&tail_w[i], CELL_BYTES) != CELL_BYTES ||
             full_read(fd, (UNS8*)&tail_o[i], CELL_BYTES) != CELL_BYTES) {
-            write_str(2, "Truncated image header.\n");
-            exit(2);
+            bad_image(4);
         }
     }
 #if ENC == 3
     /*  Iteration 229: THROW's body, written by the converter and by
      *  SAVE-SYSTEM after the locals block - UM/MOD throws -10 there.  */
     if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) {
-        write_str(2, "Truncated image header.\n");
-        exit(2);
+        bad_image(4);
     }
 #endif
 
@@ -962,13 +985,11 @@ static void load_image(const char *name) {
     if (magic[7] & F_HOTCALLS) {
         UNS8 k_, b_[2];
         if (full_read(fd, &k_, 1) != 1 || k_ > 32) {
-            write_str(2, "Truncated image header.\n");
-            exit(2);
+            bad_image(4);
         }
         for (i = 0; i < k_; i++) {
             if (full_read(fd, b_, 2) != 2) {
-                write_str(2, "Truncated image header.\n");
-                exit(2);
+                bad_image(4);
             }
             hot_tab[i] = b_[0] | (UNS64)b_[1] << 8;
         }
@@ -998,8 +1019,7 @@ static void load_image(const char *name) {
     return;
 #else
     if (magic[7] & 0x10) {
-        write_str(2, "Byte-granular headers are not supported by this encoding.\n");
-        exit(2);
+        bad_image(8);
     }
     /*  Collect every word from every thread, then sort by address.
      *
@@ -1049,8 +1069,7 @@ static void load_image(const char *name) {
         free(nfas);
         for (i = 0; i < ntails; i++) {
             if (tail_w[i] >= (UNS64)n) {
-                write_str(2, "DOES> tail names a word outside the chain.\n");
-                exit(2);
+                bad_image(9);
             }
             wordtab[n + i] = wordtab[tail_w[i]] + tail_o[i];
         }
@@ -1078,8 +1097,7 @@ static void load_image(const char *name) {
     }
     for (i = 0; i < ntails; i++) {
         if (tail_w[i] >= (UNS64)n) {
-            write_str(2, "DOES> tail names a word outside the chain.\n");
-            exit(2);
+            bad_image(9);
         }
         wordtab[n + i] = wordtab[tail_w[i]] + tail_o[i];
     }
@@ -1494,31 +1512,6 @@ static spn_st jit_interp(cell *sp, cell tos, cell body) {
 #endif
 static void virtual_machine(void) {
     VMREGS
-#ifdef TOSREG
-    register UNS64 tos asm(TOSREG) = CELL(dsp); dsp += CELL_BYTES;   /* fill; pinned: the gene regpin */
-#else
-    UNS64 tos = CELL(dsp); dsp += CELL_BYTES;       /* fill */
-#endif
-#define NOS CELL(dsp)
-#if GUARD
-#define PUSHT(x) do { UNS64 v_ = (x); dsp -= CELL_BYTES; \
-        CELL(dsp) = tos; tos = v_; } while (0)
-#else
-#define PUSHT(x) do { UNS64 v_ = (x); dsp -= CELL_BYTES; \
-        if (dsp < dsp_limit) stack_fault(0); CELL(dsp) = tos; tos = v_; } while (0)
-#endif
-#define POPT() do { tos = CELL(dsp); dsp += CELL_BYTES; } while (0)
-#undef VMPUSH
-#define VMPUSH PUSHT
-#define SPILL() do { dsp -= CELL_BYTES; CELL(dsp) = tos; } while (0)
-#define FILLNEXT() do { POPT(); NEXT(); } while (0)
-#undef DIV0_DISPATCH
-#define DIV0_DISPATCH() FILLNEXT()
-#if ENC == 3
-#define BROFF(a) ((int16_t)LD16(a))
-#else
-#define BROFF(a) (2 * (int16_t)TOK(a))
-#endif
 #if ENC == 1
 #define CALLTARGET(t) (wtab[(t) - 256])
     const UNS64 *const wtab = wordtab;
@@ -1850,17 +1843,17 @@ L_hcall:   /* one-byte call: t holds the byte (0xE0-0xFF), ip is past it */
 
 L_noop:    /* noop    */ NEXT();
 L_exit:    /* exit    */ ip = RS; rp += CELL_BYTES; NEXT();
-L_lit: PUSHT(OPND16(ip)); ip += 2; NEXT();
+L_lit:     /* lit     */ PUSH(OPND16(ip)); ip += 2; NEXT();
 #if ENC == 3
-L_lit8: PUSHT(BYTE(ip)); ip += 1; NEXT();
-L_lit8x: PUSHT(BYTE(ip)); ip = RS; rp += CELL_BYTES; NEXT();
-L_lit32: SPILL();   /* lit32   */ { UNS64 v = LD32(ip);
+L_lit8:    /* lit8    */ PUSH(BYTE(ip)); ip += 1; NEXT();
+L_lit8x:   /* lit8;exit */ PUSH(BYTE(ip)); ip = RS; rp += CELL_BYTES; NEXT();
+L_lit32:   /* lit32   */ { UNS64 v = LD32(ip);
                            if (v & 0x80000000u) v |= ~(UNS64)0xFFFFFFFFu;
-                           PUSH(v); ip += 4; } FILLNEXT();
+                           PUSH(v); ip += 4; } NEXT();
 #else
-L_lit32: SPILL();   /* lit32   */ { UNS64 v = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 2) << 16);
+L_lit32:   /* lit32   */ { UNS64 v = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 2) << 16);
                            if (v & 0x80000000u) v |= ~(UNS64)0xFFFFFFFFu;
-                           PUSH(v); ip += 4; } FILLNEXT();
+                           PUSH(v); ip += 4; } NEXT();
 /*  A literal too wide for LIT32's sign-extended 32 bits, as CELL_BYTES/2
  *  tokens, little end first. The 16-bit encodings did not have this: the
  *  translator masked every literal to 32 bits and a wider one was
@@ -1868,10 +1861,10 @@ L_lit32: SPILL();   /* lit32   */ { UNS64 v = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 
  *  encodings had ever COMPILED a literal - they were all translated from
  *  a cell image whose own constants happened to fit. The first thing to
  *  find it was the CORE suite's MAX-INT on a 64-bit cell.  */
-L_lit64t: SPILL();  /* lit64   */ { UNS64 v = 0; int k_;
+L_lit64t:  /* lit64   */ { UNS64 v = 0; int k_;
                            for (k_ = 0; k_ < CELL_BYTES / 2; k_++)
                                v |= (UNS64)TOK(ip + 2 * k_) << (16 * k_);
-                           PUSH(v); ip += CELL_BYTES; } FILLNEXT();
+                           PUSH(v); ip += CELL_BYTES; } NEXT();
 #endif
 #if ENC == 1
 /*  FARCALL: [72][low 16][high 16] - a call to an absolute byte offset
@@ -1888,7 +1881,7 @@ L_lit64t: SPILL();  /* lit64   */ { UNS64 v = 0; int k_;
  *  target from the address. That contrast is the argument for deleting
  *  the table, and this opcode is what makes it measurable rather than
  *  hypothetical.  */
-L_farcall: SPILL(); { UNS64 off = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 2) << 16);
+L_farcall: { UNS64 off = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 2) << 16);
              RPUSH(ip + 4); ip = (UNS64)(uintptr_t)base + off; }
            goto next;
 /*  DODOES with an address instead of a word number, for a DOES> word
@@ -1900,7 +1893,7 @@ L_farcall: SPILL(); { UNS64 off = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 2) << 16);
  *  overwrite and a 32-bit offset does not fit. Bodies are 2-byte
  *  aligned, so halving the offset costs nothing and reaches 128 KB.
  *  Past that the compiler refuses rather than truncating.  */
-L_dodoesf: SPILL(); { UNS64 off = (UNS64)TOK(ip) << 1;
+L_dodoesf: { UNS64 off = (UNS64)TOK(ip) << 1;
              RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
              ip = (UNS64)(uintptr_t)base + off; }
            goto next;
@@ -1917,11 +1910,11 @@ L_dodoesf: SPILL(); { UNS64 off = (UNS64)TOK(ip) << 1;
 #else
 #define SLOT() (t = LD16(ip), ip += 2, cbase + (t << SCALE))
 #endif
-L_lit0: PUSHT(0); NEXT();
-L_lit1: PUSHT(1); NEXT();
-L_litm1: PUSHT(~(UNS64)0); NEXT();
-L_vf: { UNS64 a = SLOT(); PUSHT(CELL(a)); } NEXT();
-L_vs: { UNS64 a = SLOT(); CELL(a) = tos; POPT(); } NEXT();
+L_lit0:   VMPUSH(0); NEXT();                          /* JVM iconst_0  */
+L_lit1:   VMPUSH(1); NEXT();
+L_litm1:  VMPUSH(~(UNS64)0); NEXT();
+L_vf:     { UNS64 a = SLOT(); VMPUSH(CELL(a)); } NEXT();   /* getstatic */
+L_vs:     { UNS64 a = SLOT(); CELL(a) = DS0; dsp += CELL_BYTES; } NEXT();
 /*  Locals are shallow-bound VARIABLEs (locals.4). These do LSAVE,
  *  LRESTORE, L! and LZERO in one dispatch, on the SAME Forth-visible save
  *  stack (LSAVE-SP, LSAVE-STACK), and fall back to the Forth word itself
@@ -1938,32 +1931,32 @@ L_lrest: { UNS64 a = SLOT(), lsp = cbase + loc_hdr[0];
     if ((INT64)sp <= 0 || !stk) {
         VMPUSH(a - cbase); RPUSH(ip); ip = cbase + loc_hdr[4]; TRACE_CALL(); NEXT(); }
     CELL(lsp) = --sp; CELL(a) = CELL(stk + sp * CELL_BYTES); } NEXT();
-L_lstore: { UNS64 a = SLOT(); CELL(a) = tos; POPT(); } NEXT();
+L_lstore: { UNS64 a = SLOT(); CELL(a) = DS0; dsp += CELL_BYTES; } NEXT();
 L_lzero:  { UNS64 a = SLOT(); CELL(a) = 0; } NEXT();
 /*  The kernel's hottest tiny colon words, as opcodes (Gforth-style
  *  primitive selection). The translator substitutes one only where the
  *  compiled body is exactly the definition implemented here.  */
-L_zeq: tos = -(UNS64)(tos == 0); NEXT();
-L_sub: tos = NOS - tos; dsp += CELL_BYTES; NEXT();
-L_ne: tos = -(UNS64)(NOS != tos); dsp += CELL_BYTES; NEXT();
-L_zlt: tos = -(UNS64)((INT64)tos < 0); NEXT();
-L_sgt: tos = -(UNS64)((INT64)tos < (INT64)NOS); dsp += CELL_BYTES; NEXT();
-L_2dup: { UNS64 a_ = NOS, b_ = tos; PUSHT(a_); PUSHT(b_); } NEXT();
-L_2drop: tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; NEXT();
-L_charp: tos += 1; NEXT();
-L_onep: tos += 1; NEXT();
-L_cellp: tos += CELL_BYTES; NEXT();
-L_cells: tos <<= CELL_SHIFT; NEXT();
-L_onem: tos -= 1; NEXT();
-L_invert: tos = ~tos; NEXT();
-L_count: { UNS64 a_ = tos; tos = a_ + 1; PUSHT(BYTE(a_)); } NEXT();
-L_aligned: tos = (tos + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1); NEXT();
+L_zeq:    DS0 = -(UNS64)(DS0 == 0); NEXT();                     /* 0=  */
+L_sub:    DS1 -= DS0; dsp += CELL_BYTES; NEXT();                /* -   */
+L_ne:     DS1 = -(UNS64)(DS1 != DS0); dsp += CELL_BYTES; NEXT(); /* <> */
+L_zlt:    DS0 = -(UNS64)((INT64)DS0 < 0); NEXT();               /* 0<  */
+L_sgt:    DS1 = -(UNS64)((INT64)DS0 < (INT64)DS1); dsp += CELL_BYTES; NEXT();
+L_2dup:   { UNS64 a_ = DS1, b_ = DS0; PUSH(a_); PUSH(b_); } NEXT();
+L_2drop:  dsp += 2 * CELL_BYTES; NEXT();
+L_charp:  DS0 += 1; NEXT();                                     /* CHAR+ */
+L_onep:   DS0 += 1; NEXT();                                     /* 1+  */
+L_cellp:  DS0 += CELL_BYTES; NEXT();                            /* CELL+ */
+L_cells:  DS0 <<= CELL_SHIFT; NEXT();
+L_onem:   DS0 -= 1; NEXT();                                     /* 1-  */
+L_invert: DS0 = ~DS0; NEXT();
+L_count:  { UNS64 a_ = DS0; DS0 = a_ + 1; PUSH(BYTE(a_)); } NEXT();
+L_aligned: DS0 = (DS0 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1); NEXT();
 /*  Lua 5.4's OP_ADDI / OP_EQI: a signed 8-bit immediate. Lua added
  *  immediate forms for every operator and kept only these.  */
-L_addi: tos += (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();
-L_addix: tos += (UNS64)(INT64)(int8_t)BYTE(ip); ip = RS; rp += CELL_BYTES; NEXT();
-L_eqi: tos = -(UNS64)(tos == (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();
-L_eqix: tos = -(UNS64)(tos == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CELL_BYTES; NEXT();
+L_addi:   DS0 += (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();
+L_addix:  DS0 += (UNS64)(INT64)(int8_t)BYTE(ip); ip = RS; rp += CELL_BYTES; NEXT();
+L_eqi:    DS0 = -(UNS64)(DS0 == (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();
+L_eqix:   DS0 = -(UNS64)(DS0 == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CELL_BYTES; NEXT();
 #endif
 #if ENC == 3 && OPS10
 /*  relf's format-10 opcodes: kernel colon words given opcodes from the
@@ -1971,20 +1964,22 @@ L_eqix: tos = -(UNS64)(tos == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CE
  *  where its compiled body is exactly the definition here. As opcodes the
  *  return-stack words have no return address of their own on top: I is
  *  the top cell, J two below it.  */
-L_x_plusstore: { UNS64 a_ = tos; CELL(a_) += NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();
-L_x_qdup: if (tos) PUSHT(tos); NEXT();
-L_x_2fetch: { UNS64 a_ = tos; tos = CELL(a_ + CELL_BYTES); PUSHT(CELL(a_)); } NEXT();
-L_x_2store: { UNS64 a_ = tos; CELL(a_) = NOS; CELL(a_ + CELL_BYTES) = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; } NEXT();
-L_x_gt: tos = -(UNS64)((INT64)NOS > (INT64)tos); dsp += CELL_BYTES; NEXT();
-L_x_zeq: tos = -(UNS64)(tos == 0); NEXT();
-L_x_execute: { UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();
-L_x_i: PUSHT(RS); NEXT();
-L_x_j: PUSHT(CELL(rp + 2 * CELL_BYTES)); NEXT();
+L_x_plusstore: { UNS64 a_ = DS0; CELL(a_) += DS1; dsp += 2 * CELL_BYTES; } NEXT(); /* +!      */
+/* ?DUP: the value first - one PUSH lowers dsp before it evaluates x,
+   so PUSH(DS0) would copy the new, empty slot onto itself.  */
+L_x_qdup:      if (DS0) { UNS64 v_ = DS0; PUSH(v_); } NEXT();                    /* ?DUP    */
+L_x_2fetch:    { UNS64 a_ = DS0; DS0 = CELLU(a_ + CELL_BYTES); PUSH(CELLU(a_)); } NEXT();   /* 2@ (Iteration 290) */
+L_x_2store:    { UNS64 a_ = DS0; CELLU(a_) = DS1; CELLU(a_ + CELL_BYTES) = DS2; dsp += 3 * CELL_BYTES; } NEXT(); /* 2! */
+L_x_gt:        { INT64 b_ = (INT64)DS0, a_ = (INT64)DS1; dsp += CELL_BYTES; DS0 = -(UNS64)(a_ > b_); } NEXT();   /* > (Iteration 299) */
+L_x_zeq:       DS0 = -(UNS64)(DS0 == 0); NEXT();                                  /* 0= */
+L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; TRACE_CALL(); } NEXT();    /* EXECUTE */
+L_x_i:         PUSH(RS); NEXT();                                                    /* I       */
+L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */
 L_x_unloop:    rp += 2 * CELL_BYTES; NEXT();                                        /* UNLOOP  */
 #if X_IPLUS
-L_x_iplus: tos += RS; NEXT();
+L_x_iplus:     DS0 += RS; NEXT();                     /* I + (Iteration 60: run-time code's I+)  */
 #endif
-L_x_do: { RPUSH(NOS); RPUSH(tos); tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();
+L_x_do:        { RPUSH(DS1); RPUSH(DS0); dsp += 2 * CELL_BYTES; } NEXT();            /* (DO)    */
 /*  The loop words with an operand: where the colon word jumps to its
  *  return address plus the operand cell, these take the branch offset
  *  after the opcode, as ?BRANCH does; where it skips the cell, they skip
@@ -1994,44 +1989,61 @@ L_x_do: { RPUSH(NOS); RPUSH(tos); tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_
 /*  Short branches: a one-byte offset, from the operand, where it fits -
  *  the converter decides branch by branch (tools/sod16.py, shorten).  */
 L_x_br8:   ip += (int8_t)BYTE(ip); NEXT();                                         /* BRANCH8  */
-L_x_qbr8: t = tos; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_qbr8:  if (DS0) ip += 1; else ip += (int8_t)BYTE(ip);                          /* ?BRANCH8 */
+           dsp += CELL_BYTES; NEXT();
 /*  0= ?BRANCH as one branch that jumps when the top is NOT zero: about 4%
  *  of the dispatches on kernel, parse and corpus (lab/evolve/price.py,
  *  Iteration 8). The converter fuses them where nothing jumps between
  *  (tools/sod16.py, testbranch); offsets as ?BRANCH's, from the operand.  */
-L_x_nqbr: t = tos; POPT(); if (t) ip += (int16_t)LD16(ip); else ip += 2; NEXT();
-L_x_nqbr8: t = tos; POPT(); if (t) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();
+L_x_nqbr:  if (DS0) ip += (int16_t)LD16(ip); else ip += 2;                     /* 0= ?BRANCH  */
+           dsp += CELL_BYTES; NEXT();
+L_x_nqbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1;                      /* 0= ?BRANCH8 */
+           dsp += CELL_BYTES; NEXT();
 /*  < ?BRANCH: falls through when a < b, jumps otherwise - fib's test, 9% of
  *  its dispatches; in code compiled at run time, fused by the compiler
  *  overlay (forth/cv8-fuse.4, ?BRANCH,) from SUPER-TABLE (Iteration 9).  */
-L_x_ltbr: t = (INT64)NOS < (INT64)tos; dsp += CELL_BYTES; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_ltbr8: t = (INT64)NOS < (INT64)tos; dsp += CELL_BYTES; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_ltbr:  { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;    /* < ?BRANCH  */
+             if (a_ < b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_ltbr8: { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;    /* < ?BRANCH8 */
+             if (a_ < b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
 /*  = ?BRANCH and U< ?BRANCH: as < ?BRANCH (Iteration 9) - about 1-2% of
  *  the dispatches each on kernel, parse and corpus (lab/evolve/price.py).  */
-L_x_eqbr: t = NOS == tos; dsp += CELL_BYTES; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_eqbr8: t = NOS == tos; dsp += CELL_BYTES; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
-L_x_ultbr: t = NOS < tos; dsp += CELL_BYTES; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_ultbr8: t = NOS < tos; dsp += CELL_BYTES; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_eqbr:   { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* = ?BRANCH */
+             if (a_ == b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_eqbr8:  { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* = ?BRANCH8 */
+             if (a_ == b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
+L_x_ultbr:  { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* U< ?BRANCH */
+             if (a_ < b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_ultbr8: { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* U< ?BRANCH8 */
+             if (a_ < b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
 /*  Iteration 12: the rest of the tests before a branch - "-" and <> (one
  *  pair: both fall through when a != b), >, 0<, and = with an immediate
  *  (EQI then ?BRANCH: the immediate byte, then the offset). Each pair is
  *  compiled only in a design that has it (-DX_NEBR ..., from lab/evolve),
  *  so no other engine changes - unused code moves GCC's layout too.  */
 #if X_NEBR
-L_x_nebr: t = NOS != tos; dsp += CELL_BYTES; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_nebr8: t = NOS != tos; dsp += CELL_BYTES; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_nebr:   { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;      /* <> ?BRANCH, - ?BRANCH */
+              if (a_ != b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_nebr8:  { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;
+              if (a_ != b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
 #endif
 #if X_SGTBR
-L_x_sgtbr: t = (INT64)NOS > (INT64)tos; dsp += CELL_BYTES; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_sgtbr8: t = (INT64)NOS > (INT64)tos; dsp += CELL_BYTES; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_sgtbr:  { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;  /* > ?BRANCH */
+              if (a_ > b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_sgtbr8: { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;
+              if (a_ > b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
 #endif
 #if X_ZLTBR
-L_x_zltbr: t = (INT64)tos < 0; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_zltbr8: t = (INT64)tos < 0; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_zltbr:  if ((INT64)DS0 < 0) ip += 2; else ip += (int16_t)LD16(ip);     /* 0< ?BRANCH */
+            dsp += CELL_BYTES; NEXT();
+L_x_zltbr8: if ((INT64)DS0 < 0) ip += 1; else ip += (int8_t)BYTE(ip);
+            dsp += CELL_BYTES; NEXT();
 #endif
 #if X_EQIBR
-L_x_eqibr: t = tos == (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_eqibr8: t = tos == (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_eqibr:  { UNS64 v_ = DS0, i_ = (UNS64)(INT64)(int8_t)BYTE(ip); dsp += CELL_BYTES; ip += 1;   /* n = ?BRANCH */
+              if (v_ == i_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_eqibr8: { UNS64 v_ = DS0, i_ = (UNS64)(INT64)(int8_t)BYTE(ip); dsp += CELL_BYTES; ip += 1;
+              if (v_ == i_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
 #endif
 /*  Iteration 33: DUP ?BRANCH and OVER ?BRANCH - the test KEEPS its value:
  *  5.8-6.2% and 0.5-0.8% of the front designs' image dispatches
@@ -2039,66 +2051,86 @@ L_x_eqibr8: t = tos == (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; POPT(); if (t) i
  *  carries an operand. Nothing popped; compiled only where a design has
  *  them, as Iteration 12's.  */
 #if X_DUPBR
-L_x_dupbr: if (tos) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_dupbr8: if (tos) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_dupbr:   if (DS0) ip += 2; else ip += (int16_t)LD16(ip); NEXT();        /* DUP ?BRANCH   */
+L_x_dupbr8:  if (DS0) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();         /* DUP ?BRANCH8  */
 #endif
 #if X_OVERBR
-L_x_overbr: if (NOS) ip += 2; else ip += (int16_t)LD16(ip); NEXT();
-L_x_overbr8: if (NOS) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+L_x_overbr:  if (DS1) ip += 2; else ip += (int16_t)LD16(ip); NEXT();        /* OVER ?BRANCH  */
+L_x_overbr8: if (DS1) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();         /* OVER ?BRANCH8 */
 #endif
 /*  Iteration 34: DUP 0= ?BRANCH kept - jumps when the top is NOT zero, and
  *  keeps it (3.4-4.3%) - and SWAP n + : ( a b -- b a+n ), ADDI's immediate
  *  (3.7-5.0%; lab/evolve/regprice.py).  */
 #if X_DUPNBR
-L_x_dupnbr: if (tos) ip += (int16_t)LD16(ip); else ip += 2; NEXT();
-L_x_dupnbr8: if (tos) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();
+L_x_dupnbr:  if (DS0) ip += (int16_t)LD16(ip); else ip += 2; NEXT();        /* DUP 0= ?BRANCH  */
+L_x_dupnbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();         /* DUP 0= ?BRANCH8 */
 #endif
 #if X_SWAPADDI
-L_x_swapaddi: t = NOS; NOS = tos; tos = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();
+L_x_swapaddi: t = DS1; DS1 = DS0; DS0 = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();   /* SWAP n + */
 #endif
 /*  Iteration 176, the hybrid's keeping forms: an operation on the top with an
  *  immediate, the top kept - DUP n + and DUP n < (fib's DUP -1 + and DUP 2 <),
  *  one dispatch for three. results/price-hybrid.md.  */
 #if X_DUPADDI
-L_x_dupaddi: PUSHT(tos); tos = tos + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();
+L_x_dupaddi: PUSH(DS1 + (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();                 /* DUP n + */
 #endif
 #if X_DUPLTI
-L_x_duplti: PUSHT(tos); tos = -(UNS64)((INT64)tos < (INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();
+L_x_duplti: PUSH(-(UNS64)((INT64)DS1 < (INT64)(int8_t)BYTE(ip))); ip += 1; NEXT();         /* DUP n < */
 #endif
 /*  Iteration 50: FILL and CMOVE, the kernel's byte loops (12-14 dispatches a
  *  byte in Forth; CMOVE 5-7% of kernel, parse and corpus), as opcodes - a
  *  byte at a time, ascending, as the loops: CMOVE's overlap behaves the same.  */
 #if X_FILL
-L_x_fill: { UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();
+L_x_fill:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += 3 * CELL_BYTES;             /* FILL  */
+             while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();
 #endif
 #if X_CMOVE
-L_x_cmove: { UNS64 u_ = tos, d_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();
+L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;             /* CMOVE */
+             while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();
 #endif
 /*  Iteration 51: THREAD-FIND ( nfa namebuf --- nfa' | 0 ) - the byte-header
  *  dictionary's walk along one thread (forth/cv8b-kfast.4): count, then the
  *  bytes (NAME=?), then the link back - NEXT-NFA8's three forms. ~20
  *  dispatches a candidate word in Forth; 37-63% of kernel, parse, corpus.  */
 #if X_THREADFIND
-L_x_threadfind: { UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; NAME_WALK(a_, nb_); tos = a_; } NEXT();
+L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+             NAME_WALK(a_, nb_);                    /* Iteration 316: bfind; 402: either walk, one macro */
+             DS0 = a_; } NEXT();
 #endif
 /*  Iteration 54: the input side - SCAN and SKIP ( c-addr u c --- c-addr' u' ),
  *  the kernel's character loops, and TABS>BL ( c-addr u --- ), REFILL's tab
  *  loop (forth/cv8b-kinput.4): a character at a time, as the loops; the
  *  character compared as a cell, as = and - compare it.  */
 #if X_SCAN
-L_x_scan: { UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();
+L_x_scan:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
+             if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; }   /* a space: any control character too (Iteration 145) */
+             else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; }
+             DS1 = a_; DS0 = u_; } NEXT();
 #endif
 #if X_SKIP
-L_x_skip: { UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();
+L_x_skip:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
+             if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; }  /* a space: any control character too (Iteration 145) */
+             else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; }
+             DS1 = a_; DS0 = u_; } NEXT();
 #endif
 /*  (PARSE) ( addr u c --- a1 len adv ): SKIP then SCAN, the string between and
  *  how far >IN moves (kinput's PARSE8). HASH ( c-addr u #threads --- n ): the
  *  kernel's, exactly - cross.4's THASH must agree. PLACE ( addr len c-addr --- ). */
 #if X_PARSE
-L_x_parse: { UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();
+L_x_parse: { UNS64 c_ = DS0, u_ = DS1, a_ = DS2, p_ = a_, s_;
+             if (c_ == 32) {                       /* a space: any control character too (Iteration 145) */
+                 while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_;
+                 while (u_ && BYTE(p_) > 32) { p_++; u_--; }
+             } else {
+                 while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_;
+                 while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; }
+             }
+             DS2 = s_; DS1 = p_ - s_; DS0 = (p_ - a_) + (u_ ? 1 : 0); } NEXT();
 #endif
 #if X_HASH
-L_x_hash: { UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 * CELL_BYTES; h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2; tos = (h_ ^ u_) & (t_ - 1); } NEXT();
+L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+             h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2;
+             DS0 = (h_ ^ u_) & (t_ - 1); } NEXT();
 #endif
 /*  Iteration 57: (FIND) ( c-addr nb ctx n --- c-addr 0 | xt 1 | xt -1 ) -
  *  the kernel's FIND with kfast's SEARCH-WORDLIST8 (forth/cv8b-klookup.4):
@@ -2106,33 +2138,42 @@ L_x_hash: { UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 
  *  the name to NAMEBUF (32 MIN, PLACE), HASH, the thread's head, THREAD-FIND's
  *  walk, NAME>8 and the immediate bit.  */
 #if X_FIND
-L_x_find: { UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();
+L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: bfind; 402: either walk, NAME_WALK */
+            dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
 #endif
 /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER
  *  with BASE @ given (klookup's >NUMBER8): DIGIT?'s test exactly - '0'-'9',
  *  nothing between '9' and 'A', then A on, below base (signed) - and ud*base
  *  + digit as the kernel does it: UM* of the low cell, * of the high, D+.  */
 #if X_TONUMBER
-L_x_tonumber: { UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();
+L_x_tonumber: { UNS64 b_ = DS0, u_ = DS1, a_ = DS2, hi_ = CELL(dsp + 3 * CELL_BYTES), lo_ = CELL(dsp + 4 * CELL_BYTES);
+            while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; }
+            dsp += CELL_BYTES; DS0 = u_; DS1 = a_; DS2 = hi_; CELL(dsp + 3 * CELL_BYTES) = lo_; } NEXT();
 #endif
 #if X_NUMBERQ
-L_x_numberq: { UNS64 p_ = tos, b_ = NOS, a_ = CELL(dsp + CELL_BYTES), lo_, hi_; tos = numberq(a_, b_, p_, &lo_, &hi_); CELL(dsp + CELL_BYTES) = lo_; NOS = hi_; } NEXT();
+L_x_numberq: { UNS64 p_ = DS0, b_ = DS1, a_ = DS2, lo_, hi_, f_ = numberq(a_, b_, p_, &lo_, &hi_); DS2 = lo_; DS1 = hi_; DS0 = f_; } NEXT();   /* (NUMBER?) */
 #endif
 #if X_PLACE
-L_x_place: { UNS64 d_ = tos, n_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();
+L_x_place: { UNS64 d_ = DS0, n_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
+             BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();
 #endif
-L_x_qdo: { UNS64 n2_ = tos, n1_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += BROFF(ip); } NEXT();
+L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
+             if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */
 L_x_loop:  { UNS64 i_ = RS + 1;                                                  /* (LOOP)  */
              if (i_ == CELL(rp + CELL_BYTES)) { rp += 2 * CELL_BYTES; ip += 2; }
              else { CELL(rp) = i_; ip += (int16_t)LD16(ip); } } NEXT();
-L_x_ploop: { UNS64 n_ = tos, i_ = RS, l_ = CELL(rp + CELL_BYTES), j_ = i_ + n_; POPT(); if ((INT64)(((i_ - l_) ^ (j_ - l_)) & ((i_ - l_) ^ n_)) < 0) { rp += 2 * CELL_BYTES; ip += 2; } else { CELL(rp) = j_; ip += BROFF(ip); } } NEXT();
+L_x_ploop: { UNS64 n_ = DS0, i_ = RS, l_ = CELL(rp + CELL_BYTES), j_ = i_ + n_;  /* (+LOOP) */
+             dsp += CELL_BYTES;
+             if ((INT64)(((i_ - l_) ^ (j_ - l_)) & ((i_ - l_) ^ n_)) < 0) { rp += 2 * CELL_BYTES; ip += 2; }
+             else { CELL(rp) = j_; ip += (int16_t)LD16(ip); } } NEXT();
 #endif
 #if ENC == 3
-L_lit64: SPILL();   /* lit64: a full cell, little-endian. CELL_BYTES bytes.      */
+L_lit64:   /* lit64: a full cell, little-endian. CELL_BYTES bytes.      */
     { UNS64 v = 0; int i_;
       for (i_ = CELL_BYTES - 1; i_ >= 0; i_--) v = (v << 8) | BYTE(ip + i_);
-      PUSH(v); ip += CELL_BYTES; } FILLNEXT();
+      PUSH(v); ip += CELL_BYTES; } NEXT();
 L_esc:     /*  The escaped band: one more byte selects an OS/libc
             *  primitive. Half the primitive band was these, for 3.2% of
             *  static sites and 0.006% of dispatches; behind an escape
@@ -2140,8 +2181,7 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
 #if ESCAPE
     t = BYTE(ip); ip += 1; PROF(t); goto *esc_tab[t];
 #else
-    write_str(2, "CV8: image uses the escaped band, engine built without it\n");
-    exit(2);
+    bad_image(7);
 #endif
 #endif
 #if X_JIT
@@ -2152,7 +2192,7 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
  *  EXIT does. The return stack crosses in jit_rp, for loops and >R.
  *  Here among the ordinary handlers: gen-tos.py must wrap it in SPILL
  *  and FILL - after the tag's call handlers it is left bare (Iteration 81). */
-L_x_jit: SPILL();   { uint32_t f_ = jit_ld32(ip);
+L_x_jit:   { uint32_t f_ = jit_ld32(ip);
              jit_cbase = cbase;
              if (f_ & 0x80000000u) f_ = jit_word(ip - 1, 0);
              if (JIT_NATIVE(f_)) {
@@ -2168,17 +2208,37 @@ L_x_jit: SPILL();   { uint32_t f_ = jit_ld32(ip);
 #if JITMUL
                  if (jit_call(f_, (cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0, &r_)) {   /* 475: a zero divisor in native code */
                      rp = JIT_RP_GET(); dsp = (UNS64)(uintptr_t)jit_tsp - CELL_BYTES;
-                     if (jit_rip) { DS0 = (UNS64)jit_ttos; ip = jit_rip; jit_rip = 0; FILLNEXT(); }   /* 488: (ABORT") true - the interpreter runs the call */
-                     DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; FILLNEXT();            /* as L_umdiv's DIV0 */
+                     if (jit_rip) { DS0 = (UNS64)jit_ttos; ip = jit_rip; jit_rip = 0; NEXT(); }   /* 488: (ABORT") true - the interpreter runs the call */
+                     DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; NEXT();            /* as L_umdiv's DIV0 */
                  }
 #else
                  r_ = ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
 #endif
                  rp = JIT_RP_GET(); dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
                  ip = RS; rp += CELL_BYTES;
-             } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } FILLNEXT();   /* bytecode: its caller skips the header next time */
+             } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
 #endif
-L_dovar: PUSHT((ip + (TAG2 ? 4 : 3) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)); ip = RS; rp += CELL_BYTES; NEXT();
+L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
+#if ENC == 3
+    /*  The PFA is align(body+3), not align(body+1), so that it is the
+     *  SAME address DODOES computes after overwriting the front of the
+     *  body with a 2-byte call. With bodies always cell-aligned the two
+     *  agreed by accident; the byte-header layout leaves bodies wherever
+     *  the name ends, and a DOES> word created at run time then found
+     *  its parameter field one cell away from where CREATE had put it.
+     *  cv8.4's CREATE8 reserved the two bytes; since doesfar retired at 1
+ *  (Iteration 593) CREATE reserves three for the far call, so the
+ *  field is at align(body+4).  */
+#if TAG2
+    /*  Tag 2: CREATE reserves the longest call, 4 bytes (FORMAT-TAG2.md).  */
+    PUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#else
+    PUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#endif
+#else
+    PUSH((ip + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#endif
+    ip = RS; rp += CELL_BYTES; NEXT();
 L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
 #if ENC == 3 && TAG2
     /*  Tag 2: always the 4-byte call, 11 + 30 bits, in the 4 bytes CREATE
@@ -2206,58 +2266,68 @@ L_branch:  /* branch  */ ip += (int16_t)LD16(ip); NEXT();
 #else
 L_branch:  /* branch  */ ip += 2 * (int16_t)TOK(ip); NEXT();
 #endif
-L_0branch: t = tos; POPT(); if (t) ip += 2; else ip += BROFF(ip); NEXT();
-L_drop: POPT(); NEXT();
-L_dup: PUSHT(tos); NEXT();
-L_swap: t = NOS; NOS = tos; tos = t; NEXT();
-L_rot: t = CELL(dsp + CELL_BYTES); CELL(dsp + CELL_BYTES) = NOS; NOS = tos; tos = t; NEXT();
-L_over: t = NOS; PUSHT(t); NEXT();
-L_cfetch: tos = BYTE(tos); NEXT();
-L_fetch: tos = CELL(tos); NEXT();
-L_cstore: BYTE(tos) = (UNS8)NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; NEXT();
-L_store: CELL(tos) = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; NEXT();
-L_and: tos &= NOS; dsp += CELL_BYTES; NEXT();
-L_or: tos |= NOS; dsp += CELL_BYTES; NEXT();
-L_xor: tos ^= NOS; dsp += CELL_BYTES; NEXT();
-L_fromr: PUSHT(RS); rp += CELL_BYTES; NEXT();
-L_tor: RPUSH(tos); POPT(); NEXT();
-L_rfetch: PUSHT(RS); NEXT();
-L_eq: tos = -(UNS64)(NOS == tos); dsp += CELL_BYTES; NEXT();
-L_ugt: tos = -(UNS64)(NOS < tos); dsp += CELL_BYTES; NEXT();
-L_gt: tos = -(UNS64)((INT64)NOS < (INT64)tos); dsp += CELL_BYTES; NEXT();
-L_plus: tos += NOS; dsp += CELL_BYTES; NEXT();
-L_negate: tos = -tos; NEXT();
-L_lshift: tos = NOS << tos; dsp += CELL_BYTES; NEXT();
-L_rshift: tos = NOS >> tos; dsp += CELL_BYTES; NEXT();
-L_ummult: SPILL();  /* um*     */ umul(&DS0, &DS1); FILLNEXT();
-L_umdiv: SPILL();   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; FILLNEXT();
-L_dplus: SPILL();   /* d+      */
+L_0branch: /* 0branch */
+#if ENC == 3
+    if (DS0) ip += 2; else ip += (int16_t)LD16(ip);
+#else
+    if (DS0) ip += 2; else ip += 2 * (int16_t)TOK(ip);
+#endif
+    dsp += CELL_BYTES;
+    NEXT();
+L_drop:    /* drop    */ dsp += CELL_BYTES; NEXT();
+L_dup:     /* dup     */ PUSH(DS1); NEXT();
+L_swap:    /* swap    */ t = DS0; DS0 = DS1; DS1 = t; NEXT();
+L_rot:     /* rot     */ t = DS2; DS2 = DS1; DS1 = DS0; DS0 = t; NEXT();
+L_over:    /* over    */ PUSH(DS2); NEXT();
+L_cfetch:  /* C@      */ DS0 = BYTE(DS0); NEXT();
+L_fetch:   /* @       */ DS0 = CELL(DS0); NEXT();
+L_cstore:  /* c!      */ BYTE(DS0) = (UNS8)DS1; dsp += 2 * CELL_BYTES; NEXT();
+L_store:   /* !       */ CELL(DS0) = DS1; dsp += 2 * CELL_BYTES; NEXT();
+L_and:     /* and     */ DS1 &= DS0; dsp += CELL_BYTES; NEXT();
+L_or:      /* or      */ DS1 |= DS0; dsp += CELL_BYTES; NEXT();
+L_xor:     /* xor     */ DS1 ^= DS0; dsp += CELL_BYTES; NEXT();
+L_fromr:   /* r>      */ PUSH(RS); rp += CELL_BYTES; NEXT();
+L_tor:     /* >r      */ RPUSH(DS0); dsp += CELL_BYTES; NEXT();
+L_rfetch:  /* r@      */ PUSH(RS); NEXT();
+L_eq:      /* =       */ DS1 = - (UNS64)(DS0 == DS1); dsp += CELL_BYTES; NEXT();
+L_ugt:     /* u<      */ DS1 = - (UNS64)(DS1 < DS0); dsp += CELL_BYTES; NEXT();
+L_gt:      /* <       */
+    DS1 = - (UNS64)((INT64)DS1 < (INT64)DS0);
+    dsp += CELL_BYTES;
+    NEXT();
+L_plus:    /* +       */ DS1 += DS0; dsp += CELL_BYTES; NEXT();
+L_negate:  /* negate  */ DS0 = - DS0; NEXT();
+L_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; NEXT();
+L_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; NEXT();
+L_ummult:  /* um*     */ umul(&DS0, &DS1); NEXT();
+L_umdiv:   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
+L_dplus:   /* d+      */
     DS3 += DS1; DS2 += DS0; DS2 += (DS3 < DS1);
     dsp += 2 * CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 
-L_write: SPILL(); { /* write   c-addr u --- : u bytes to the terminal (t_write) */
+L_write: { /* write   c-addr u --- : u bytes to the terminal (t_write) */
     t_write((const UNS8 *)(uintptr_t)DS1, (UNS64)DS0);
     dsp += 2 * CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
-L_read: SPILL(); { /* read    c-addr u --- u2 : what input there is, 0 at its end (t_read) */
+L_read: { /* read    c-addr u --- u2 : what input there is, 0 at its end (t_read) */
     UNS64 n_ = t_read((UNS8 *)(uintptr_t)DS1, (UNS64)DS0);
     DS1 = n_;
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
-L_bye: SPILL();     /* bye     */ t_flush(); PROFDUMP; exit(0);
-L_spfetch: SPILL(); /* sp@     */ PUSH(dsp + CELL_BYTES); FILLNEXT();
-L_spstore: SPILL(); /* sp!     */ dsp = DS0; FILLNEXT();
-L_rpfetch: SPILL(); /* rp@     */ PUSH(rp); FILLNEXT();
-L_rpstore: SPILL(); /* rp!     */ rp = DS0; dsp += CELL_BYTES;
+L_bye:     /* bye     */ t_flush(); PROFDUMP; exit(0);
+L_spfetch: /* sp@     */ PUSH(dsp + CELL_BYTES); NEXT();
+L_spstore: /* sp!     */ dsp = DS0; NEXT();
+L_rpfetch: /* rp@     */ PUSH(rp); NEXT();
+L_rpstore: /* rp!     */ rp = DS0; dsp += CELL_BYTES;
 #if JITEXEC && JITMUL
     if (JIT_PAST(rp)) jit_unwind(rp, dsp, ip);  /* 672: a CATCH in an outer interpreter - its frames */
 #endif
-    FILLNEXT();
+    NEXT();
 
-L_openfile: SPILL(); { /* c-addr u fam --- fid ior */
+L_openfile: { /* c-addr u fam --- fid ior */
     int fd;
     t = BYTE(DS2 + DS1);
     BYTE(DS2 + DS1) = 0;
@@ -2266,15 +2336,15 @@ L_openfile: SPILL(); { /* c-addr u fam --- fid ior */
     DS2 = (UNS64)fd;
     DS1 = (fd >= 0) ? 0 : 200;
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
-L_closefile: SPILL(); {/* fid --- ior */
+L_closefile: {/* fid --- ior */
     t_fdrop((int)DS0);
 
     DS0 = (UNS64)close((int)DS0);
-    FILLNEXT();
+    NEXT();
     }
-L_readline: SPILL(); { /* c-addr u1 fid --- u2 flag ior */
+L_readline: { /* c-addr u1 fid --- u2 flag ior */
     int fd = (int)DS0;
     UNS64 addr = DS2, max = DS1, count = 0;
     long n, err = 0, got_any = 0;
@@ -2298,9 +2368,9 @@ L_readline: SPILL(); { /* c-addr u1 fid --- u2 flag ior */
     DS2 = count;
     DS1 = got_any ? (UNS64)-1 : 0;
     DS0 = err ? (UNS64)-200 : 0;
-    FILLNEXT();
+    NEXT();
 }
-L_writeline: SPILL(); { /* c-addr u fid --- ior */
+L_writeline: { /* c-addr u fid --- ior */
     t_flush();
     t_fdrop((int)DS0);          /* Iteration 225: what READ-LINE read ahead given back first, as WRITE-FILE does -
                                    else a line written after a line read lands past the read-ahead */
@@ -2316,9 +2386,9 @@ L_writeline: SPILL(); { /* c-addr u fid --- ior */
         DS2 = (UNS64)-200;
     }
     dsp += 2 * CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
-L_readfile: SPILL(); { /* c-addr u1 fid --- u2 ior */
+L_readfile: { /* c-addr u1 fid --- u2 ior */
     t_fdrop((int)DS0);
     int fd = (int)DS0;
     UNS64 addr = DS2, maxlen = DS1;
@@ -2333,9 +2403,9 @@ L_readfile: SPILL(); { /* c-addr u1 fid --- u2 ior */
         DS1 = 0;
     }
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
-L_writefile: SPILL(); { /* c-addr u fid --- ior */
+L_writefile: { /* c-addr u fid --- ior */
     t_fdrop((int)DS0);
     t_flush();
     int fd = (int)DS0;
@@ -2345,10 +2415,10 @@ L_writefile: SPILL(); { /* c-addr u fid --- ior */
     n = full_write(fd, (void*)(uintptr_t)addr, len);
     DS2 = (n == (long)len) ? 0 : (UNS64)-200;
     dsp += 2 * CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
 #if !SYSC
-L_system: SPILL(); { t_flush(); /* c-addr u --- ior */
+L_system: { t_flush(); /* c-addr u --- ior */
     UNS64 addr = DS1, len = DS0;
     UNS8 saved;
     pid_t pid;
@@ -2376,10 +2446,10 @@ L_system: SPILL(); { t_flush(); /* c-addr u --- ior */
     BYTE(addr + len) = saved;
     DS1 = (UNS64)ior;
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
-L_reposfile: SPILL(); {/* ud fid --- ior */
+L_reposfile: {/* ud fid --- ior */
     /*  ANS: ( ud fileid -- ior ) - the offset a double, low cell under the
      *  high one; the ior 0 or 200. It took one cell and returned the new
      *  position as its ior, so any position but 0 read as a failure
@@ -2391,9 +2461,9 @@ L_reposfile: SPILL(); {/* ud fid --- ior */
         dsp += 2 * CELL_BYTES;
         DS0 = (r_ < 0) ? 200 : 0;
     }
-    FILLNEXT();
+    NEXT();
     }
-L_filepos: SPILL(); {/* fid --- ud ior */
+L_filepos: {/* fid --- ud ior */
     /*  ANS: ( fileid -- ud ior ) - a double, low cell under the high one.
      *  It returned one cell until the Forth 2012 file tests said so;
      *  nothing in Forth calls it (Iteration 125; RelF: the same fault and
@@ -2405,9 +2475,9 @@ L_filepos: SPILL(); {/* fid --- ud ior */
         if (p_ < 0) { DS2 = 0; DS1 = 0; DS0 = 200; }
         else { DS2 = (UNS64)q_; DS1 = (UNS64)(CELL_BYTES == 8 ? 0ULL : (q_ >> 32)); DS0 = 0; }
     }
-    FILLNEXT();
+    NEXT();
     }
-L_delfile: SPILL(); { /* c-addr u --- ior */
+L_delfile: { /* c-addr u --- ior */
     t = BYTE(DS1 + DS0);
     BYTE(DS1 + DS0) = 0;
     {   /* the byte back first, then the result (Iteration 124: storing the
@@ -2417,9 +2487,9 @@ L_delfile: SPILL(); { /* c-addr u --- ior */
         DS1 = (UNS64)r_;
     }
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
-L_filesize: SPILL(); { /* fid --- ud ior */
+L_filesize: { /* fid --- ud ior */
     /*  ANS: ( fileid -- ud ior ), a double - see L_filepos; the ior 200
      *  where the size cannot be had, not always 0 (Iteration 125). */
     t_fdrop((int)DS0);
@@ -2431,7 +2501,7 @@ L_filesize: SPILL(); { /* fid --- ud ior */
         if (size < 0) { DS2 = 0; DS1 = 0; DS0 = 200; }
         else { DS2 = (UNS64)q_; DS1 = (UNS64)(CELL_BYTES == 8 ? 0ULL : (q_ >> 32)); DS0 = 0; }
     }
-    FILLNEXT();
+    NEXT();
 }
 /*
  *  Process-control primitives (shell support). Callers are responsible
@@ -2449,7 +2519,7 @@ L_filesize: SPILL(); { /* fid --- ud ior */
  * the block, r the kernel's result - on failure -errno (Iteration 141: the
  * shell can tell EINTR from ENOENT; the runtime's syscall gives -1 and errno);
  * num -1, -2, -3: argc, argv, the initial environment - what no call returns. */
-L_syscall: SPILL(); {
+L_syscall: {
     long num = (long)(INT64)DS0, r;
     const UNS64 *a = (const UNS64 *)(uintptr_t)DS1;
     t_flush();
@@ -2469,34 +2539,34 @@ L_syscall: SPILL(); {
         } else if ((num = sysc_i386(num)) < 0) r = -38;        /* sysc_done for a handler. ENOSYS */
         else
 #endif
-        r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
+        r = SYSCALL6(num, a[0], a[1], a[2], a[3], a[4], a[5]);
         if (r == -1) r = -(long)errno;
     }
     DS1 = (UNS64)(INT64)r;
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
-L_nosys: SPILL();   /* a primitive the gene sysc removed: the shell's are Forth now */
+L_nosys:   /* a primitive the gene sysc removed: the shell's are Forth now */
     t_flush(); _exit(70);
 #endif
 #if !SYSC
-L_fork: SPILL(); /* --- pid */
+L_fork: /* --- pid */
      t_flush();PUSH((UNS64)(INT64)fork());
-    FILLNEXT();
+    NEXT();
 #endif /* !SYSC */
 #if !SYSC
-L_execve: SPILL(); { t_flush(); /* argv-addr path-addr --- ior */
+L_execve: { t_flush(); /* argv-addr path-addr --- ior */
     char *path = (char*)(uintptr_t)DS0;
     char **argv = (char**)(uintptr_t)DS1;
     execve(path, argv, environ);
     /* only reached if execve itself failed */
     DS1 = (UNS64)200;
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_waitpid: SPILL(); { /* pid --- status ior */
+L_waitpid: { /* pid --- status ior */
     int status = 0;
     pid_t r = waitpid((pid_t)(INT64)DS0, &status, 0);
     if (r < 0) {
@@ -2506,50 +2576,50 @@ L_waitpid: SPILL(); { /* pid --- status ior */
         DS0 = (UNS64)(INT64)status;
         PUSH(0);
     }
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_pipe: SPILL(); { /* --- fd-read fd-write ior */
+L_pipe: { /* --- fd-read fd-write ior */
     int fds[2];
     if (pipe(fds) < 0) {
         PUSH(0); PUSH(0); PUSH(200);
     } else {
         PUSH((UNS64)fds[0]); PUSH((UNS64)fds[1]); PUSH(0);
     }
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_dup2: SPILL(); /* oldfd newfd --- ior */
+L_dup2: /* oldfd newfd --- ior */
     DS1 = (UNS64)((dup2((int)DS1, (int)DS0) < 0) ? 200 : 0);
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 #endif /* !SYSC */
 #if !SYSC
-L_getenv: SPILL(); { /* c-addr --- addr */
+L_getenv: { /* c-addr --- addr */
     char *v = getenv((char*)(uintptr_t)DS0);
     DS0 = (UNS64)(uintptr_t)v;
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_setenv: SPILL(); /* value-addr name-addr --- ior */
+L_setenv: /* value-addr name-addr --- ior */
     DS1 = (UNS64)((setenv((char*)(uintptr_t)DS0, (char*)(uintptr_t)DS1, 1) < 0) ? 200 : 0);
     dsp += CELL_BYTES;
-    FILLNEXT();
+    NEXT();
 #endif /* !SYSC */
 #if !SYSC
-L_sysexit: SPILL(); /* n --- */
+L_sysexit: /* n --- */
      t_flush();PROFDUMP; _exit((int)DS0);
 #endif /* !SYSC */
 #if !SYSC
-L_chdir: SPILL(); /* c-addr --- ior */
+L_chdir: /* c-addr --- ior */
     DS0 = (UNS64)((chdir((char*)(uintptr_t)DS0) < 0) ? 200 : 0);
-    FILLNEXT();
+    NEXT();
 #endif /* !SYSC */
 #if !SYSC
-L_getcwd: SPILL(); { /* addr max-len --- len ior */
+L_getcwd: { /* addr max-len --- len ior */
     char *r = getcwd((char*)(uintptr_t)DS1, (size_t)DS0);
     if (r == 0) {
         DS1 = 0;
@@ -2558,27 +2628,27 @@ L_getcwd: SPILL(); { /* addr max-len --- len ior */
         DS1 = (UNS64)strlen(r);
         DS0 = 0;
     }
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_sysargc: SPILL(); /* --- n */
+L_sysargc: /* --- n */
     PUSH((UNS64)(g_argc > 2 ? g_argc - 2 : 0));
-    FILLNEXT();
+    NEXT();
 #endif /* !SYSC */
 #if !SYSC
-L_sysarg: SPILL(); { /* n --- c-addr */
+L_sysarg: { /* n --- c-addr */
     long n = (long)(INT64)DS0;
     if (n < 0 || n + 2 >= g_argc) {
         DS0 = 0;
     } else {
         DS0 = (UNS64)(uintptr_t)g_argv[n + 2];
     }
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_getpwhome: SPILL(); { /* c-addr --- addr | 0 */
+L_getpwhome: { /* c-addr --- addr | 0 */
     /* A named user's home directory, via NSS rather than by reading
      * /etc/passwd. That file is one NSS source among several: on a
      * host using LDAP, SSSD, NIS or systemd-homed a real user may not
@@ -2589,11 +2659,11 @@ L_getpwhome: SPILL(); { /* c-addr --- addr | 0 */
      * immediately. */
     struct passwd *pw = getpwnam((const char *)(uintptr_t)DS0);
     DS0 = pw ? (UNS64)(uintptr_t)pw->pw_dir : 0;
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_getfsize: SPILL(); { /* --- n */
+L_getfsize: { /* --- n */
     /* RLIMIT_FSIZE's soft limit in POSIX's 512-byte blocks, or -1 for
      * unlimited. Blocks rather than bytes deliberately: POSIX specifies
      * ulimit in 512-byte units (which is where bash differs, reporting
@@ -2607,11 +2677,11 @@ L_getfsize: SPILL(); { /* --- n */
     } else {
         PUSH((UNS64)(rl.rlim_cur / 512));
     }
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_setfsize: SPILL(); { /* n --- ior */
+L_setfsize: { /* n --- ior */
     struct rlimit rl;
     INT64 n = (INT64)DS0;
     if (getrlimit(RLIMIT_FSIZE, &rl) < 0) {
@@ -2626,18 +2696,18 @@ L_setfsize: SPILL(); { /* n --- ior */
         rl.rlim_max = rl.rlim_cur;
         DS0 = (UNS64)((setrlimit(RLIMIT_FSIZE, &rl) < 0) ? 202 : 0);
     }
-    FILLNEXT();
+    NEXT();
 }
 #endif /* !SYSC */
 #if !SYSC
-L_getpid: SPILL(); /* --- pid */
+L_getpid: /* --- pid */
     PUSH((UNS64)(INT64)getpid());
-    FILLNEXT();
+    NEXT();
 #endif /* !SYSC */
 #if !SYSC
-L_unsetenv: SPILL(); /* c-addr --- ior */
+L_unsetenv: /* c-addr --- ior */
     DS0 = (UNS64)((unsetenv((char*)(uintptr_t)DS0) < 0) ? 200 : 0);
-    FILLNEXT();
+    NEXT();
 
 /*
  *  ALLOCATE / FREE / RESIZE - the standard Forth-2012 memory-allocation
@@ -2651,18 +2721,18 @@ L_unsetenv: SPILL(); /* c-addr --- ior */
  *  pointers are reset before an image is written - see pool.4.
  */
 #endif /* !SYSC */
-L_allocate: SPILL(); /* u --- a-addr ior */
+L_allocate: /* u --- a-addr ior */
 {
     void *p = malloc((size_t)DS0);
     DS0 = (UNS64)(uintptr_t)p;
     PUSH((UNS64)(p == NULL ? 201 : 0));
-    FILLNEXT();
+    NEXT();
 }
-L_free: SPILL(); /* a-addr --- ior */
+L_free: /* a-addr --- ior */
     free((void*)(uintptr_t)DS0);
     DS0 = 0;
-    FILLNEXT();
-L_resize: SPILL(); /* a-addr u --- a-addr' ior */
+    NEXT();
+L_resize: /* a-addr u --- a-addr' ior */
 {
     void *p = realloc((void*)(uintptr_t)DS1, (size_t)DS0);
     if (p == NULL) {
@@ -2673,7 +2743,7 @@ L_resize: SPILL(); /* a-addr u --- a-addr' ior */
         DS1 = (UNS64)(uintptr_t)p;
         DS0 = 0;
     }
-    FILLNEXT();
+    NEXT();
 }
 #if FOLD
 #define EXITNEXT() do { ip = RS; rp += CELL_BYTES; NEXT(); } while (0)

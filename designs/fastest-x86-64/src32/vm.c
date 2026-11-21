@@ -336,6 +336,14 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
  */
 
 #define CELL(reg) (*(UNS64*)(reg))
+/*  Iteration 706: 2@ and 2! read and write a cell pair at any address. Two cell loads through UNS64* let GCC
+ *  join them into one doubleword load (LDRD/STRD on ARMv7), which traps on an address not word aligned - the
+ *  corpus's `HERE 1 ALLOT  HERE 1 ,  ... 1ST 2@` (Forth 2012 leaves an unaligned `,` ambiguous; the Hayes test
+ *  does it). Linux on the Tegra fixes the access up; qemu-user and a kernel set to signal do not
+ *  (results/drafts/arm-preflight-705.md). A one-byte-aligned type keeps the two accesses apart there; on x86
+ *  the same instructions (results/drafts/arm2at-706.md). */
+typedef UNS64 __attribute__((aligned(1), may_alias)) UNS64U;
+#define CELLU(reg) (*(UNS64U*)(reg))
 #define BYTE(reg) (*(UNS8*)(reg))
 #if BFIND
 /*  Iteration 316, the gene bfind: THREAD-FIND's and (FIND)'s walk with fewer branches to
@@ -734,6 +742,16 @@ int rt_open(const char *p, int flags, int mode);
 #define OPEN3(p, f, m) open((p), (f), (m))
 #endif
 
+/*  Iteration 707 (the ideation pilot, results/drafts/ideation-707.md): the engine's system calls through rt_syscall6
+ *  where the runtime is linked - six arguments, no va_list, as rt_open (257): the variadic syscall made the runtime save
+ *  every argument register - 241 bytes of the smallest design's 4,784 bytes of code. Errors as syscall's: -1, errno. */
+#if RTLIB && defined(__x86_64__)   /* i386's and ARMv7's runtimes keep their variadic syscall for their own calls: there +16 */
+long rt_syscall6(long n, long a, long b, long c, long d, long e, long f);
+#define SYSCALL6(n, a, b, c, d, e, f) rt_syscall6((n), (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
+#else
+#define SYSCALL6(n, a, b, c, d, e, f) syscall((n), (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
+#endif
+
 static void stack_fault(int which) {
     write_str(2, which ? "relf: return stack overflow\n"
                        : "relf: data stack overflow\n");
@@ -845,6 +863,28 @@ static UNS64 throw_off;    /* Iteration 229: THROW's body (offset), from the hea
 static UNS64 hot_tab[32];  /* one-byte calls: image offsets, from the header */
 #endif
 
+/*  Iteration 709 (the sweep, results/drafts/sweep-709.md): every refusal of
+ *  the image's contents in one message and one call, its check a digit - the
+ *  seven messages were 374 of the smallest engine's 1,072 bytes of rodata.
+ *  "not a RelF image" stays the message's start: relf's crash fuzzer
+ *  (vendor/relf/tree/tools/crashfuzz.py) matches it. The digit says which:
+ *    1 not this encoding or cell width (the magic)   2 a newer CV8 format
+ *    3 CV8 features this engine was built without    4 the header truncated
+ *    5 an impossible thread count                    6 too many DOES> tails
+ *    7 the escaped band, the engine built without it
+ *    8 byte-granular headers (SOD16)                 9 a DOES> tail outside the chain (SOD16)
+ *  Not here: the file not opened or not read, and memory (not the image's).  */
+/*  Not cold: GCC then moved its caller in virtual_machine (L_esc) to
+ *  .text.unlikely, out of reach of the dispatch table's label differences
+ *  ("can't resolve .text.unlikely - .L135").  */
+static void bad_image(int why) __attribute__((noreturn, noinline));
+static void bad_image(int why) {
+    static char m[] = "not a RelF image (0)\n";
+    m[18] = (char)('0' + why);
+    write_str(2, m);
+    exit(2);
+}
+
 static void load_image(const char *name) {
     int fd;
     long len;
@@ -869,22 +909,17 @@ static void load_image(const char *name) {
         || ((uint32_t)magic[0] | (uint32_t)magic[1] << 8 | (uint32_t)magic[2] << 16 | (uint32_t)magic[3] << 24)
            != ((uint32_t)IMAGE_MAGIC[0] | (uint32_t)IMAGE_MAGIC[1] << 8 | (uint32_t)IMAGE_MAGIC[2] << 16 | (uint32_t)IMAGE_MAGIC[3] << 24)
         || magic[4] != IMAGE_MAGIC[4]) {
-        write_str(2, "not a RelF image, or built for a different encoding "
-                     "or cell width.\n");
-        exit(2);
+        bad_image(1);
     }
     /*  Bytes 6-7 are a format version and a FEATURE BITMAP. The engine
      *  runs any image whose required features it implements, so adding
      *  a feature later does not invalidate older images, and an older
      *  engine refuses a newer image cleanly instead of misreading it. */
     if (magic[6] > IMAGE_MAGIC[6]) {
-        write_str(2, "image is a newer CV8 format version than this engine\n");
-        exit(2);
+        bad_image(2);
     }
     if (magic[7] & ~IMAGE_MAGIC[7]) {
-        write_str(2, "image needs CV8 features this engine was not built "
-                     "with (varcall/varslot/spec/lit64)\n");
-        exit(2);
+        bad_image(3);
     }
     /*
      *  Header, after the magic: the newest word's NFA as an offset, the
@@ -906,26 +941,21 @@ static void load_image(const char *name) {
      *  encoding that names a call by word NUMBER - but the header has
      *  one shape for every encoding.  */
     if (full_read(fd, (UNS8*)&nthreads, CELL_BYTES) != CELL_BYTES) {
-        write_str(2, "Truncated image header.\n");
-        exit(2);
+        bad_image(4);
     }
     if (nthreads < 1 || nthreads > MAX_THREADS) {
-        write_str(2, "Image declares an impossible thread count.\n");
-        exit(2);
+        bad_image(5);
     }
     for (i = 0; i < nthreads; i++)
         if (full_read(fd, (UNS8*)&heads[i], CELL_BYTES) != CELL_BYTES) {
-            write_str(2, "Truncated image header.\n");
-            exit(2);
+            bad_image(4);
         }
     head_nfa = heads[0];
     if (full_read(fd, (UNS8*)&ntails, CELL_BYTES) != CELL_BYTES) {
-        write_str(2, "Truncated image header.\n");
-        exit(2);
+        bad_image(4);
     }
     if (ntails > MAX_TAILS) {
-        write_str(2, "Image declares too many DOES> tails.\n");
-        exit(2);
+        bad_image(6);
     }
 #if SPEC
     /* locals opcodes: save-stack variable, buffer, limit, fallback words */
@@ -944,16 +974,14 @@ static void load_image(const char *name) {
     for (i = 0; i < ntails; i++) {
         if (full_read(fd, (UNS8*)&tail_w[i], CELL_BYTES) != CELL_BYTES ||
             full_read(fd, (UNS8*)&tail_o[i], CELL_BYTES) != CELL_BYTES) {
-            write_str(2, "Truncated image header.\n");
-            exit(2);
+            bad_image(4);
         }
     }
 #if ENC == 3
     /*  Iteration 229: THROW's body, written by the converter and by
      *  SAVE-SYSTEM after the locals block - UM/MOD throws -10 there.  */
     if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) {
-        write_str(2, "Truncated image header.\n");
-        exit(2);
+        bad_image(4);
     }
 #endif
 
@@ -962,13 +990,11 @@ static void load_image(const char *name) {
     if (magic[7] & F_HOTCALLS) {
         UNS8 k_, b_[2];
         if (full_read(fd, &k_, 1) != 1 || k_ > 32) {
-            write_str(2, "Truncated image header.\n");
-            exit(2);
+            bad_image(4);
         }
         for (i = 0; i < k_; i++) {
             if (full_read(fd, b_, 2) != 2) {
-                write_str(2, "Truncated image header.\n");
-                exit(2);
+                bad_image(4);
             }
             hot_tab[i] = b_[0] | (UNS64)b_[1] << 8;
         }
@@ -998,8 +1024,7 @@ static void load_image(const char *name) {
     return;
 #else
     if (magic[7] & 0x10) {
-        write_str(2, "Byte-granular headers are not supported by this encoding.\n");
-        exit(2);
+        bad_image(8);
     }
     /*  Collect every word from every thread, then sort by address.
      *
@@ -1049,8 +1074,7 @@ static void load_image(const char *name) {
         free(nfas);
         for (i = 0; i < ntails; i++) {
             if (tail_w[i] >= (UNS64)n) {
-                write_str(2, "DOES> tail names a word outside the chain.\n");
-                exit(2);
+                bad_image(9);
             }
             wordtab[n + i] = wordtab[tail_w[i]] + tail_o[i];
         }
@@ -1078,8 +1102,7 @@ static void load_image(const char *name) {
     }
     for (i = 0; i < ntails; i++) {
         if (tail_w[i] >= (UNS64)n) {
-            write_str(2, "DOES> tail names a word outside the chain.\n");
-            exit(2);
+            bad_image(9);
         }
         wordtab[n + i] = wordtab[tail_w[i]] + tail_o[i];
     }
@@ -1973,8 +1996,8 @@ L_eqix: tos = -(UNS64)(tos == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CE
  *  the top cell, J two below it.  */
 L_x_plusstore: { UNS64 a_ = tos; CELL(a_) += NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();
 L_x_qdup: if (tos) PUSHT(tos); NEXT();
-L_x_2fetch: { UNS64 a_ = tos; tos = CELL(a_ + CELL_BYTES); PUSHT(CELL(a_)); } NEXT();
-L_x_2store: { UNS64 a_ = tos; CELL(a_) = NOS; CELL(a_ + CELL_BYTES) = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; } NEXT();
+L_x_2fetch: { UNS64 a_ = tos; tos = CELLU(a_ + CELL_BYTES); PUSHT(CELLU(a_)); } NEXT();
+L_x_2store: { UNS64 a_ = tos; CELLU(a_) = NOS; CELLU(a_ + CELL_BYTES) = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; } NEXT();
 L_x_gt: tos = -(UNS64)((INT64)NOS > (INT64)tos); dsp += CELL_BYTES; NEXT();
 L_x_zeq: tos = -(UNS64)(tos == 0); NEXT();
 L_x_execute: { UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();
@@ -2140,8 +2163,7 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
 #if ESCAPE
     t = BYTE(ip); ip += 1; PROF(t); goto *esc_tab[t];
 #else
-    write_str(2, "CV8: image uses the escaped band, engine built without it\n");
-    exit(2);
+    bad_image(7);
 #endif
 #endif
 #if X_JIT
@@ -2469,7 +2491,7 @@ L_syscall: SPILL(); {
         } else if ((num = sysc_i386(num)) < 0) r = -38;        /* sysc_done for a handler. ENOSYS */
         else
 #endif
-        r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
+        r = SYSCALL6(num, a[0], a[1], a[2], a[3], a[4], a[5]);
         if (r == -1) r = -(long)errno;
     }
     DS1 = (UNS64)(INT64)r;

@@ -1,4 +1,4 @@
-\ designs/portable-knee/genes32.4 - portable-knee's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ ../../../tmp/fz/designs/portable-knee/genes32.4 - portable-knee's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
 \ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
 \ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
 \ A list is a word giving its text ( --- c-addr u ), names and numbers each followed by one space.
@@ -8,23 +8,23 @@ VARIABLE G-AT
 : G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;
 4 CONSTANT G-CELL          \ the target's cell, bytes
 G-LIST: G-OVERLAYS  \ after kernel.4, in this order
-S" cv8.4 cv8b.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8-fuse.4 cv8-fuse-imm.4 cv8-fuse-loopall.4 " G+
-S" cv8-fuse-iplus.4 file-sysc.4 file-sysc2.4 " G+
+S" cv8.4 cv8b.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8-fuse.4 cv8-fuse-loopall.4 " G+
+S" cv8-fuse-iplus.4 cv8-fuse-inline.4 file-sysc.4 file-sysc2.4 " G+
 G-LIST: G-FOLDS  \ the fold set: FOLD-BASE + place
-S" ! RSHIFT C@ C! AND OR XOR LIT U< OVER DROP SWAP >R R@ NEGATE < " G+
+S" + RSHIFT XOR LIT DROP @ " G+
 31 CONSTANT G-SPEC          \ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc
 G-LIST: G-SUPERS  \ fused pairs: first second opcode
-S" OVER C@ 53 + @ 54 @ + 55 " G+
+S" DUP @ 44 " G+
 G-LIST: G-OPS10  \ format-10 operations: name opcode
-S" SWAP+I 126 I+ 127 (FIND) 89 (>NUMBER) 90 SCAN 91 SKIP 92 FILL 93 (PARSE) 94 HASH 95 PLACE 36 " G+
-S" (LEAVE) 37 I 38 J 39 (DO) 40 (LOOP) 41 (+LOOP) 42 (?DO) 43 UNLOOP 44 ?BRANCH8 45 2@ 46 2! 47 " G+
-S" BRANCH8 48 OVER?BRANCH 49 CMOVE 50 > 51 0= 52 " G+
+S" I+ 126 (FIND) 127 (>NUMBER) 79 SCAN 80 SKIP 81 FILL 82 (PARSE) 83 HASH 84 PLACE 85 (DO) 86 " G+
+S" (LOOP) 87 (+LOOP) 88 (?DO) 89 (LEAVE) 90 I 91 J 92 UNLOOP 93 >?BRANCH 94 DUP?BRANCH8 95 ?BRANCH8 36 " G+
+S" BRANCH8 37 OVER?BRANCH 38 CMOVE 39 2@ 40 > 41 0= 42 2! 43 " G+
 0 CONSTANT G-HOTCALLS      \ one-byte calls, at most
 -1 CONSTANT G-OP-BODIES     \ the format-10 words' bodies their opcode
 -1 CONSTANT G-OP-INLINE     \ ...placed among the primitives
 -1 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
 -1 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
-32 CONSTANT G-THREADS       \ the dictionary's hash threads
+16 CONSTANT G-THREADS       \ the dictionary's hash threads
 -1 CONSTANT G-RTFUSE        \ the run-time fuser's tables filled (cv8-fuse.4's SUPER-TABLE, IMM-OPS)
 -1 CONSTANT G-ESCAPE         \ escaped primitives: two bytes, ESC and a selector
 G-LIST: G-ESC-PRIMS  \ the escaped primitives
@@ -46,5 +46,10 @@ G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
 G-LIST: G-T2-ESC  \ ...logical operation, escape selector
 0 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
 0 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+0 CONSTANT G-GUARD-ABORT   \ the gene abortif: ABORT" guarded by ?BRANCH (sod16.guard_aborts; 714)
 G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
+0 CONSTANT G-FACTOR        \ the gene factor: repeated cold code in headerless bodies (layout.py --factor; 715)
+0 CONSTANT G-FACTOR-ANY    \ ...every word, the profile aside (--factor-share above 1)
+G-LIST: G-FACTOR-COLD  \ ...the words below --factor-share of the reference dispatches
+G-LIST: G-FACTOR-NOT  \ ...never: what layout.py patches after reading it, the dump tool
 G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet

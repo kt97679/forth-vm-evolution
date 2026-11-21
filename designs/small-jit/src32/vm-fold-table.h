@@ -1,5 +1,1 @@
-[73 + 3] = DSP(LX_lit),
-[73 + 4] = DSP(LX_drop),
-[73 + 2] = DSP(LX_cstore),
-[73 + 1] = DSP(LX_fromr),
-[73 + 0] = DSP(LX_plus),
+[73 + 0] = DSP(LX_drop),

@@ -1,4 +1,4 @@
-\ designs/portable-small/genes.4 - portable-small's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ ../../../tmp/fz/designs/portable-small/genes.4 - portable-small's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
 \ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
 \ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
 \ A list is a word giving its text ( --- c-addr u ), names and numbers each followed by one space.
@@ -43,5 +43,10 @@ G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
 G-LIST: G-T2-ESC  \ ...logical operation, escape selector
 0 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
 0 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+0 CONSTANT G-GUARD-ABORT   \ the gene abortif: ABORT" guarded by ?BRANCH (sod16.guard_aborts; 714)
 G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
+0 CONSTANT G-FACTOR        \ the gene factor: repeated cold code in headerless bodies (layout.py --factor; 715)
+0 CONSTANT G-FACTOR-ANY    \ ...every word, the profile aside (--factor-share above 1)
+G-LIST: G-FACTOR-COLD  \ ...the words below --factor-share of the reference dispatches
+G-LIST: G-FACTOR-NOT  \ ...never: what layout.py patches after reading it, the dump tool
 G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet

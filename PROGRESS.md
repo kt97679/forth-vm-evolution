@@ -11999,3 +11999,15 @@ own run's readings before building) and --write/--anchors/--cap (a list for the 
 files alone gave 23 JIT designs below 35,980 B within 10 % of 15eda54ebd in-run; measure-ids.py, loadtest.py at 10 rounds.
 Files: results/drafts/esolangs-717.md, results/drafts/esolangs-717.py, results/followup-seed96-jitband.md; GOALS.md's
 register (three rows), lab/evolve/pool-sizes.py, NEXT-RUN, REMOTES, results/predictions.md (chain D's five).
+
+## Iteration 718 - 2026-11-21 - Claude
+
+The owner on chain C's three choices: "no strong opinions - the most reasonable way, ensuring we are not losing any good
+designs". Each decided by the chains' rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent):
+smallest 219878ec89 (the 23 smaller are trades), portable-fastest d727605472 (5f7e66b12d x86-32 +2.7 %), fastest-x86-32
+11f956db93 (3.8 % smaller, 16 KB leaner, tied); every near one kept on record. The ten built into designs/ - 645's
+build-out split around the cross GCC: validate 7 of 7, the ARM rules the lab's bytes (3 clang, 3 GCC), nine self-built
+(portable-fastest translator-built: the fused branches), make test/selfhost/32/libc, pack 20 of 20, run-tests PASS.
+small-jit provisional until chain D; the Tegra's GCC check is the owner's, beside chain D.
+Files: results/new-roles-718.md, results/relf-designs-718.md, results/drafts/roles-build-718.sh,
+results/drafts/designs-table-718.py, results/drafts/designs-sha256-718.txt; designs/ (the ten), designs/README.md.

@@ -1,0 +1,83 @@
+\ cv8-fuse-var.4 - a data word's @ and ! as one operation in code compiled at RUN time (Iteration 687: the gene
+\ rtvar; step 3 of results/drafts/search-reopen-plan-677.md - relf's VAR@ and VAR!, its Iteration 260). Loaded
+\ after the other fusers of either family (cv8-fuse.4 or cv8t-fuse.4, their -imm, -loopall, -iplus; 689: the two-bit
+\ tag too, its codes one byte each - the converter pins vf and vs), before cv8t-empty.4 and cv8t-jit.4, and only for
+\ designs with the gene: its code costs image bytes, and only the designs that choose it pay them.
+\
+\ A call to a data word - its code DOVAR: a VARIABLE, a CREATE - followed straight by @ or ! becomes vf or vs and the
+\ slot of its parameter field, the operations the converter lays for the kernel's own variables (spec var): one
+\ dispatch for three (the call, DOVAR, the @ or !). The call is laid as before and remembered - VAR-AT where it began,
+\ VAR-PFA its parameter field - and LAST-OP is left at VAR-MARK, an address no other rule matches (it is no byte
+\ before HERE), so a branch target, which clears LAST-OP, and any operation compiled after the call, which moves it,
+\ stop the fusion: nothing is fused across a label (relf's rule). A slot out of the design's reach (23 bits, or 16
+\ without VARSLOT) leaves the call. In relf a VAR@ averages 3.2 bytes, about a call and @: dispatches, not bytes.
+\
+\ VAR-OPS: this design's vf and vs, @ and !, VARSLOT (1: a slot of 2 or 3 big-endian bytes; 0: 2 little-endian),
+\ SCALE - written by the converter (tools/layout.py), zeros where the design has no vf (the fusion off). Every
+\ COMPILE, not fused goes to the COMPILE,8 before this one (the translator keeps a later X8's call to an earlier X8
+\ of its own name).
+
+CREATE VAR-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C,
+\ [0] vf [1] vs [2] @ [3] ! [4] VARSLOT [5] the slots' scale; 695: [6] 1 under the two-bit tag; [8] R> [9] @ with the
+\ EXIT folded in [10] the pair R> @ - [11] which of 8-10 this design has (1 2 4). Zeros: the fusion off.
+ALIGN
+VARIABLE VAR-AT ( --- a-addr )     \ where the last call to a data word began
+VARIABLE VAR-PFA ( --- a-addr )    \ its parameter field
+VARIABLE VAR-MARK ( --- a-addr )   \ LAST-OP's value while that call is the last thing laid
+
+: SLOT-OF ( a-addr --- u -1 | 0 )
+\ a's slot - its offset from the image, scaled - if the design's slot operand reaches it.
+  START @ - DUP 0< IF DROP 0 EXIT THEN
+  VAR-OPS 5 + C@ ?DUP IF  2DUP 1 SWAP LSHIFT 1- AND IF 2DROP 0 EXIT THEN  RSHIFT  THEN
+  DUP VAR-OPS 4 + C@ IF 8388608 ELSE 65536 THEN < IF -1 EXIT THEN DROP 0 ;
+
+: SLOT, ( u --- )
+\ tools/sod16.py's emit_slot.
+  VAR-OPS 4 + C@ 0= IF DUP 255 AND C, 8 RSHIFT 255 AND C, EXIT THEN
+  DUP 32768 < IF DUP 8 RSHIFT C, 255 AND C, EXIT THEN
+  DUP 16 RSHIFT 128 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C, ;
+
+: VAR-FUSE ( xt --- xt 0 | -1 )
+\ xt, a primitive, is @ or ! straight after a call to a data word: vf or vs and the slot in the call's place.
+  LAST-OP @ VAR-MARK = 0= IF 0 EXIT THEN
+  DUP C@ VAR-OPS 2 + C@ = IF VAR-OPS C@ ELSE
+    DUP C@ VAR-OPS 3 + C@ = IF VAR-OPS 1+ C@ ELSE 0 EXIT THEN THEN
+  VAR-PFA @ SLOT-OF 0= IF DROP 0 EXIT THEN
+  ROT DROP  VAR-AT @ HERE - ALLOT  SWAP OP, SLOT,  0 LAST-OP ! -1 ;
+
+: DOES-TAIL ( xt --- a-addr | 0 )
+\ Where a DOES> child's tail begins (695): the call (;CODE) stored after its DODOES - the byte header's far form, 22 bits
+\ of cells; the tag's, 30 bits of bytes (the engine's DODOES). The near form (doesfar 0, retired) 0.
+  1+ DUP C@ DUP 64 AND 0= IF 2DROP 0 EXIT THEN
+  VAR-OPS 6 + C@ IF
+    63 AND 24 LSHIFT OVER 1+ C@ 16 LSHIFT OR OVER 2 + C@ 8 LSHIFT OR SWAP 3 + C@ OR
+  ELSE
+    63 AND 16 LSHIFT OVER 1+ C@ 8 LSHIFT OR SWAP 2 + C@ OR CELLS
+  THEN START @ + ;
+
+: TAIL-@? ( a-addr --- flag )
+\ True if the tail at a-addr is R> @ and EXIT: three bytes, or two with the EXIT folded into @, or the pair and EXIT.
+  DUP C@ VAR-OPS 8 + C@ = VAR-OPS 11 + C@ 1 AND AND IF
+    1+ DUP C@ VAR-OPS 2 + C@ = IF 1+ C@ EXIT-OP = EXIT THEN
+    C@ VAR-OPS 9 + C@ = VAR-OPS 11 + C@ 2 AND AND EXIT
+  THEN
+  DUP C@ VAR-OPS 10 + C@ = VAR-OPS 11 + C@ 4 AND AND IF 1+ C@ EXIT-OP = EXIT THEN
+  DROP 0 ;
+
+: DOES-@ ( xt --- xt 0 | -1 )
+\ Iteration 695 (relf's VAR@ takes DOES> @ too): a call to a DOES> child whose tail is R> @ - a VALUE, a buffer - laid
+\ as vf of its parameter field. TO and >BODY ! store there; vf reads it at each use.
+  VAR-OPS 11 + C@ 0= IF 0 EXIT THEN
+  DUP DOES-TAIL ?DUP 0= IF 0 EXIT THEN
+  TAIL-@? 0= IF 0 EXIT THEN
+  DUP >BODY SLOT-OF 0= IF 0 EXIT THEN
+  SWAP DROP VAR-OPS C@ OP, SLOT, 0 LAST-OP ! -1 ;
+
+: COMPILE,8 ( xt --- )
+\ The COMPILE,8 before this one, with a data word's @ and ! fused, and a call to a data word remembered.
+  VAR-OPS C@ 0= IF COMPILE,8 EXIT THEN
+  DUP PRIMITIVE? IF VAR-FUSE IF EXIT THEN COMPILE,8 EXIT THEN
+  DUP C@ DODOES-OP = IF DOES-@ IF EXIT THEN COMPILE,8 EXIT THEN
+  DUP C@ DOVAR-OP = IF
+    HERE SWAP DUP >BODY VAR-PFA ! COMPILE,8 VAR-AT ! VAR-MARK LAST-OP ! EXIT
+  THEN COMPILE,8 ;

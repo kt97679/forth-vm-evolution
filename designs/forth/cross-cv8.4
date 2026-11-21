@@ -474,6 +474,7 @@ CREATE TGTS2 #OPS-MAX 1+ ALLOT
     DUP 1 TARGET-CELL-BYTES @ 3 LSHIFT 1 - LSHIFT AND IF -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT OR THEN
   THEN ;
 : LIT+ ( n --- ) T-NORM O-LIT SWAP 0 0 OP+ ;
+: ALIT+ ( t-addr --- ) T-NORM O-LIT SWAP 1 0 OP+ ;    \ 715: an address (['] ) - b 1: never factored, it moves
 : BR+ ( target long short --- ) >R >R O-BR SWAP R> R> OP+ ;
 : STR+ ( c-addr u --- )
   DUP SPOOL# @ + 8192 > ABORT" cross: a definition's strings too long"
@@ -626,7 +627,7 @@ VARIABLE FWD-LIST 0 FWD-LIST !
     I 1+ TGT? 0= I 1+ OP-K O-P = AND IF
       I OP-K O-DC = 4 SPEC? AND IF
         I 1+ OP-A DUP 2 SPECIAL = SWAP 3 SPECIAL = OR IF
-          O-SLOT I 1+ OP-A 2 SPECIAL = IF 99 ELSE 100 THEN I OP-B 0 I OP! I 1+ KILL
+          O-SLOT I 1+ OP-A 2 SPECIAL = IF 99 ELSE 100 THEN I OP-B I OP-C I OP! I 1+ KILL   \ c: its shadow (715)
         THEN
       THEN
       I OP-K O-LIT = 2 SPEC? AND IF
@@ -688,6 +689,13 @@ CREATE PAIRS 64 3 * CELLS ALLOT  VARIABLE #PAIRS 0 #PAIRS !  VARIABLE PAIRS-OPEN
 : NOT-YET? ( --- )
   G-NOT-YET DUP IF S" cross: not yet: " TYPE TYPE CR -1 ABORT" cross: the design needs what this compiler does not do yet" THEN 2DROP ;
 NOT-YET?
+
+\ Iteration 714: the gene abortif (the translator's --guard-abort,
+\ sod16.py's guard_aborts) - the genes' G-GUARD-ABORT, 0 for genes written
+\ before it (designs/*/genes.4 of the ten shipped designs).
+CREATE GA-NAME 13 C, 71 C, 45 C, 71 C, 85 C, 65 C, 82 C, 68 C, 45 C, 65 C, 66 C, 79 C, 82 C, 84 C,
+: GA-GENE ( --- f ) GA-NAME FIND IF EXECUTE ELSE DROP 0 THEN ;
+GA-GENE CONSTANT GUARD-ABORT?
 
 : TEST-PASS ( --- )
 \ A test, then a ?BRANCH nothing lands on: the fused branch, where the
@@ -778,7 +786,7 @@ S" DUP<I" OPS10-OF CONSTANT X-DLTI
 \ form (layout.py's pad_before), else as near as it reaches.
   G-TAG2 IF DROP 4 ELSE OP-A FWD-SITE-SIZE THEN ;
 : S-OPDC ( addr i --- n ) OPDC-CALL DUP >R PADDED R> + TARGET-CELL-BYTES @ + ;
-: S-STR ( addr i --- n ) OP-B 1+ OVER + ALIGNED-T SWAP - ;
+: S-STR ( addr i --- n ) OP-B 1+ SWAP DROP ;    \ 681: the count and the characters, unpadded (cv8.4's (S")8)
 
 : E-DEAD ( i --- ) DROP ;
 : E-P ( i --- ) OP-A OP,-T ;
@@ -808,7 +816,7 @@ S" DUP<I" OPS10-OF CONSTANT X-DLTI
   R@ OP-K O-LOOPC = IF R@ OP-B ADDR THERE - ,-T R> DROP EXIT THEN
   R@ OP-C DUP PENDING? IF 14 CELLS + DUP @ SWAP THERE SWAP ! ,-T ELSE @ THERE - ,-T THEN R> DROP ;
 : E-STR ( i --- )
-  DUP OP-B DUP C,-T SWAP OP-A THERE CHARS IMAGE + ROT DUP ALLOT-T CMOVE ALIGN-T ;
+  DUP OP-B DUP C,-T SWAP OP-A THERE CHARS IMAGE + ROT DUP ALLOT-T CMOVE ;    \ 681: no ALIGN-T after it
 
 \ A buffer word's LIT32 (the translator's LITOFF), patched at the end.
 14 CONSTANT O-LIT32
@@ -834,6 +842,26 @@ CREATE ENCODERS 16 CELLS ALLOT
 ' S-LITX ' E-LITX O-LITX KIND!
 ' S-RB ' E-RB O-RB KIND!
 ' S-5 ' E-LIT32 O-LIT32 KIND!
+\ 715: the gene factor's genes (export-genes.py; 0 in genes written before
+\ it) and its call: O-FB, a call to a factored body - chained, the bodies
+\ laid after the last word (the factor section, below END-DEF's).
+CREATE GBUF 34 ALLOT
+: GENE ( c-addr u --- xt | 0 ) GBUF PLACE GBUF FIND 0= IF DROP 0 THEN ;
+: GENE-N ( c-addr u --- x ) GENE DUP IF EXECUTE THEN ;
+S" G-FACTOR" GENE-N G-TAG2 AND CONSTANT FACTOR?
+S" G-FACTOR-ANY" GENE-N CONSTANT FAC-ANY
+S" G-FACTOR-COLD" GENE CONSTANT FAC-COLD-XT
+S" G-FACTOR-NOT" GENE CONSTANT FAC-NOT-XT
+: FAC-LIST ( xt|0 --- c-addr u ) ?DUP IF EXECUTE ELSE 0 0 THEN ;
+: FAC-CHECK ( --- ) FACTOR? G-HOTCALLS AND ABORT" cross: factor with one-byte calls not done (the tag has none)" ;
+FAC-CHECK
+256 CONSTANT #FB-MAX
+CREATE FB-CHAIN #FB-MAX CELLS FACTOR? AND ALLOT     \ a body's chain of calls
+CREATE FB-SNAP #FB-MAX FACTOR? AND ALLOT            \ its operations kept, this pass
+15 CONSTANT O-FB
+: S-FB ( addr i --- n ) 2DROP 0 CHAIN-SIZE ;
+: E-FB ( i --- ) OP-A CELLS FB-CHAIN + CHAIN,-T ;
+' S-FB ' E-FB O-FB KIND!
 : OP-SIZE ( addr i --- n ) DUP OP-K CELLS SIZERS + @ EXECUTE ;
 : OP-ENCODE ( i --- ) DUP OP-K CELLS ENCODERS + @ EXECUTE ;
 
@@ -1030,13 +1058,316 @@ CREATE RAW-TMP 256 4 * CELLS ALLOT  VARIABLE #RAW-TMP
 : JIT-HEADER, ( len --- ) 65533 OP,-T 1 31 LSHIFT OR 32,-T ;
 : JH-OPB ( len --- ) JH-NAMED? TLINK @ 0= 0= AND IF JIT-HEADER, ELSE DROP THEN ;
 
+\ ---- the gene factor (the translator's --factor: tools/layout.py,
+\ Iteration 267; here 715). Repeated straight-line code in cold words
+\ moved into headerless bodies [run][EXIT] after the last word, each use
+\ a call. Pass 2 keeps the operations of every word it may factor - by
+\ its final name in G-FACTOR-COLD (the reference profile's words below
+\ --factor-share), or any with G-FACTOR-ANY, never G-FACTOR-NOT's - and
+\ whether each word may be called from anywhere (sod16.py's ra_safe).
+\ Between passes 2 and 3 the runs are found and chosen as layout.py does:
+\ two to 16 operations of a stretch nothing lands on but its first, none
+\ depending on where it sits (a branch, an inline cell, a string, an
+\ address, an EXIT) or on the return stack below it (I, J, EXECUTE, the
+\ loop words; a call to a word that reads its caller's return address;
+\ >R and R> unbalanced), recurring, taken greedily by net bytes
+\ k(len-2)-(len+1), a use never overlapping another. Pass 3 makes each
+\ use a call (O-FB), checking it is what pass 2 kept, and lays the bodies
+\ - the first use's operations as pass 3 has them - after the last word.
+\ An operation is compared by what both passes see: a call by its word's
+\ ordinal, a FORWARD's or rebound name's as the word it reached.
+VARIABLE LAST-SHADOW 0 LAST-SHADOW !    \ the shadow made last (PART 4; here for the factor's use, 715)
+VARIABLE FAC-ON  FACTOR? FAC-ON !
+12288 CONSTANT #FE-MAX
+10 CONSTANT FE-CELLS
+\ An operation kept: [id-k][id-a][id-b][bytes][ordinal][index][landed][key-k][key-a][safe].
+CREATE FE #FE-MAX FE-CELLS * CELLS FACTOR? AND ALLOT  VARIABLE #FE 0 #FE !
+: FE# ( e --- a-addr ) FE-CELLS * CELLS FE + ;
+: FE@ ( e n --- x ) CELLS SWAP FE# + @ ;
+: FE! ( x e n --- ) CELLS SWAP FE# + ! ;
+VARIABLE #FKEPT 0 #FKEPT !
+
+: OP-ID ( i --- k a b )
+\ An operation as two passes both see it: a call or a slot by its word's
+\ ordinal (its address moves).
+  DUP OP-K DUP O-C = OVER O-DC = OR IF SWAP OP-C ORD 0 EXIT THEN
+  DUP O-SLOT = IF SWAP DUP OP-A SWAP OP-C ORD EXIT THEN
+  SWAP DUP OP-A SWAP OP-B ;
+
+\ The return stack below a body's entry (sod16.py's rs_walk), by opcode.
+: RS-NAMES ( --- c-addr u ) S" >R 2>R R> RDROP 2R> R@ 2R@ RP@ RP! " ;
+CREATE RS-NEED 0 , 0 , 1 , 1 , 2 , 1 , 2 , 99 , 99 ,
+CREATE RS-DELTA 1 , 2 , -1 , -1 , -2 , 0 , 0 , 0 , 0 ,
+CREATE RS-OPS 9 CELLS ALLOT
+: RS-FILL ( --- ) 9 0 ?DO I RS-NAMES LIST-TOKEN NAME-OP I CELLS RS-OPS + ! LOOP ;
+VARIABLE RS-D
+: RS-STEP ( op --- f )
+\ False where it reads below the entry, leaves by an EXIT off it, or
+\ moves the stack pointer.
+  DUP 1 = IF DROP RS-D @ 0= EXIT THEN
+  9 0 ?DO
+    DUP I CELLS RS-OPS + @ = IF
+      DROP I CELLS RS-NEED + @ DUP 99 = IF DROP UNLOOP 0 EXIT THEN
+      RS-D @ > IF UNLOOP 0 EXIT THEN
+      I CELLS RS-DELTA + @ RS-D +! UNLOOP -1 EXIT
+    THEN
+  LOOP DROP -1 ;
+: PAIR-OF ( op --- op1 op2 -1 | 0 )
+  #PAIRS @ 0 ?DO
+    DUP I 3 * CELLS PAIRS + 2 CELLS + @ = IF DROP I 3 * CELLS PAIRS + DUP @ SWAP CELL+ @ -1 UNLOOP EXIT THEN
+  LOOP DROP 0 ;
+: RS-OP ( op --- f ) DUP PAIR-OF IF ROT DROP SWAP RS-STEP IF RS-STEP ELSE DROP 0 THEN ELSE RS-STEP THEN ;
+CREATE RSOK #ORD-MAX FACTOR? AND ALLOT             \ ordinal -> 1: it may be called from anywhere
+: RS-KEEP ( --- )
+\ Pass 2, before the rewrites (layout.py's raw_read): the definition's
+\ own walk, not strict - for its word, and the X its last X8 replaces.
+  RS-FILL 0 RS-D ! -1
+  #OPS @ 0 ?DO I OP-K O-P = IF I OP-A RS-OP 0= IF DROP 0 LEAVE THEN THEN LOOP
+  IF 1 ELSE 0 THEN DUP LAST-SHADOW @ ORD RSOK + C!
+  HS-FINAL @ IF LAST-SHADOW @ 9 CELLS + @ ?DUP IF ORD RSOK + C! EXIT THEN THEN DROP ;   \ 9 CELLS +: >REDIR
+
+CREATE LTG #OPS-MAX 1+ ALLOT
+: LANDED ( --- )
+\ What something lands on: the marks, a branch's target, a loop's start.
+  TGTS LTG #OPS-MAX 1+ CMOVE
+  #OPS @ 0 ?DO
+    I OP-K O-BR = IF I OP-A DUP 0< 0= IF LTG + 1 SWAP C! ELSE DROP THEN THEN
+    I OP-K O-LOOPC = IF 1 I OP-B LTG + C! THEN
+  LOOP ;
+: FAC-WORD? ( --- f )
+  HS-FNAME COUNT FAC-NOT-XT FAC-LIST LIST-INDEX 0< 0= IF 0 EXIT THEN
+  FAC-ANY IF -1 EXIT THEN
+  HS-FNAME COUNT FAC-COLD-XT FAC-LIST LIST-INDEX 0< 0= ;
+: FAC-KEEP ( --- )
+\ Pass 2, after the rewrites: the word's operations.
+  HS-FINAL @ 0= IF EXIT THEN
+  FAC-WORD? 0= IF 1 #FKEPT +! EXIT THEN
+  #FE @ #OPS @ + #FE-MAX > ABORT" cross: too many operations to factor"
+  LANDED
+  #OPS @ 0 ?DO
+    I OP-ID #FE @ 2 FE! #FE @ 1 FE! #FE @ 0 FE!
+    0 I OP-SIZE #FE @ 3 FE!  LAST-SHADOW @ ORD #FE @ 4 FE!  I #FE @ 5 FE!  I LTG + C@ #FE @ 6 FE!
+    1 #FE +!
+  LOOP ;
+
+\ The search, between passes 2 and 3.
+: RA-NAMES ( --- c-addr u ) S" EXECUTE I J UNLOOP (DO) (?DO) (LOOP) (+LOOP) (LEAVE) " ;
+CREATE NOP-OPS 1024 FACTOR? AND ALLOT               \ opcode -> 1: never in a run
+: NOP! ( op --- ) DUP 0< 0= OVER 1024 < AND IF NOP-OPS + 1 SWAP C! ELSE DROP THEN ;
+: NOP? ( op --- f ) DUP 0< OVER 1023 > OR IF DROP -1 ELSE NOP-OPS + C@ 0= 0= THEN ;
+: NOP-FILL ( --- )
+\ EXIT, the words that read the return stack, every form with an EXIT
+\ in it (the folds), a pair holding one.
+  NOP-OPS 1024 0 FILL  1 NOP!
+  RA-NAMES LIST-COUNT 0 ?DO I RA-NAMES LIST-TOKEN NAME-OP NOP! LOOP
+  128 0 ?DO I FOLDMAP + C@ ?DUP IF NOP! THEN LOOP
+  #PAIRS @ 0 ?DO
+    I 3 * CELLS PAIRS + DUP @ NOP? SWAP CELL+ @ NOP? OR IF I 3 * CELLS PAIRS + 2 CELLS + @ NOP! THEN
+  LOOP ;
+: CALLEE-SAFE? ( shadow --- f )
+  DUP CELL+ @ DUP K-DATA = SWAP K-CONST = OR IF DROP -1 EXIT THEN
+  DUP CELL+ @ K-COLON = 0= IF DROP 0 EXIT THEN
+  DUP SH-NAME RA-NAMES LIST-INDEX 0< 0= IF DROP 0 EXIT THEN
+  ORD RSOK + C@ 0= 0= ;
+: FE-SAFE ( e --- f )
+  DUP 0 FE@
+  DUP O-P = IF DROP 1 FE@ NOP? 0= EXIT THEN
+  DUP O-LIT = IF DROP 2 FE@ 0= EXIT THEN
+  DUP O-SLOT = OVER O-DC = OR IF 2DROP -1 EXIT THEN
+  DUP O-IMM = IF DROP 1 FE@ DUP 121 <> SWAP 123 <> AND EXIT THEN
+  DUP O-C = IF DROP 1 FE@ HS-SH CALLEE-SAFE? EXIT THEN
+  DUP O-F = IF DROP 1 FE@ FWD-SHADOW ?DUP IF CALLEE-SAFE? ELSE 0 THEN EXIT THEN
+  DUP O-RB = IF DROP 1 FE@ RB-SHADOW CALLEE-SAFE? EXIT THEN
+  2DROP 0 ;
+: FE-KEY ( e --- )
+  >R R@ 0 FE@ R@ 1 FE@
+  OVER O-F = IF 2DROP O-C R@ 1 FE@ FWD-SHADOW ?DUP IF ORD ELSE -1 THEN THEN
+  OVER O-RB = IF 2DROP O-C R@ 1 FE@ RB-SHADOW ORD THEN
+  R@ 8 FE! R> 7 FE! ;
+CREATE FE-END #FE-MAX CELLS FACTOR? AND ALLOT       \ an operation's stretch's end, or 0
+: FE-SEGS ( --- )
+\ In each word the stretches of safe operations nothing lands on but the
+\ first (layout.py's _segs).
+  #FE @ 0 ?DO 0 I CELLS FE-END + ! LOOP
+  0 BEGIN DUP #FE @ < WHILE                        ( j )
+    DUP 9 FE@ 0= IF 1+ ELSE
+      DUP 1+ BEGIN                                 ( i j )
+        DUP #FE @ < IF DUP 9 FE@ OVER 6 FE@ 0= AND OVER 4 FE@ 3 PICK 4 FE@ = AND ELSE 0 THEN
+      WHILE 1+ REPEAT
+      2DUP SWAP - 2 < 0= IF 2DUP SWAP ?DO DUP I CELLS FE-END + ! LOOP THEN SWAP DROP
+    THEN
+  REPEAT DROP ;
+: REM ( e --- n ) DUP CELLS FE-END + @ SWAP - 16 MIN 0 MAX ;
+: CMP ( x1 x2 --- n ) 2DUP < IF 2DROP -1 EXIT THEN > IF 1 ELSE 0 THEN ;
+: KEY-CMP ( e1 e2 --- n )
+  2DUP 7 FE@ SWAP 7 FE@ SWAP CMP ?DUP IF >R 2DROP R> EXIT THEN
+  2DUP 8 FE@ SWAP 8 FE@ SWAP CMP ?DUP IF >R 2DROP R> EXIT THEN
+  2 FE@ SWAP 2 FE@ SWAP CMP ;
+VARIABLE SA  VARIABLE SB
+: SEQ-CMP ( p q --- n )
+\ Two positions' runs, operation by operation; then the shorter, then the earlier, first.
+  SB ! SA !
+  SA @ REM SB @ REM MIN 0 ?DO SA @ I + SB @ I + KEY-CMP ?DUP IF UNLOOP EXIT THEN LOOP
+  SA @ REM SB @ REM CMP ?DUP IF EXIT THEN
+  SA @ SB @ CMP ;
+: LCP ( p q --- n )
+  SB ! SA ! SA @ REM SB @ REM MIN 0 ?DO SA @ I + SB @ I + KEY-CMP IF I UNLOOP EXIT THEN LOOP
+  SA @ REM SB @ REM MIN ;
+CREATE FPOS #FE-MAX CELLS FACTOR? AND ALLOT  VARIABLE #FPOS
+CREATE FTMP #FE-MAX CELLS FACTOR? AND ALLOT
+CREATE FLCP #FE-MAX CELLS FACTOR? AND ALLOT
+VARIABLE MS-W VARIABLE MS-LO VARIABLE MS-MID VARIABLE MS-HI VARIABLE MS-I VARIABLE MS-J VARIABLE MS-K
+: P@ ( i --- p ) CELLS FPOS + @ ;
+: MS-MERGE ( --- )
+  MS-LO @ MS-I ! MS-MID @ MS-J ! MS-LO @ MS-K !
+  BEGIN MS-K @ MS-HI @ < WHILE
+    MS-I @ MS-MID @ < IF MS-J @ MS-HI @ < IF MS-I @ P@ MS-J @ P@ SEQ-CMP 0 > 0= ELSE -1 THEN ELSE 0 THEN
+    IF MS-I @ P@ 1 MS-I +! ELSE MS-J @ P@ 1 MS-J +! THEN
+    MS-K @ CELLS FTMP + !  1 MS-K +!
+  REPEAT ;
+: FAC-SORT ( --- )
+\ Every position with room for a run, by its run (a bottom-up merge sort).
+  1 MS-W !
+  BEGIN MS-W @ #FPOS @ < WHILE
+    0 BEGIN DUP #FPOS @ < WHILE
+      DUP MS-LO !  DUP MS-W @ + #FPOS @ MIN MS-MID !  DUP MS-W @ 2* + #FPOS @ MIN MS-HI !
+      MS-MERGE  MS-W @ 2* +
+    REPEAT DROP
+    FTMP FPOS #FPOS @ CELLS CMOVE  MS-W @ 2* MS-W !
+  REPEAT ;
+2048 CONSTANT #FC-MAX
+CREATE FC #FC-MAX 4 * CELLS FACTOR? AND ALLOT  VARIABLE #FC  VARIABLE #FRUNS   \ [length][first in FPOS][members][bytes]
+: FC# ( c --- a-addr ) 4 * CELLS FC + ;
+: RUN-BYTES ( p n --- bytes ) 0 SWAP 0 ?DO OVER I + 3 FE@ + LOOP SWAP DROP ;
+: RUN-RS? ( p n --- f )
+\ Balanced, never below its own entry (rs_walk, strict).
+  0 RS-D ! 0 ?DO DUP I + DUP 0 FE@ O-P = IF 1 FE@ RS-OP 0= IF DROP UNLOOP 0 EXIT THEN ELSE DROP THEN LOOP
+  DROP RS-D @ 0= ;
+: WORTH ( k bytes --- v ) DUP 2 - ROT * SWAP 1+ - ;
+VARIABLE CL VARIABLE CS VARIABLE CN
+: FC+ ( L s n --- )
+\ A run of L operations, at FPOS s and the n-1 after it.
+  CN ! CS ! CL !
+  CS @ P@ CL @ 2DUP RUN-BYTES >R RUN-RS? R> SWAP OVER 2 > AND 0= IF DROP EXIT THEN
+  1 #FRUNS +!
+  CN @ OVER WORTH 0 > 0= IF DROP EXIT THEN
+  #FC @ #FC-MAX < 0= ABORT" cross: too many runs to factor"
+  #FC @ FC# >R CL @ R@ ! CS @ R@ CELL+ ! CN @ R@ 2 CELLS + ! R> 3 CELLS + ! 1 #FC +! ;
+: FAC-RUNS ( --- )
+\ Each run that recurs: at each length, the positions next in the order
+\ sharing that many operations.
+  0 #FC ! 0 #FRUNS !  #FPOS @ 2 < IF EXIT THEN
+  #FPOS @ 1 ?DO I 1- P@ I P@ LCP I CELLS FLCP + ! LOOP
+  17 2 ?DO
+    0 #FPOS @ 1+ 1 ?DO
+      I #FPOS @ < IF I CELLS FLCP + @ J < ELSE -1 THEN
+      IF I OVER - 2 < 0= IF J OVER I OVER - FC+ THEN DROP I THEN
+    LOOP DROP
+  LOOP ;
+CREATE TAKEN #FE-MAX FACTOR? AND ALLOT
+CREATE MSORT 512 CELLS FACTOR? AND ALLOT
+CREATE MEMB 512 CELLS FACTOR? AND ALLOT
+VARIABLE FL  VARIABLE FLAST
+: M@ ( j --- x ) CELLS MSORT + @ ;
+: MSWAP ( j --- ) DUP M@ OVER 1- M@ ROT DUP >R CELLS MSORT + ! R> 1- CELLS MSORT + ! ;
+: TAKEN? ( p --- f ) FL @ 0 ?DO DUP I + TAKEN + C@ IF DROP UNLOOP -1 EXIT THEN LOOP DROP 0 ;
+: FREE-OF ( c --- k )
+\ A candidate's positions free now, in order (layout.py's _free), in MEMB.
+  FC# DUP @ FL !  DUP 2 CELLS + @ 512 MIN >R CELL+ @ CELLS FPOS + MSORT R@ CELLS CMOVE
+  R@ 1 ?DO I BEGIN DUP 0 > IF DUP 1- M@ OVER M@ > ELSE 0 THEN WHILE DUP MSWAP 1- REPEAT DROP LOOP
+  0 FLAST ! 0
+  R> 0 ?DO
+    I M@ DUP FLAST @ < OVER TAKEN? OR IF DROP ELSE DUP FL @ + FLAST ! OVER CELLS MEMB + ! 1+ THEN
+  LOOP ;
+CREATE FB-RUN #FB-MAX 2 * CELLS FACTOR? AND ALLOT  VARIABLE #FB 0 #FB !   \ a body: [first operation][length]
+1024 CONSTANT #FU-MAX
+CREATE FU #FU-MAX 4 * CELLS FACTOR? AND ALLOT  VARIABLE #FU 0 #FU !      \ a use: [ordinal][index][body][first operation]
+VARIABLE BEST VARIABLE BESTV
+: FAC-CHOOSE ( --- )
+\ The best run by net bytes, over and over, until none pays (layout.py's
+\ greedy pick; the first of equals here).
+  TAKEN #FE @ 0 FILL  0 #FB ! 0 #FU !
+  BEGIN
+    -1 BEST ! 0 BESTV !
+    #FC @ 0 ?DO I FREE-OF I FC# 3 CELLS + @ WORTH DUP BESTV @ > IF BESTV ! I BEST ! ELSE DROP THEN LOOP
+  BEST @ 0< 0= WHILE
+    BEST @ FREE-OF
+    #FB @ #FB-MAX < 0= ABORT" cross: too many factored bodies"
+    #FU @ OVER + #FU-MAX > ABORT" cross: too many factored uses"
+    MEMB @ #FB @ 2* CELLS FB-RUN + !  FL @ #FB @ 2* 1+ CELLS FB-RUN + !
+    0 ?DO
+      I CELLS MEMB + @  FL @ 0 ?DO 1 OVER I + TAKEN + C! LOOP
+      #FU @ 4 * CELLS FU + >R
+      DUP 4 FE@ R@ !  DUP 5 FE@ R@ CELL+ !  #FB @ R@ 2 CELLS + !  R> 3 CELLS + !  1 #FU +!
+    LOOP
+    1 #FB +!
+  REPEAT ;
+: FAC-SEARCH ( --- )
+  FAC-ON @ 0= IF EXIT THEN
+  NOP-FILL RS-FILL
+  #FE @ 0 ?DO I FE-KEY I FE-SAFE I 9 FE! LOOP
+  FE-SEGS
+  0 #FPOS ! #FE @ 0 ?DO I REM 2 < 0= IF I #FPOS @ CELLS FPOS + ! 1 #FPOS +! THEN LOOP
+  FAC-SORT FAC-RUNS FAC-CHOOSE
+  S" cross-cv8: factor - " TYPE #FB @ . S" bodies, " TYPE #FU @ . S" uses; " TYPE
+  #FKEPT @ . S" words kept as hot, " TYPE #FRUNS @ . S" runs considered, " TYPE #FE @ . S" operations kept" TYPE CR ;
+
+\ Pass 3.
+CREATE FB-OPS #FB-MAX 64 * CELLS FACTOR? AND ALLOT   \ a body's operations, 16 at most, as this pass has them
+VARIABLE UI VARIABLE UP VARIABLE UB VARIABLE UN VARIABLE UK VARIABLE FU-SAVED
+: FU-SAME? ( j --- f )
+  DUP UP @ + UK !  UI @ + OP-ID
+  UK @ 2 FE@ = SWAP UK @ 1 FE@ = AND SWAP UK @ 0 FE@ = AND ;
+: FU-APPLY ( u --- )
+  4 * CELLS FU + DUP CELL+ @ UI !  DUP 2 CELLS + @ UB !  3 CELLS + @ UP !
+  UB @ 2* 1+ CELLS FB-RUN + @ UN !
+  UI @ UN @ + #OPS @ > ABORT" cross: a factored run past its word's end"
+  UN @ 0 ?DO
+    I FU-SAME? 0= ABORT" cross: a factored run changed between passes"
+    I IF UI @ I + LTG + C@ ABORT" cross: a factored run is landed on" THEN
+    UP @ I + 3 FE@ FU-SAVED +!
+  LOOP
+  UB @ FB-SNAP + C@ 0= IF
+    UI @ OP# UB @ 64 * CELLS FB-OPS + UN @ 4 * CELLS CMOVE  1 UB @ FB-SNAP + C!
+  THEN
+  UN @ 1 ?DO UI @ I + KILL LOOP
+  O-FB UB @ 0 0 UI @ OP!  0 CHAIN-SIZE NEGATE FU-SAVED +! ;
+: FAC-APPLY ( --- )
+\ Each use in this word a call to its body.
+  PASS @ 3 < #FU @ 0= OR IF EXIT THEN
+  LAST-SHADOW @ ORD LANDED
+  #FU @ 0 ?DO I 4 * CELLS FU + @ OVER = IF I FU-APPLY THEN LOOP DROP COMPACT ;
+VARIABLE FB-BYTES
+: LAY-BODIES ( --- )
+\ The bodies after the last word, [run][EXIT] (the EXIT folded, as
+\ layout.py's fold_exit does), each one's chain made calls to it.
+  FAC-ON @ 0= PASS @ 3 < OR IF EXIT THEN
+  THERE FB-BYTES !
+  #FB @ 0 ?DO
+    I FB-SNAP + C@ 0= ABORT" cross: a factored body never used"
+    THERE I CELLS FB-CHAIN + @ PATCH-CHAIN  CHAIN-END I CELLS FB-CHAIN + !
+    CODE-START
+    I 64 * CELLS FB-OPS + OPS  I 2* 1+ CELLS FB-RUN + @ DUP #OPS ! 4 * CELLS CMOVE
+    1 0 P+ FOLD-PASS COMPACT
+    COUNTING @ IF COUNT-SITES THEN
+    THERE RELAX ENCODE 0 #OPS !
+  LOOP
+  THERE FB-BYTES @ - FB-BYTES !
+  S" cross-cv8: factor - the words' code " TYPE FU-SAVED @ . S" bytes smaller, the bodies " TYPE FB-BYTES @ . CR ;
+: FAC-RESET ( --- )
+  FAC-ON @ 0= IF EXIT THEN
+  #FB-MAX 0 ?DO CHAIN-END I CELLS FB-CHAIN + ! LOOP  FB-SNAP #FB-MAX 0 FILL  0 FU-SAVED !
+  PASS @ 2 = IF 0 #FE ! 0 #FKEPT ! RSOK #ORD-MAX 0 FILL THEN ;
+
 : END-DEF ( --- )
 \ The definition's EXIT, the rewrites, the layout, the bytes - none for
 \ a dead word; a callee's body kept first, the JIT's header if it has one.
   1 0 P+
   DEAD-NOW @ IF 0 #OPS ! 0 HS-ON ! 0 HS-STORE ! 0 HS-FINAL ! EXIT THEN
   HS-STORE @ ?DUP IF RAW-KEEP THEN  0 HS-ON ! 0 HS-STORE !
+  FAC-ON @ PASS @ 2 = AND IF RS-KEEP THEN
   SPECIALISE COMPACT FOLD-PASS COMPACT PAIR-PASS COMPACT TEST-PASS COMPACT KEEP-PASS COMPACT
+  FAC-ON @ IF PASS @ 2 = IF FAC-KEEP THEN FAC-APPLY THEN
   COUNTING @ IF COUNT-SITES THEN
   JH-NAMED? IF JH-PLAIN? ELSE 0 THEN IF
     THERE 5 + DUP RELAX #OPS @ ADDR SWAP - JIT-HEADER,
@@ -1044,7 +1375,6 @@ CREATE RAW-TMP 256 4 * CELLS ALLOT  VARIABLE #RAW-TMP
   0 HS-FINAL !  ENCODE 0 #OPS ! ;
 
 \ ---- the shadows ----------------------------------------------------
-VARIABLE LAST-SHADOW 0 LAST-SHADOW !
 VARIABLE IN-KERNEL 0 IN-KERNEL !   \ on while kernel.4 is compiled: rebinding is the kernel's uses only
 : >REDIR ( shadow --- a-addr ) 9 CELLS + ;
 : REF-T ( shadow-body --- )
@@ -1122,6 +1452,8 @@ VARIABLE SH-KIND
 : I-, ,-T ;
 : I-C, C,-T ;
 : I-ALLOT ALLOT-T ;
+: I-FILL ( t-addr u c --- )   \ 714: cv8-fuse-inline.4 zeroes INL-OPS so
+  SWAP 0 ?DO OVER I + OVER SWAP C!-T LOOP 2DROP ;
 : I-ALIGN ALIGN-T ;
 : I-CELLS CELLS-T ;
 : I-CHARS ;
@@ -1459,21 +1791,43 @@ FORWARD (ABORT")
 FORWARD (POSTPONE)
 
 : DO ( --- j ) [ TRANSIENT ] (DO) [ FORTH ] #OPS @ DUP MARK ;
-: LOOP ( j --- )
+: LOOP-OP ( j --- )
 \ (LOOP) and the cell after it - or (LOOP)'s format-10 opcode with a
 \ branch's offset, where the design has it (ops10_rewrite's LOOPKIND).
   [ TRANSIENT ] ['] (LOOP) [ FORTH ] >BODY DUP FWD-SHADOW ?DUP IF
     DUP CELL+ @ K-COLON = OVER 2 CELLS + @ AND IF 2 CELLS + @ SWAP DROP 0 BR+ EXIT THEN DROP
   THEN FWD-REF >R O-LOOPC R> ROT 0 OP+ ;
+\ Iteration 714: ?DO, for cv8-fuse-inline.4 (the gene rtinline) - (?DO)'s
+\ format-10 opcode, a branch past the loop's end as the translator lays
+\ it (sod16.py's LOOPKIND: QDO); its LOOP resolves it (-2 marks a ?DO's).
+: ?DO ( --- j-skip j -2 )
+  S" (?DO)" OPS10-OF DUP 0= ABORT" cross: not yet: ?DO without (?DO)'s format-10 opcode"
+  0 >FWD-BR #OPS @ DUP MARK -2 ;
+: LOOP ( j --- | j-skip j -2 --- )
+  DUP -2 = IF DROP [ TRANSIENT ] LOOP-OP [ FORTH ] >RESOLVE EXIT THEN [ TRANSIENT ] LOOP-OP [ FORTH ] ;
 : ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE STR+ ;
-: ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ ;
+: ABORT" ( "ccc<quote>" --- )
+\ (ABORT") and its string. Under the gene abortif (GUARD-ABORT?) the
+\ translator's guard_aborts: ?BRANCH past the string and -1 before the
+\ call, so a false flag skips it - except after a literal -1, where the
+\ call always aborts. (Its other exception, a word with a DOES> tail
+\ inside, cannot arise: no target definition here has one.) A branch to
+\ the site lands on the guard, as there.
+  GUARD-ABORT? IF
+    #OPS @ DUP IF 1- DUP OP-K O-LIT = SWAP OP-A -1 = AND ELSE DROP 0 THEN
+    0= IF
+      4 QBR8-OP >FWD-BR -1 LIT+
+      [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ >RESOLVE EXIT
+    THEN
+  THEN
+  [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ ;
 : POSTPONE ( "name" --- )
   BL WORD COUNT T-SHADOW 0= ABORT" cross: POSTPONE of no target word"
   REDIRECTED DUP REF!
   DUP 5 CELLS + @ IF >R O-C R@ @ 0 R> OP+ EXIT THEN
   >R O-PPC [ TRANSIENT ] ['] (POSTPONE) [ FORTH ] >BODY FWD-REF R@ @ R> OP+ ;
 : ['] BL WORD COUNT T-SHADOW 0= ABORT" cross: ['] of no target word" REDIRECTED
-  DUP PENDING? ABORT" cross: ['] of a word not placed yet" DUP REF! @ LIT+ ;
+  DUP PENDING? ABORT" cross: ['] of a word not placed yet" DUP REF! @ ALIT+ ;
 
 : \ POSTPONE \ ; IMMEDIATE
 : ( POSTPONE ( ; IMMEDIATE
@@ -1637,6 +1991,157 @@ VARIABLE LT-AT
     OVER I + C!-T
   LOOP DROP ;
 
+\ Iteration 714 (self-hosting phase 6): cv8-fuse-var.4's VAR-OPS and
+\ cv8-fuse-inline.4's INL-OPS, byte for byte as tools/layout.py writes
+\ them - before, both stayed zeros here and the run-time fusions (the genes
+\ rtvar and rtinline) were off in every self-built image (697). An
+\ operation's names are sod16.py's t2_names: later kinds name over earlier
+\ ones - the primitives, the fixed operations, the specialisations, the
+\ folds (name;EXIT), the pairs ("A B"), the format-10 operations.
+: BYTE-OF ( op --- code -1 | 0 )
+\ The operation's one-byte code where it has one (layout.py's _byte); -1
+\ (no such operation) has none.
+  DUP 0< IF DROP 0 EXIT THEN
+  G-TAG2 IF
+    DUP 65533 = IF DROP T2JIT @ DUP 0< IF DROP 0 ELSE -1 THEN EXIT THEN
+    >L2 DUP 256 < IF T2ONE + C@ DUP IF 1- -1 ELSE DROP 0 THEN ELSE DROP 0 THEN EXIT
+  THEN
+  DUP 128 < IF -1 ELSE DROP 0 THEN ;
+: SPEC-OP ( c-addr u --- op | -1 )
+\ A specialisation's opcode by its t2_names name - named whenever the
+\ design has any (G-SPEC), as sod16.py names them.
+  G-SPEC 0= IF 2DROP -1 EXIT THEN
+  2DUP S" lit0 lit1 litm1 vf vs LSAVE LRESTORE L! LZERO " LIST-INDEX DUP 0< 0= IF SWAP DROP SWAP DROP 96 + EXIT THEN DROP
+  2DUP TINY-SET LIST-INDEX DUP 0< 0= IF SWAP DROP SWAP DROP TINY-BASE + EXIT THEN DROP
+  S" ADDI ADDIX EQI EQIX " LIST-INDEX DUP 0< 0= IF 120 + THEN ;
+: FIXED-OP ( c-addr u --- op | -1 )
+  S" LIT32 68 DOVAR 69 DODOES 70 LIT8 71 LIT8X 72 LIT64 124 " LIST-VALUE ;
+: LAST-OP ( c-addr u --- op | -1 )
+\ The last operation bearing the name, by t2_names' order (layout.py's
+\ _inv: VAR-OPS's DOES> @ tail).
+  2DUP OPS10-OF ?DUP IF SWAP DROP SWAP DROP EXIT THEN
+  2DUP SPEC-OP DUP 0< 0= IF SWAP DROP SWAP DROP EXIT THEN DROP
+  2DUP FIXED-OP DUP 0< 0= IF SWAP DROP SWAP DROP EXIT THEN DROP
+  PRIM-OP ;
+: CODE-OF ( c-addr u --- code -1 | 0 )
+\ The last code bearing the name among those with a byte (INL-OPS's _code).
+  2DUP OPS10-OF ?DUP IF BYTE-OF IF SWAP DROP SWAP DROP -1 EXIT THEN THEN
+  2DUP SPEC-OP BYTE-OF IF SWAP DROP SWAP DROP -1 EXIT THEN
+  2DUP FIXED-OP BYTE-OF IF SWAP DROP SWAP DROP -1 EXIT THEN
+  PRIM-OP BYTE-OF ;
+: FOLD-OP-OF ( c-addr u --- op | -1 )
+\ The fold-set primitive's folded opcode (name;EXIT), if it is in the set.
+  G-FOLDS LIST-INDEX DUP 0< IF EXIT THEN FOLD-BASE + ;
+: PAIR-OP-OF ( c-addr1 u1 c-addr2 u2 --- op | -1 )
+\ The fused pair "first second"'s opcode, if the design has it.
+  G-SUPERS LIST-COUNT 3 / 0 ?DO
+    2OVER I 3 * G-SUPERS LIST-TOKEN COMPARE 0= IF
+      2DUP I 3 * 1+ G-SUPERS LIST-TOKEN COMPARE 0= IF
+        2DROP 2DROP I 3 * 2 + G-SUPERS LIST-TOKEN TOKEN>N UNLOOP EXIT
+      THEN
+    THEN
+  LOOP 2DROP 2DROP -1 ;
+: VAR-OPS! ( --- )
+\ vf, vs, @ and ! (all four or none - the fusion off), VARSLOT, SCALE 0;
+\ the tag; DOES> @'s tail - R>, @;EXIT, the pair R> @, in one-byte codes -
+\ and which of the three the design has.
+  S" VAR-OPS" T-SHADOW 0= IF EXIT THEN @ >BODY-T >R
+  4 SPEC? G-VARSLOT AND IF
+    99 100 S" @" PRIM-OP S" !" PRIM-OP
+    G-TAG2 IF
+      >R >R >R T2C R> T2C R> T2C R> T2C
+      2OVER 2OVER * * * 0= IF 2DROP 2DROP 0 0 0 0 THEN
+    ELSE
+      DUP 255 > IF DROP 125 THEN >R DUP 255 > IF DROP 125 THEN R>
+    THEN
+  ELSE 0 0 0 0 THEN
+  R@ 3 + C!-T R@ 2 + C!-T R@ 1+ C!-T R@ C!-T
+  G-VARSLOT IF 1 ELSE 0 THEN R@ 4 + C!-T  0 R@ 5 + C!-T
+  G-TAG2 IF 1 ELSE 0 THEN R@ 6 + C!-T  0 R@ 7 + C!-T
+  0 R@ 11 + C!-T
+  4 SPEC? G-VARSLOT AND IF
+    S" R>" LAST-OP BYTE-OF IF R@ 8 + C!-T R@ 11 + DUP C@-T 1 OR SWAP C!-T THEN
+    S" @" FOLD-OP-OF BYTE-OF IF R@ 9 + C!-T R@ 11 + DUP C@-T 2 OR SWAP C!-T THEN
+    S" R>" S" @" PAIR-OP-OF BYTE-OF IF R@ 10 + C!-T R@ 11 + DUP C@-T 4 OR SWAP C!-T THEN
+  THEN
+  R> DROP ;
+
+\ INL-OPS: two bits a code, the length with its operand of what code
+\ compiled at run time may copy for a call - layout.py's whitelist of the
+\ operations that cannot tell where they sit; which codes are folds; the
+\ JIT's code and header; the folds and their plain forms.
+: INL-PURE ( --- c-addr u )
+  S" NOOP DROP DUP SWAP ROT OVER C@ @ C! ! AND OR XOR = U< < + NEGATE LSHIFT RSHIFT UM* UM/MOD D+ SP@ 0= - <> 0< > 2DUP 2DROP CHAR+ 1+ CELL+ CELLS 1- INVERT COUNT ALIGNED lit0 lit1 litm1 +! ?DUP 2@ 2! FILL CMOVE " ;
+: INL-OPND ( --- c-addr u ) S" LIT8 2 LIT 3 ADDI 2 EQI 2 SWAP+I 2 DUP+I 2 DUP<I 2 " ;
+: PURE? ( c-addr u --- f ) INL-PURE LIST-INDEX 0< 0= ;
+: ILEN ( c-addr u --- n )
+  2DUP PURE? IF 2DROP 1 EXIT THEN INL-OPND LIST-VALUE 0 MAX ;
+CREATE INL-BITS 256 ALLOT  VARIABLE IA
+: BIT! ( n op --- ) BYTE-OF IF INL-BITS + C! ELSE DROP THEN ;
+CREATE NBUF 32 ALLOT                              \ a fold's name: name;EXIT
+: FOLD-NAME ( c-addr u --- c-addr' u' )
+  DUP >R NBUF SWAP CMOVE S" ;EXIT" NBUF R@ + SWAP CMOVE NBUF R> 5 + ;
+CREATE FP 26 20 * ALLOT  VARIABLE #FP          \ the folds: [name 16][u][fold code][plain code]
+: FP# ( i --- addr ) 20 * FP + ;
+: FP+ ( c-addr u fold-code plain-code --- )
+  #FP @ FP# >R R@ 19 + C! R@ 18 + C! DUP R@ 16 + C! R> SWAP CMOVE 1 #FP +! ;
+: FP-NAME ( i --- c-addr u ) FP# DUP 16 + C@ ;
+CREATE FP-T 20 ALLOT
+: FP-SORT ( --- )
+\ By the fold's name, as Python's sorted() orders strings.
+  #FP @ 2 < IF EXIT THEN
+  #FP @ 1 DO
+    I BEGIN DUP 0> WHILE
+      DUP 1- FP-NAME 2 PICK FP-NAME COMPARE 0> 0= IF DROP 0 ELSE
+        DUP FP# FP-T 20 CMOVE DUP 1- FP# OVER FP# 20 CMOVE FP-T OVER 1- FP# 20 CMOVE 1-
+      THEN
+    REPEAT DROP
+  LOOP ;
+: FOLD-CAND ( c-fold u-fold c-plain u-plain fold-op --- )
+\ A fold and its plain form: kept if both have a code and the plain form
+\ a length.
+  BYTE-OF 0= IF 2DROP 2DROP EXIT THEN >R
+  2DUP ILEN 0= IF 2DROP 2DROP R> DROP EXIT THEN
+  CODE-OF 0= IF 2DROP R> DROP EXIT THEN          ( c-fold u-fold plain-code )
+  OVER 16 > ABORT" cross: INL-OPS: a fold's name too long"
+  R> SWAP FP+ ;
+: INL-BITS! ( --- )
+  INL-BITS 256 0 FILL
+  INL-PURE LIST-COUNT 0 ?DO I INL-PURE LIST-TOKEN 2DUP ILEN ROT ROT PRIM-OP BIT! LOOP
+  INL-OPND LIST-COUNT 2 / 0 ?DO I 2 * INL-OPND LIST-TOKEN 2DUP ILEN ROT ROT PRIM-OP BIT! LOOP
+  0 68 BIT!  0 69 BIT!  0 70 BIT!  2 71 BIT!  0 72 BIT!  0 124 BIT!
+  G-SPEC IF
+    1 96 BIT! 1 97 BIT! 1 98 BIT!  105 99 DO 0 I BIT! LOOP
+    TINY-SET LIST-COUNT 0 ?DO I TINY-SET LIST-TOKEN ILEN I TINY-BASE + BIT! LOOP
+    2 120 BIT! 0 121 BIT! 2 122 BIT! 0 123 BIT!
+  THEN
+  G-FOLDS LIST-COUNT 0 ?DO 0 I FOLD-BASE + BIT! LOOP
+  G-SUPERS LIST-COUNT 3 / 0 ?DO
+    I 3 * G-SUPERS LIST-TOKEN PURE? I 3 * 1+ G-SUPERS LIST-TOKEN PURE? AND 1 AND
+    I 3 * 2 + G-SUPERS LIST-TOKEN TOKEN>N BIT!
+  LOOP
+  G-OPS10 LIST-COUNT 2 / 0 ?DO
+    I 2 * G-OPS10 LIST-TOKEN ILEN I 2 * 1+ G-OPS10 LIST-TOKEN TOKEN>N BIT!
+  LOOP
+  G-TAG2 G-JIT AND IF 0 65533 BIT! THEN ;
+: INL-OPS! ( --- )
+\ (The table's address in a variable: R@ inside DO ... LOOP is the loop's.)
+  S" INL-OPS" T-SHADOW 0= IF EXIT THEN @ >BODY-T IA !
+  INL-BITS!
+  64 0 DO 0 4 0 DO J 4 * I + INL-BITS + C@ I 2* LSHIFT OR LOOP IA @ I + C!-T LOOP
+  0 #FP !
+  G-FOLDS LIST-COUNT 0 ?DO I G-FOLDS LIST-TOKEN 2DUP FOLD-NAME 2SWAP I FOLD-BASE + FOLD-CAND LOOP
+  S" LIT8X" S" LIT8" 72 FOLD-CAND
+  G-SPEC IF S" ADDIX" S" ADDI" 121 FOLD-CAND  S" EQIX" S" EQI" 123 FOLD-CAND THEN
+  FP-SORT
+  96 64 DO 0 IA @ I + C!-T LOOP
+  #FP @ 0 ?DO
+    I FP# 18 + C@ DUP 3 RSHIFT 64 + IA @ + DUP C@-T ROT 7 AND 1 SWAP LSHIFT OR SWAP C!-T
+    I FP# 18 + C@ IA @ 99 + I 2* + C!-T  I FP# 19 + C@ IA @ 100 + I 2* + C!-T
+  LOOP
+  G-TAG2 G-JIT AND T2JIT @ 0< 0= AND IF T2JIT @ 5 ELSE 0 0 THEN IA @ 97 + C!-T IA @ 96 + C!-T
+  #FP @ IA @ 98 + C!-T ;
+
 \ PART 9: THE IMAGE FILE (engine/vm-lab.c, load_image): the magic, the
 \ thread heads (one empty one, the design's thin header), no DOES> tails,
 \ an empty locals block if the engine has the specialisations, THROW's
@@ -1719,12 +2224,16 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
       DUP SH-NAME 4 PICK 4 PICK COMPARE 0= IF @ >R 2DROP R> UNLOOP EXIT THEN
     THEN DROP
   LOOP 2DROP -1 ;
+: JW-MAX ( --- e )
+\ The last body's end - the table's largest number (bodies do not overlap).
+  0 BEGIN DUP JW-NEXT ?DUP WHILE SWAP DROP REPEAT DUP IF JW-END THEN ;
 : SAVE-JIT-LAYOUT ( "name" --- )
   BL WORD COUNT G-JIT 0= IF 2DROP EXIT THEN
   W/O CREATE-FILE ABORT" cross: can't create the JIT's layout" FID-J !
   JW-COLLECT
   S" #define JIT_NWENDS " J-TYPE 0 0 BEGIN JW-NEXT ?DUP WHILE SWAP 1+ SWAP REPEAT J-NUM J-CR
-  S" static const unsigned int jit_wends[][2] = {" J-TYPE
+  \ Iteration 710 (tools/layout.py's, wends16): two bytes a number where every end is under 64 KB
+  JW-MAX 65536 < IF S" static const unsigned short jit_wends[][2] = {" ELSE S" static const unsigned int jit_wends[][2] = {" THEN J-TYPE
   0 0 BEGIN JW-NEXT ?DUP WHILE
     SWAP IF S" , " J-TYPE THEN
     S" {" J-TYPE DUP J-NUM S" , " J-TYPE DUP JW-END J-NUM S" }" J-TYPE
@@ -1758,20 +2267,20 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
   0 #INLS !  0 #BSS !  0 ALLOT-HOOK !  0 #SHADOWS !  0 LAST-SHADOW !
   REFD #ORD-MAX 0 FILL  FREE# #ORD-MAX CELLS 0 FILL  ALL# #ORD-MAX CELLS 0 FILL
   0 #OPS !  0 HEADERLESS !  0 IN-KERNEL !  0 DEAD-NOW !
-  0 #FWDP !  0 HS-ON !  0 HS-STORE !  0 HS-FINAL ! ;
+  0 #FWDP !  0 HS-ON !  0 HS-STORE !  0 HS-FINAL !  FAC-RESET ;
 
 : BUILD ( --- )
   RESET
   -1 IN-KERNEL ! S" kernel.4" INCLUDED 0 IN-KERNEL !
   XINCLUDE-OVERLAYS
-  CHECK-PLACED FWDP-PATCH RESOLVE-FORWARDS RESOLVE-REBINDS
+  LAY-BODIES CHECK-PLACED FWDP-PATCH RESOLVE-FORWARDS RESOLVE-REBINDS
   S" FORTH-WORDLIST" TXT >BODY-T PUBLISH-WORDLIST
   DP-END S" DP" TXT >BODY-T !-T
 \ The dictionary's room from START: the CV8 engines keep the stacks apart, in
 \ 256 MB of their own (engine/vm-lab.c's MEMMAX; kernel.4's DICT-MAX, which the
 \ translator wrote too - tools/layout.py, Iteration 184).
   268435456 S" DICT-MAX" TXT >BODY-T !-T
-  FOLD-OPS! FOLD-TABLE! SUPER-TABLE! IMM-OPS! LOOPTAB! ;
+  FOLD-OPS! FOLD-TABLE! SUPER-TABLE! IMM-OPS! LOOPTAB! VAR-OPS! INL-OPS! ;
 
 \ After a pass: the dead words (to leave out of the next), the one-byte
 \ calls' targets (for the next) - each the same as the pass before found,
@@ -1847,6 +2356,7 @@ CREATE NEWHOTS 32 CELLS ALLOT  VARIABLE #NEWHOTS
   SCAN-SOURCES
   1 PASS ! BUILD FIND-DEAD THERE 16384 < NEAR ! REPORT
   2 PASS ! -1 COUNTING ! BUILD FIND-DEAD FIND-HOT REPORT
+  FAC-SEARCH
   3 PASS ! BUILD FIND-DEAD FIND-HOT REPORT ;
 
 PASSES

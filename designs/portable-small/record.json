@@ -1,6 +1,23 @@
 {
- "bin": 9416,
- "gen": 278,
+ "app": 8320,
+ "app32": 7865,
+ "appby": [
+  1671,
+  1290,
+  2885,
+  936,
+  1538
+ ],
+ "appby32": [
+  1611,
+  1226,
+  2659,
+  880,
+  1489
+ ],
+ "bin": 8806,
+ "etext": null,
+ "gen": 0,
  "genome": {
   "abortif": 0,
   "align1": 0,
@@ -108,12 +125,15 @@
   "opt": "O2",
   "peel": 0,
   "regpin": 0,
+  "rtconst": 0,
   "rtempty": 1,
   "rtfuse": 1,
   "rtimm": 0,
+  "rtinline": 0,
   "rtiplus": 1,
   "rtloop": 1,
   "rtloopall": 1,
+  "rtvar": 0,
   "scale": 0,
   "sharedcall": 1,
   "skippad": 0,
@@ -227,13 +247,57 @@
   "varcall": 1,
   "varslot": 0
  },
+ "how": "measure-ids.py",
  "id": "ae99617f06",
- "jit": false,
+ "mem": {
+  "ackermann": 80,
+  "apps": 480,
+  "bubble": 80,
+  "corpus": 80,
+  "fib": 76,
+  "kernel": 124,
+  "loop": 76,
+  "parse": 76,
+  "sieve": 84
+ },
+ "raw": {
+  "ackermann": 13289000,
+  "apps": 47351000,
+  "bubble": 7609000,
+  "corpus": 10061000,
+  "fib": 66808000,
+  "kernel": 3738000,
+  "loop": 10783000,
+  "parse": 18791000,
+  "sieve": 14918000
+ },
  "rss": 124,
- "size": 9183,
- "speed": 0.3751574012075074,
- "speed32": 0.4045153959416717,
+ "size": 9135,
+ "speed": 0.4077795060776645,
+ "speed32": 0.4094653070500387,
+ "src": "measure-ids.py (the laptop, 1 read)",
  "status": "ok",
- "total": 18599,
- "why": "found before - flagged by the screen (smallarm)"
+ "t": {
+  "ackermann": 0.9452308130023472,
+  "apps": 0.7096121568157295,
+  "bubble": 0.20256635518994756,
+  "corpus": 0.27612800526951364,
+  "fib": 1.0042238489635786,
+  "kernel": 0.47048458149779737,
+  "loop": 0.10577064553150166,
+  "parse": 0.21741041987249946,
+  "sieve": 0.5207707882426866
+ },
+ "t32": {
+  "ackermann": 0.958272488317757,
+  "apps": 0.7632665226138142,
+  "bubble": 0.18357416493043888,
+  "corpus": 0.28808929561841373,
+  "fib": 0.8970319929894123,
+  "kernel": 0.5038748564867968,
+  "loop": 0.11037869106073855
+ },
+ "total": 26261,
+ "unit": "median cpu time / hand-made s6, long workloads (Iteration 100)",
+ "why": "a holder: smallarm"
 }

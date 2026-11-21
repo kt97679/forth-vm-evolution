@@ -381,6 +381,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed96-roles-c.md` - Chain C's pooled pick (716): the 66 on three machines, every session (its set: followup-pick-seed96-roles-c.json).
 - `followup-pick-seed96-roles-c.json` - followup-pick-seed96-roles-c.md's set as JSON (final-pick.py --json, Iteration 716).
 - `followup-roles-seed96-roles-c.md` - Chain C processed (Iteration 716): small-and-fast-on-ARMv7 kept, the smallest JIT design to 15eda54ebd; the smallest's trade and two ties left for the owner.
+- `new-roles-718.md` - The new roles chosen (Iteration 718, the owner: the most reasonable way, no good design lost): the chains' rule for the three choices, the ten, and every near one kept on record.
+- `relf-designs-718.md` - The new roles' ten records (Iteration 718), by role - the build-out's input (small-jit provisional until chain D).
 - `followup-seed96-jitband.md` - Chain D's static list (Iteration 717): the smallest JIT design's anchors and the 23 JIT designs 1 % or more below 15eda54ebd that the seed 95 and 96 results files gave, within 10 % of it in-run.
 - `selfhost-fusions-714.md` - Self-hosting phase 6's first parts (Iteration 714): the cross compiler fills VAR-OPS and INL-OPS as the translator does, and guards ABORT" (the gene abortif); what the new roles still need of it.
 - `selfhost-factor-715.md` - The gene factor in the cross compiler (Iteration 715): the runs found and chosen by layout.py's rules, three test designs self-host at both widths, the choice against the translator's.

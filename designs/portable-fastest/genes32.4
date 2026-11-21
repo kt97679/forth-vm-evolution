@@ -1,4 +1,4 @@
-\ designs/portable-fastest/genes32.4 - portable-fastest's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ ../../../tmp/fz/designs/portable-fastest/genes32.4 - portable-fastest's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
 \ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
 \ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
 \ A list is a word giving its text ( --- c-addr u ), names and numbers each followed by one space.
@@ -8,44 +8,82 @@ VARIABLE G-AT
 : G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;
 4 CONSTANT G-CELL          \ the target's cell, bytes
 G-LIST: G-OVERLAYS  \ after kernel.4, in this order
-S" cv8.4 cv8b.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8b-knumber.4 cv8-fuse.4 cv8-fuse-imm.4 " G+
-S" cv8-fuse-loopall.4 cv8-fuse-iplus.4 file-sysc.4 file-sysc2.4 " G+
+S" cv8t.4 cv8bt.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8b-knumber.4 cv8t-fuse.4 cv8t-fuse-imm.4 " G+
+S" cv8-fuse-loopall.4 cv8-fuse-iplus.4 cv8-fuse-var.4 cv8-fuse-inline.4 file-sysc.4 file-sysc2.4 " G+
 G-LIST: G-FOLDS  \ the fold set: FOLD-BASE + place
-S" + = @ LSHIFT RSHIFT C@ C! AND OR XOR LIT < U< OVER DROP DUP ROT >R R> R@ NEGATE ! " G+
+S" + = ! @ LSHIFT RSHIFT C@ C! AND OR XOR LIT U< DUP OVER DROP SWAP ROT >R R> R@ NEGATE " G+
 31 CONSTANT G-SPEC          \ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc
 G-LIST: G-SUPERS  \ fused pairs: first second opcode
-S" + C@ 66 " G+
 G-LIST: G-OPS10  \ format-10 operations: name opcode
-S" SWAP+I 126 I+ 127 (NUMBER?) 95 (FIND) 36 (>NUMBER) 37 SCAN 38 SKIP 39 FILL 40 (PARSE) 41 HASH 42 " G+
-S" PLACE 43 UNLOOP 44 (DO) 45 (?DO) 46 J 47 (+LOOP) 48 (LEAVE) 49 I 50 (LOOP) 51 BRANCH8 52 " G+
-S" =?BRANCH8 53 <>?BRANCH 54 DUP?BRANCH 55 OVER?BRANCH 56 DUP+I 57 CMOVE 58 2@ 59 2! 60 > 61 0= 62 " G+
-S" ?BRANCH8 63 +! 64 THREAD-FIND 65 " G+
+S" SWAP+I 126 I+ 127 (NUMBER?) 95 (FIND) 27 (>NUMBER) 28 THREAD-FIND 29 SCAN 30 SKIP 31 FILL 32 " G+
+S" (PARSE) 33 HASH 34 PLACE 35 (DO) 36 (LOOP) 37 (+LOOP) 38 (?DO) 39 (LEAVE) 40 I 41 J 42 UNLOOP 43 " G+
+S" =I?BRANCH 44 EXECUTE 45 ?BRANCH8 46 BRANCH8 47 =?BRANCH8 48 <>?BRANCH 49 >?BRANCH 50 DUP?NBRANCH 51 " G+
+S" DUP?BRANCH8 52 OVER?BRANCH 53 DUP+I 54 DUP<I 55 CMOVE 56 2@ 57 2! 58 > 59 0= 60 " G+
 0 CONSTANT G-HOTCALLS      \ one-byte calls, at most
 -1 CONSTANT G-OP-BODIES     \ the format-10 words' bodies their opcode
 -1 CONSTANT G-OP-INLINE     \ ...placed among the primitives
 -1 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
 -1 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
-128 CONSTANT G-THREADS       \ the dictionary's hash threads
+32 CONSTANT G-THREADS       \ the dictionary's hash threads
 -1 CONSTANT G-RTFUSE        \ the run-time fuser's tables filled (cv8-fuse.4's SUPER-TABLE, IMM-OPS)
 -1 CONSTANT G-ESCAPE         \ escaped primitives: two bytes, ESC and a selector
 G-LIST: G-ESC-PRIMS  \ the escaped primitives
 S" BYE OPEN-FILE CLOSE-FILE READ-LINE WRITE-LINE READ-FILE WRITE-FILE (SYSTEM) REPOSITION-FILE " G+
 S" FILE-POSITION DELETE-FILE FILE-SIZE SYSCALL (EXECVE) (WAITPID) (PIPE) (DUP2) (GETENV) (SETENV) " G+
 S" (SYS-EXIT) (CHDIR) (GETCWD) (SYS-ARGC) (SYS-ARG) (GETPID) (UNSETENV) ALLOCATE FREE RESIZE " G+
-S" (GETPWHOME) (GETFSIZE) (SETFSIZE) " G+
+S" (GETPWHOME) (GETFSIZE) (SETFSIZE) UM* UM/MOD D+ WRITE READ SP@ SP! RP@ RP! " G+
 -1 CONSTANT G-VARSLOT        \ slot operands 2 or 3 bytes, high byte first; else 2, low first
 G-LIST: G-REBIND  \ the kernel's uses rebound to the overlays' words
 S" OPEN-FILE CLOSE-FILE WRITE-FILE ALLOCATE FREE " G+
 G-LIST: G-HEADERLESS  \ no headers
 S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SAVED " G+
 1 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
-31 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
+95 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
 76 CONSTANT G-MAGIC5
-0 CONSTANT G-TAG2          \ the two-bit tag: codes by the engine's map, calls 2-4 bytes, links 1-4
-0 CONSTANT G-T2WIDE        \ ...no 3-byte call: 0x80-0xBF one-byte codes
+-1 CONSTANT G-TAG2          \ the two-bit tag: codes by the engine's map, calls 2-4 bytes, links 1-4
+-1 CONSTANT G-T2WIDE        \ ...no 3-byte call: 0x80-0xBF one-byte codes
 G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
+S" 0 0 1 1 2 2 3 3 4 4 71 5 68 6 124 7 69 8 70 9 47 10 46 11 36 12 37 13 38 14 39 15 40 16 41 17 42 18 " G+
+S" 43 19 99 20 100 21 54 22 55 23 127 24 6 25 23 26 7 27 16 28 18 29 17 30 11 31 22 32 5 33 19 34 9 35 " G+
+S" 118 36 106 37 76 38 52 39 120 40 12 41 10 42 88 43 96 44 14 45 35 46 72 47 33 48 134 49 92 50 78 51 " G+
+S" 126 52 128 53 60 54 20 55 98 56 113 57 97 58 111 59 26 60 8 61 110 62 115 128 108 129 13 130 15 131 " G+
+S" 116 132 25 133 44 134 21 135 114 136 122 137 24 138 80 139 91 140 50 141 121 142 73 143 59 144 " G+
+S" 34 145 129 146 136 147 137 148 27 149 45 150 79 151 130 152 131 153 81 154 132 155 133 156 135 157 " G+
+S" 49 158 149 159 85 160 119 161 28 162 140 163 75 164 29 165 77 166 82 167 56 168 74 169 30 170 " G+
+S" 95 171 87 172 83 173 89 174 32 175 31 176 57 177 58 178 105 179 109 180 123 181 138 182 139 183 " G+
+S" 143 184 94 185 48 186 51 187 53 188 84 189 86 190 90 191 " G+
 G-LIST: G-T2-ESC  \ ...logical operation, escape selector
+S" 93 0 101 1 102 2 103 3 104 4 107 5 112 6 117 7 141 8 142 9 144 10 145 11 146 12 147 13 148 14 " G+
+S" 150 15 151 16 152 17 153 18 154 19 155 20 156 21 157 22 158 23 159 24 160 25 161 26 162 27 163 28 " G+
+S" 164 29 165 30 166 31 167 32 168 33 " G+
 0 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
 0 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+0 CONSTANT G-GUARD-ABORT   \ the gene abortif: ABORT" guarded by ?BRANCH (sod16.guard_aborts; 714)
 G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
+S" PARSE-WORD SOURCE 1 WORD PARSE-WORD 1 WORD HERE 1 WORD BL 1 INTERPRET WORD 1 INTERPRET FIND 1 " G+
+S" ?STACK DEPTH 1 ?STACK U> 1 C, HERE 1 REFILL SOURCE-ID 1 REFILL SOURCE-ID 2 REFILL SOURCE-ID 3 " G+
+S" INTERPRET NUMBER? 1 OP, C, 1 \ SOURCE 1 W, C, 1 W, C, 2 CALL, C, 2 CALL, C, 1 ALIGN HERE 1 " G+
+-1 CONSTANT G-FACTOR        \ the gene factor: repeated cold code in headerless bodies (layout.py --factor; 715)
+0 CONSTANT G-FACTOR-ANY    \ ...every word, the profile aside (--factor-share above 1)
+G-LIST: G-FACTOR-COLD  \ ...the words below --factor-share of the reference dispatches
+S" ! !CALL !CSP !W #> #FOLD-OPS #S ' ( (." G+ 34 G-C S" ) (;CODE) (>NUMBER) (?DO) (FIND) (LEAVE) (PARSE) (POSTPONE) " G+
+S" */ */MOD + +! +LOOP , . ." G+ 34 G-C S"  / /MOD 0< 0BRANCH-OP 2* 2/ 2DROP 2DUP 2OVER 2SWAP 32, : ; < <# <> " G+
+S" <BRANCH, <RESOLVE = >BODY >MARK >OP >R >RESOLVE ?BRANCH ?BRANCH, ?BRANCH8-OP ?COMP ?CSP ?DO ?DO8 @ " G+
+S" ABORT ABORT" G+ 34 G-C S"  ABS ACC-BYTE ACCEPT AGAIN8 ALIGNED ALLOCATE AND BEGIN BIN BRANCH BRANCH-OP BRANCH8-OP " G+
+S" BYE BYTES. C! C@ CATCH CELL+ CELL- CHAIN16? CHAR CHAR+ CLOSE-FILE COLD CONSTANT CONVERT CR CREATE " G+
+S" CREATE-FILE CV8-SHIFT CV8-SHIFT-DEFAULT D+ D. DABS DECIMAL DELETE-FILE DICT-LIMIT DO DO8 DODOES-OP " G+
+S" DOES> DOVAR DOVAR-OP DROP DUP ELSE EMIT ESC-OP EVALUATE EXIT EXIT-OP EXPECT FILE-POSITION FILE-SIZE " G+
+S" FM/MOD FOLD-BASE FOLD-DEFAULTS FREE FS-DROP FS-EDIT? FS-FORGET FS-MMAP FS-UPTO-EDIT FS4 HEX HOLD IF " G+
+S" IMM+ IMM-AFTER IMM-AT IMMEDIATE INCLUDE-BUFFER INCLUDED INVERT J KEY LEAVE LEAVE8 LINK-LEN LIT LIT, " G+
+S" LIT16-OP LIT32-OP LIT64-OP LIT8-OP LITERAL LOOP LOOP, LSHIFT M* MAX MOD MOVE MU/MOD NEGATE NOOP " G+
+S" OPEN-FILE OPERAND-ALIGN OR OVER PAD PARSE POCKET POSTPONE PRIMITIVE? QUERY QUIT R/O R/W R> R@ READ " G+
+S" READ-FILE RECURSE REPEAT REPOSITION-FILE RESIZE RESOLVE-LEAVE RESOLVE-LEAVE16 RESOLVE-LEAVES REVEAL " G+
+S" ROLL ROT RP! RP@ RSHIFT S" G+ 34 G-C S"  S>D SIGN SM/REM SP! SP@ SPACE SPACES STRING, SWAP SYSCALL THEN " G+
+S" THREAD-FIND THROW TIB TRUE TYPE U. U< UM* UM/MOD UNLOOP UNTIL VARIABLE W/O WARM WHILE WRITE " G+
+S" WRITE-FILE WRITE-LINE XOR [ ['] [CHAR] \ ] " G+
+G-LIST: G-FACTOR-NOT  \ ...never: what layout.py patches after reading it, the dump tool
+S" EXIT-OP LIT16-OP BRANCH-OP 0BRANCH-OP LIT32-OP DOVAR-OP DODOES-OP LIT8-OP LIT64-OP BRANCH8-OP " G+
+S" ?BRANCH8-OP JIT-OP CALL, NFA BP BE NFATAB #NFA TA CELLB INIT-NFATAB COLLECT SWAPC SORTNFA DUMP " G+
+S" PROLOGUE-DUMP " G+
 G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet
+S" =I?BRANCH DUP?NBRANCH " G+

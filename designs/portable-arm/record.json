@@ -1,9 +1,26 @@
 {
- "bin": 13320,
- "gen": 27,
+ "app": 8429,
+ "app32": 7937,
+ "appby": [
+  1717,
+  1310,
+  2881,
+  945,
+  1576
+ ],
+ "appby32": [
+  1657,
+  1246,
+  2667,
+  888,
+  1479
+ ],
+ "bin": 26790,
+ "etext": null,
+ "gen": 0,
  "genome": {
   "abortif": 0,
-  "align1": 1,
+  "align1": 0,
   "alignfn": 0,
   "alignhot": 3,
   "bfind": 0,
@@ -37,12 +54,13 @@
    "SWAP",
    ">R",
    "R>",
+   "ROT",
    "R@",
    "NEGATE",
    "C!"
   ],
   "fsys": 2,
-  "gotodup": 0,
+  "gotodup": 2,
   "guard": 1,
   "hotcalls": 0,
   "hotinl": 40,
@@ -52,7 +70,7 @@
   "jitdoes": 0,
   "jitexec": 0,
   "jitfuse": 0,
-  "jitimg": 1,
+  "jitimg": 0,
   "jitinl": 0,
   "jitk": 0,
   "jitloop": 0,
@@ -88,13 +106,12 @@
    "I",
    "J",
    "UNLOOP",
-   "0=",
    "BRANCH8",
-   "U<?BRANCH",
    "<?BRANCH8",
    "DUP+I",
    "DUP<I",
    "FILL",
+   "?DUP",
    "OVER?BRANCH",
    "I+",
    "<?BRANCH",
@@ -105,14 +122,17 @@
    "+!"
   ],
   "opt": "O2",
-  "peel": 0,
+  "peel": 1,
   "regpin": 1,
+  "rtconst": 0,
   "rtempty": 0,
-  "rtfuse": 0,
-  "rtimm": 2,
+  "rtfuse": 1,
+  "rtimm": 1,
+  "rtinline": 0,
   "rtiplus": 1,
   "rtloop": 1,
   "rtloopall": 1,
+  "rtvar": 0,
   "scale": 0,
   "sharedcall": 1,
   "skippad": 0,
@@ -120,101 +140,16 @@
    "loc",
    "var",
    "tiny",
-   "small",
    "imm"
   ],
   "supers": [
    [
-    "+",
-    "@"
-   ],
-   [
-    "DUP",
-    ">R"
-   ],
-   [
-    "C!",
-    "R>"
-   ],
-   [
-    ">R",
-    "C!"
-   ],
-   [
-    "ROT",
-    "DUP"
-   ],
-   [
-    "R@",
-    "ROT"
-   ],
-   [
-    "DUP",
-    "C@"
-   ],
-   [
-    ">R",
-    "OVER"
-   ],
-   [
-    "OVER",
-    "C@"
-   ],
-   [
-    "C@",
-    "="
-   ],
-   [
-    "C@",
-    "DUP"
-   ],
-   [
-    "LSHIFT",
-    "OVER"
-   ],
-   [
-    "OVER",
-    "R>"
-   ],
-   [
-    "+",
-    "SWAP"
-   ],
-   [
-    "ROT",
-    "ROT"
-   ],
-   [
-    "C@",
-    "SWAP"
-   ],
-   [
-    "C@",
-    "OR"
-   ],
-   [
-    "SWAP",
-    "DUP"
+    "@",
+    "+"
    ],
    [
     "R>",
-    "SWAP"
-   ],
-   [
-    "OVER",
-    "R@"
-   ],
-   [
-    "DUP",
-    "@"
-   ],
-   [
-    "+",
-    "R>"
-   ],
-   [
-    "R>",
-    "="
+    "DROP"
    ]
   ],
   "swapi": 1,
@@ -226,19 +161,63 @@
   "tailpn": 0,
   "tfind": 0,
   "thinhdr": 1,
-  "threads": 0,
+  "threads": 2,
   "tos": 0,
-  "tracer": 0,
+  "tracer": 1,
   "varcall": 1,
   "varslot": 0
  },
- "id": "3eb59b271d",
- "jit": false,
- "rss": 132,
- "size": 9202,
- "speed": 0.31876421182711784,
- "speed32": 0.32200121574494256,
+ "how": "measure-ids.py",
+ "id": "a8d35bdccc",
+ "mem": {
+  "ackermann": 80,
+  "apps": 488,
+  "bubble": 80,
+  "corpus": 84,
+  "fib": 76,
+  "kernel": 140,
+  "loop": 80,
+  "parse": 84,
+  "sieve": 88
+ },
+ "raw": {
+  "ackermann": 9550000,
+  "apps": 40532000,
+  "bubble": 4922000,
+  "corpus": 6714000,
+  "fib": 32037000,
+  "kernel": 2691000,
+  "loop": 10227000,
+  "parse": 11646000,
+  "sieve": 11655000
+ },
+ "rss": 140,
+ "size": 10055,
+ "speed": 0.2893399703040835,
+ "speed32": 0.2913884486348858,
+ "src": "measure-ids.py (the laptop, 1 read)",
  "status": "ok",
- "total": 22522,
- "why": "the run - adds the most"
+ "t": {
+  "ackermann": 0.6884867709609978,
+  "apps": 0.633015773856005,
+  "bubble": 0.13058820408054975,
+  "corpus": 0.1836935704514364,
+  "fib": 0.4724315396752835,
+  "kernel": 0.341497461928934,
+  "loop": 0.1006525140984381,
+  "parse": 0.13459849290370302,
+  "sieve": 0.4177868588020217
+ },
+ "t32": {
+  "ackermann": 0.6860614266372123,
+  "apps": 0.6558079592565563,
+  "bubble": 0.13315584738047287,
+  "corpus": 0.18112606706093287,
+  "fib": 0.45431099910839945,
+  "kernel": 0.32462143273150845,
+  "loop": 0.11145382870664579
+ },
+ "total": 45274,
+ "unit": "median cpu time / hand-made s6, long workloads (Iteration 100)",
+ "why": "chain B: the fastest on ARMv7 (-2.63 % +/- 0.39 % against 3eb59b271d)"
 }

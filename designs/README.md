@@ -19,26 +19,28 @@ One design: `make portable-knee`, or `make` in its directory. A file: `./forth i
 
 ## Which to use
 
-Speed is CPU time against the hand-made s6 the search started from, so lower is faster - 0.185 is 5.4 times s6's
+Speed is CPU time against the hand-made s6 the search started from, so lower is faster - 0.161 is 6.2 times s6's
 speed; each class the geometric mean of its machines (x86-64: an AMD Ryzen 7 PRO 8840HS and an Intel i7-6700; x86-32:
 the same at 4-byte cells; ARMv7: an NVIDIA Tegra), every session pooled - the portable designs re-measured side by
-side in Iteration 611 (results/followup-roles-seed87.md; the knee in seed 90's follow-up, 636; the smallest in the final check, 649), the JIT designs in seed 86's chains. Bytes: engine and image at 8-byte cells, the
-engine as measured (`make tight`). Memory: peak resident.
+side in the new roles' chains (Iterations 713-716: results/followup-roles-seed96-roles.md, -b.md, -c.md; the ten
+chosen at 718, results/new-roles-718.md), each figure from chain B's sessions or, where chain B lacks a class, chain C's
+(results/drafts/designs-table-718.py). Bytes: engine, image and the five selection programs' code at 8-byte cells (the
+search's size since Iteration 686), the engine as measured (`make tight`). Memory: peak resident.
 
 | `make` target | design | what it wins | x86-64 | x86-32 | ARMv7 | bytes | memory | JIT |
 |---|---|---|---|---|---|---|---|---|
-| `fastest-x86-64` | c7c35f9c97 | fastest on x86-64 | 0.185 | 0.207 | 0.540* | 38,898 | 244 KB | yes |
-| `fastest-x86-32` | ee34931cd7 | fastest on x86-32 | 0.189 | 0.193 | 0.476* | 41,990 | 224 KB | yes |
-| `best-all-round` | 06b188f45b | best mean of x86-64, x86-32 and ARMv7 | 0.193 | 0.201 | 0.464* | 38,102 | 236 KB | yes |
-| `small-jit` | c6f1c1331b | smallest of the JIT designs | 0.225 | 0.235 | 0.577* | 29,306 | 208 KB | yes |
-| `portable-fastest` | 782f3ad7ff | fastest without the JIT, on x86 and by the mean | 0.343 | 0.339 | 0.372 | 26,242 | 148 KB | no |
-| `portable-arm` | 3eb59b271d | fastest on ARMv7 | 0.378 | 0.443 | 0.320 | 22,522 | 132 KB | no |
-| `portable-knee` | 11a56ff9e4 | fast without the JIT on x86; small | 0.363 | 0.377 | 0.477 | 19,761 | 140 KB | no |
-| `portable-small` | ae99617f06 | small, fast on ARMv7 | 0.450 | 0.444 | 0.351 | 18,599 | 124 KB | no |
-| `least-memory` | fb0d57c8a2 | least memory | 0.916 | 0.884 | 0.521 | 17,830 | 104 KB | no |
-| `smallest` | d180351903 | smallest | 1.926 | 1.784 | 1.717 | 13,883 | 116 KB | no |
+| `fastest-x86-64` | 9b15ba26f7 | fastest on x86-64 | 0.161 | 0.186 | - | 53,503 | 292 KB | yes |
+| `fastest-x86-32` | 11f956db93 | fastest on x86-32 | 0.175 | 0.180 | - | 49,925 | 264 KB | yes |
+| `best-all-round` | df097ba2e2 | best mean of x86-64, x86-32 and ARMv7 | 0.162 | 0.187 | 0.432* | 54,695 | 288 KB | yes |
+| `small-jit` | 15eda54ebd | smallest of the JIT designs | 0.219 | 0.234 | - | 36,344 | 208 KB | yes |
+| `portable-fastest` | d727605472 | fastest without the JIT, by the mean | 0.318 | 0.317 | 0.324 | 35,539 | 148 KB | no |
+| `portable-arm` | a8d35bdccc | fastest on ARMv7 | 0.339 | 0.431 | 0.302 | 45,274 | 140 KB | no |
+| `portable-knee` | 48a012411a | fast without the JIT; small | 0.385 | 0.373 | 0.408 | 26,957 | 144 KB | no |
+| `portable-small` | ae99617f06 | small, fast on ARMv7 | 0.451 | 0.443 | 0.324 | 26,261 | 124 KB | no |
+| `least-memory` | fb0d57c8a2 | least memory | 0.849 | 0.880 | 0.477 | 25,569 | 112 KB | no |
+| `smallest` | 219878ec89 | smallest | 1.483 | 1.285 | 1.234 | 21,673 | 116 KB | no |
 
-\* on ARMv7 without its JIT: the JIT generates x86 code, so the JIT designs are for x86 only.
+\* on ARMv7 without its JIT: the JIT generates x86 code, so the JIT designs are for x86 only. - : not measured on the Tegra.
 
 ## Builds
 
