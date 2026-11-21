@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 719.
+- master: Iteration 720.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -301,7 +301,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   while loadtest.py measures, restores it after each session, at a crash and at the chain's end; the pack carries
   perf-hold.log and perf.txt - the processing checks the value at the pack is the starting one, then countfit.py on the
   "cnt" lines (711). Tested here as root: 4 -> 2 while measuring -> 4 after, the hold gone at the chain's end (this VM has
-  no PMU, so no "cnt" here). **Its processing**: the written list's records not in
+  no PMU, so no "cnt" here). **720 (the owner: "include all the runs you need into next run")**: chain D carries the
+  roles' machine work too, about 5 hours - first `experiment rage-designs.py` (647: the Tegra's GCC 16 on designs/' GCC
+  designs' forth-arm, a8d35bdccc new - its rage-designs.md must say PASS), then the screen, then **lab/evolve/selfhost-speed.py**
+  (new: the gate's speed half - each self-built role on its own engine against the translator's build, 5 alternations of
+  10 rounds, both widths; at most 1.02 keeps it self-built, else the processing ships its translator-built images and
+  names it in designs/TRANSLATOR-BUILT with the ratio; here on the VM, 2 rounds: small-jit's 4-byte image 1.07-1.09 - the
+  laptop decides), then loadtest.py's repeats (dream 150 + 150 minutes). **Its processing**: the written list's records not in
   results/followup-seed96-jitband.md appended to it first (the pool-sizes pack's records; its "written ids" line), then
   `HANDOFF=results/handoff-relf-657.md PRED=717 sh lab/evolve/process-followup.sh 96-jitband ITERATION
   smalljit=15eda54ebd` (the laptop and dream only: the JIT designs' two classes), results/drafts/chainB-714.py and
@@ -317,7 +323,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   test, selfhost, 32 and libc, pack-designs 20 of 20 right (results/drafts/designs-sha256-718.txt), run-tests PASS;
   designs/README.md's table from chains B and C (results/drafts/designs-table-718.py). small-jit 15eda54ebd provisional
   until chain D. **The owner, beside chain D**: `RAGECHECK_CMD='sh tools/rage-designs-check.sh' sh tools/rage-check.sh`
-  - the Tegra's GCC 16 on the GCC designs' forth-arm (a8d35bdccc new; 17 minutes at 654); chain D does not use the Tegra.
+  - the Tegra's GCC 16 on the GCC designs' forth-arm (a8d35bdccc new; 17 minutes at 654) - since 720 chain D's first step.
   **After chain D**: small-jit made again if it changes (roles-build-718.sh with that one NAME=ID - a JIT design, no ARM
   build, so no cross GCC), the package, relf told how to fetch the ten (a new results/handoff-relf-NNN.md). Then the rest
   of the plan (the roles were step 6 - results/drafts/new-roles-plan-705.md): designs/ and the
@@ -429,7 +435,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): chain D (717, 719) - six. Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
+- **Predictions due** (results/predictions.md): chain D (717, 719, 720) - eight. Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first

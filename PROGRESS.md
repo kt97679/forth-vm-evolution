@@ -12021,3 +12021,14 @@ while loadtest.py measures and puts the old value back after each session, if it
 says the value during and after; chainctl.py's pack carries perf-hold.log and perf.txt (the value at the pack). Tested here
 as root: 4, then 2 while measuring, 4 after; perf-hold.py gone at the chain's end, the setting 4; run-tests PASS. Chain D's
 counts then for countfit.py (711). Files: lab/evolve/loadtest.py, next-run.sh, perf-hold-start.sh, chainctl.py, NEXT-RUN.
+
+## Iteration 720 - 2026-11-21 - Claude
+
+The owner: "please include all the runs you need into next run". Chain D now carries the roles' machine work: first
+`experiment rage-designs.py` (647's step: designs/' GCC designs' forth-arm by the Tegra's own GCC, a8d35bdccc new), then the
+JIT band's screen, then lab/evolve/selfhost-speed.py (new: the self-hosting gate's speed half - each self-built role on its
+own engine against the translator's build, alternated, both widths, by workload; at most 1.02 keeps it self-built), then
+loadtest.py's repeats; dream 150 + 150 minutes, about 5 hours in all; sudo once at the start (719). selfhost-speed.py run
+here on three designs (portable-fastest skipped, translator-built): it works; the VM's 2-round readings (small-jit 4-byte
+1.07-1.09) are for the laptop to decide. Files: lab/evolve/selfhost-speed.py, NEXT-RUN, REMOTES, lab/evolve/README.md,
+results/predictions.md (chain D's (7) and (8)).

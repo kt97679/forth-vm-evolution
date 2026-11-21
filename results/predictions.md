@@ -1613,4 +1613,8 @@ ceilings). (3) A listed design beats 15eda54ebd by the rule (1 % smaller, no cla
 (in-run f13b982631 +0.9 % / +0.6 % at 208 KB, 8ddaa8f03a +1.7 % / -0.1 % at 204; chain C's three beat c6f1c1331b from
 in-run +0.3-3.9 %). (4) A design that beats it is among the pool-sizes finds, not the results files' 23 - 30/70. (5) No
 listed design dies on any line - 85/15. (6) (719) loadtest.py's lines carry the PMU's counts and the pack's perf.txt reads
-the value the chain started with (the hold restored) - 85/15 (tested here but for the PMU, which this VM lacks).
+the value the chain started with (the hold restored) - 85/15 (tested here but for the PMU, which this VM lacks). (7)
+(720) rage-designs.py: PASS - the Tegra's GCC builds the three GCC designs' forth-arm byte for byte - 85/15 (654: PASS;
+a8d35bdccc's rule written by the cross GCC 13.3 here, the bytes the Tegra measured in chains A-B). (8) selfhost-speed.py:
+all nine self-built roles within 1.02 of their translator's builds at both widths - 50/50 (672: "speed the same"; here
+on the VM at 2 rounds small-jit's 4-byte image 1.07-1.09).
