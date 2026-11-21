@@ -317,7 +317,7 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
             *) if sed -n '/^[^#]/p' lab/evolve/REMOTES 2> /dev/null | grep -q -e '--also'; then
                    sh lab/evolve/remote-checks.sh probe "$NEXT_RUN_CHAIN" || true; fi ;; esac
     fi
-    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*|*" clockcheck.py "*)   # Iteration 294: missmap.py too; 545: clockcheck.py
+    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*|*" clockcheck.py "*|*" loadtest.py "*)   # Iteration 294: missmap.py too; 545: clockcheck.py; 718: loadtest.py's counters
         if [ -z "${PERF_HOLD_START:-}" ]; then
             PERF_HOLD_START=$RUNS/perf-hold-$(date +%Y%m%d-%H%M%S).start; PERF_HOLD_DONE=${PERF_HOLD_START%.start}.done
             case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)
@@ -326,8 +326,10 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
                 sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" || die "counters.py cannot have perf's counters - nothing started";;
             # Iteration 545: the clock test alone - its cycles read by tools/cputime.c, no perf program needed; without the
             # hold it still runs, on the time alone ("none": the chain's later steps do not ask again)
-            *)  PERF_HOLD_FOR=clockcheck.py sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" \
-                    || { say "the clock test will record the time alone - kernel.perf_event_paranoid not held"; PERF_HOLD_START=none; PERF_HOLD_DONE=none; };;
+            # 718: loadtest.py likewise (its 711 counters - cputime reads them itself); the owner: sudo asked at the start, restored at the end
+            *)  case " ${TOOL:-} $THEN " in *" clockcheck.py "*) PHF=clockcheck.py ;; *) PHF=loadtest.py ;; esac
+                PERF_HOLD_FOR=$PHF sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" \
+                    || { say "$PHF will record the time alone - kernel.perf_event_paranoid not held"; PERF_HOLD_START=none; PERF_HOLD_DONE=none; };;
             esac
             export PERF_HOLD_START PERF_HOLD_DONE
         fi;;

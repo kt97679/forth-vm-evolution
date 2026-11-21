@@ -10,7 +10,7 @@
 # second laptop try stopped so, in the background, perf's own message lost
 # Iteration 545: PERF_HOLD_FOR - the step the hold is for: counters.py (also missmap.py's) by default, or clockcheck.py,
 # whose cycles tools/cputime.c reads itself - no perf program checked, and a refusal leaves it the time alone
-FOR=${PERF_HOLD_FOR:-counters.py}; STOP="nothing started"; [ "$FOR" = counters.py ] || STOP="the clock test on the time alone"
+FOR=${PERF_HOLD_FOR:-counters.py}; STOP="nothing started"; [ "$FOR" = counters.py ] || STOP="$FOR on the time alone"   # 718: loadtest.py too
 if [ "$FOR" = counters.py ] && ! out=$("${PERF:-perf}" --version 2>&1); then      # PERF: what next-run.sh found (counters.py --find-perf)
     echo "next-run: perf does not run here:" >&2; echo "$out" | sed -n '1,6s/^/    /p' >&2
     echo "next-run: on Ubuntu: sudo apt install linux-tools-\$(uname -r) - for the kernel running now; nothing started" >&2

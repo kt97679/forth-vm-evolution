@@ -12011,3 +12011,13 @@ build-out split around the cross GCC: validate 7 of 7, the ARM rules the lab's b
 small-jit provisional until chain D; the Tegra's GCC check is the owner's, beside chain D.
 Files: results/new-roles-718.md, results/relf-designs-718.md, results/drafts/roles-build-718.sh,
 results/drafts/designs-table-718.py, results/drafts/designs-sha256-718.txt; designs/ (the ten), designs/README.md.
+
+## Iteration 719 - 2026-11-21 - Claude
+
+The owner: "please include sudo commands in the next run as we did previously. Ensure all settings are restored when next
+run exits." loadtest.py now takes the chain's perf hold as clockcheck.py did (545): next-run.sh's trigger takes
+loadtest.py (perf-hold-start.sh asks sudo once at the start), root's perf-hold.py sets kernel.perf_event_paranoid to 2 only
+while loadtest.py measures and puts the old value back after each session, if it dies, and at the chain's end; loadtest.md
+says the value during and after; chainctl.py's pack carries perf-hold.log and perf.txt (the value at the pack). Tested here
+as root: 4, then 2 while measuring, 4 after; perf-hold.py gone at the chain's end, the setting 4; run-tests PASS. Chain D's
+counts then for countfit.py (711). Files: lab/evolve/loadtest.py, next-run.sh, perf-hold-start.sh, chainctl.py, NEXT-RUN.

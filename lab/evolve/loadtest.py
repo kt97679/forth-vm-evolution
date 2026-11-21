@@ -81,30 +81,45 @@ if not others: print('**No other core to load: nothing to test here.**'); sys.ex
 print('| design | group | in-run | re-measured | idle | loaded | loaded / idle |%s\n|---|---|---|---|---|---|---|%s' % (
     ' in-run 32 | idle 32 | loaded 32 |' if a.ids else '', '---|---|---|' if a.ids else ''), flush=True)
 res = {'fast': [], 'slow': [], 'asked': []}; js = []
-for grp, i in groups:
-    d = os.path.join(E.EV, 'loadtest'); import shutil; shutil.rmtree(d, ignore_errors=True)
-    try:
-        eng, img = E.build(E.canon(R[i]['genome']), d); pw = E.private_work(d)
-        idle, loaded = [], []
-        CNT.clear()
-        for k_ in range(2):
-            idle.append(speed(eng, img, pw, keep=not k_))
-            ps = start_load(); time.sleep(1)
-            try: loaded.append(speed(eng, img, pw))
-            finally: stop_load(ps)
-        gi = math.sqrt(idle[0] * idle[1]); gl = math.sqrt(loaded[0] * loaded[1]); res[grp].append(gl / gi)
-        x32 = ''
-        if a.ids:                                                  # 573: and at 32 bits, idle then loaded
-            i32 = E.eval32(E.canon(R[i]['genome']), a.rounds).get('speed32')
-            ps = start_load(); time.sleep(1)
-            try: l32 = E.eval32(E.canon(R[i]['genome']), a.rounds).get('speed32')
-            finally: stop_load(ps)
-            f3 = lambda v: '%.3f' % v if v else '-'
-            x32 = ' %s | %s | %s |' % (f3(R[i].get('speed32')), f3(i32), f3(l32))
-            js.append(dict(id=i, inrun=R[i].get('speed'), inrun32=R[i].get('speed32'), idle=gi, loaded=gl, idle32=i32, loaded32=l32,
-                           **({'cnt': dict(CNT)} if CNT else {})))   # 711: the counters, where the PMU gives them
-        print('| %s | %s | %.3f | %.3f | %.3f | %.3f | %.3f |%s' % (i, grp, R[i].get('speed', 0), sp[i], gi, gl, gl / gi, x32), flush=True)
-    except Exception as x: print('| %s | %s | - | - | - | - | failed: %s |' % (i, grp, str(x)[:60]), flush=True)
+# Iteration 718 (the owner: the sudo commands in the run, every setting restored at its end): the chain's perf hold -
+# root's perf-hold.py, started where sudo could ask (next-run.sh, perf-hold-start.sh), sets kernel.perf_event_paranoid to 2
+# while this measures and puts the old value back at DONE, or when this process is gone - so the 711 counters ("cnt")
+# are read; without a hold, or one that fails, the time alone, as before
+HOLD, PAR = None, '/proc/sys/kernel/perf_event_paranoid'
+par = lambda: open(PAR).read().strip() if os.path.exists(PAR) else '?'
+if os.environ.get('PERF_HOLD_START', 'none') not in ('', 'none'):
+    import counters as C
+    try: HOLD = C.PerfHold(os.environ['PERF_HOLD_START'], os.environ['PERF_HOLD_DONE']).__enter__()
+    except SystemExit as x: print('loadtest: %s - the time alone' % x, file=sys.stderr)
+during = par()
+try:
+    for grp, i in groups:
+        d = os.path.join(E.EV, 'loadtest'); import shutil; shutil.rmtree(d, ignore_errors=True)
+        try:
+            eng, img = E.build(E.canon(R[i]['genome']), d); pw = E.private_work(d)
+            idle, loaded = [], []
+            CNT.clear()
+            for k_ in range(2):
+                idle.append(speed(eng, img, pw, keep=not k_))
+                ps = start_load(); time.sleep(1)
+                try: loaded.append(speed(eng, img, pw))
+                finally: stop_load(ps)
+            gi = math.sqrt(idle[0] * idle[1]); gl = math.sqrt(loaded[0] * loaded[1]); res[grp].append(gl / gi)
+            x32 = ''
+            if a.ids:                                                  # 573: and at 32 bits, idle then loaded
+                i32 = E.eval32(E.canon(R[i]['genome']), a.rounds).get('speed32')
+                ps = start_load(); time.sleep(1)
+                try: l32 = E.eval32(E.canon(R[i]['genome']), a.rounds).get('speed32')
+                finally: stop_load(ps)
+                f3 = lambda v: '%.3f' % v if v else '-'
+                x32 = ' %s | %s | %s |' % (f3(R[i].get('speed32')), f3(i32), f3(l32))
+                js.append(dict(id=i, inrun=R[i].get('speed'), inrun32=R[i].get('speed32'), idle=gi, loaded=gl, idle32=i32, loaded32=l32,
+                               **({'cnt': dict(CNT)} if CNT else {})))   # 711: the counters, where the PMU gives them
+            print('| %s | %s | %.3f | %.3f | %.3f | %.3f | %.3f |%s' % (i, grp, R[i].get('speed', 0), sp[i], gi, gl, gl / gi, x32), flush=True)
+        except Exception as x: print('| %s | %s | - | - | - | - | failed: %s |' % (i, grp, str(x)[:60]), flush=True)
+finally:
+    if HOLD: HOLD.__exit__()
+print('\nkernel.perf_event_paranoid: %s while measuring, %s after%s' % (during, par(), ' (the chain\'s hold, perf-hold.py)' if HOLD else ''))
 os.unlink(prog.name)
 print()
 for x in js: print(json.dumps(x, sort_keys=True))

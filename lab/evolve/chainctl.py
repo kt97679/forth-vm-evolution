@@ -34,7 +34,7 @@ next-run.sh itself uses:
                                         .partial files removed; root-owned files in REPO
                                         listed (exit 3), for next-run.sh to give back
 """
-import fnmatch, os, signal, socket, subprocess, sys, tarfile, time
+import fnmatch, os, shutil, signal, socket, subprocess, sys, tarfile, time
 
 STEP_PREFIX = 'next-run: '
 
@@ -213,6 +213,13 @@ def pack(chain, status):
                                                           time.strftime('%Y%m%d-%H%M%S', time.gmtime()),
                                                           '' if status == 'done' else '-' + status)
     final = os.path.join(runs, name); part = final + '.partial'
+    # Iteration 718 (the owner: every setting restored when the run exits): the perf hold's log and the setting now, after
+    # the chain's last measurement - the processing checks the value is the one the chain started with
+    try:
+        lg = os.path.join(runs, 'perf-hold.log')
+        if os.path.exists(lg): shutil.copy(lg, os.path.join(chain, 'perf-hold.log'))
+        write(chain, 'perf.txt', 'kernel.perf_event_paranoid at the pack: %s\n' % open('/proc/sys/kernel/perf_event_paranoid').read().strip())
+    except OSError: pass
     with tarfile.open(part, 'w:gz') as t:
         for n in sorted(os.listdir(chain)):
             if n.endswith('.new'): continue

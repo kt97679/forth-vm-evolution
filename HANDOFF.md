@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 718.
+- master: Iteration 719.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -295,8 +295,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   reach - pool-sizes.py --jit-speed 0.2116 --jit-speed32 0.2354 (15eda54ebd's seed 96 readings + 10 %, the records
   screened before building) --below-jit 35980 --write build/evolve/jitband-list.md --anchors all --cap 30; the results
   files alone gave 23 (results/followup-seed96-jitband.md, with the role's 5 anchors - dream measures these 28);
-  measure-ids.py and loadtest.py at 10 rounds on the written list. The PMU's counts need `sudo sysctl
-  kernel.perf_event_paranoid=2` first. **Its processing**: the written list's records not in
+  measure-ids.py and loadtest.py at 10 rounds on the written list. **The PMU's counts (719, the owner: the sudo commands in
+  the run, every setting restored at its end)**: loadtest.py takes the chain's perf hold as clockcheck.py does (545) -
+  next-run.sh asks sudo once at the start (from a terminal), root's perf-hold.py sets kernel.perf_event_paranoid to 2 only
+  while loadtest.py measures, restores it after each session, at a crash and at the chain's end; the pack carries
+  perf-hold.log and perf.txt - the processing checks the value at the pack is the starting one, then countfit.py on the
+  "cnt" lines (711). Tested here as root: 4 -> 2 while measuring -> 4 after, the hold gone at the chain's end (this VM has
+  no PMU, so no "cnt" here). **Its processing**: the written list's records not in
   results/followup-seed96-jitband.md appended to it first (the pool-sizes pack's records; its "written ids" line), then
   `HANDOFF=results/handoff-relf-657.md PRED=717 sh lab/evolve/process-followup.sh 96-jitband ITERATION
   smalljit=15eda54ebd` (the laptop and dream only: the JIT designs' two classes), results/drafts/chainB-714.py and
@@ -424,7 +429,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): chain D (717) - five. Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
+- **Predictions due** (results/predictions.md): chain D (717, 719) - six. Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first

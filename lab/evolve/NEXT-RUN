@@ -19,8 +19,12 @@
 #   kept below 35,980 B (1 % under 15eda54ebd's 36,344) - chain C's 40 minutes reached only 35,365 B before the batch; the
 #   seed 95 and 96 results files alone gave 23 (results/followup-seed96-jitband.md, with the role's 5 anchors). It writes
 #   build/evolve/jitband-list.md - the 28 and its best 30 new finds; measure-ids.py on it, then loadtest.py at 10 rounds
-#   (~40 minutes a session at chain C's ~1,300 s + 21 s a design), repeated while another ends by dream's deadline. The
-#   PMU's counts only with `sudo sysctl kernel.perf_event_paranoid=2` before the start.
+#   (~40 minutes a session at chain C's ~1,300 s + 21 s a design), repeated while another ends by dream's deadline.
+#   Iteration 719 (the owner: "include sudo commands in the next run as we did previously; ensure all settings are
+#   restored when next run exits"): loadtest.py takes the chain's perf hold as clockcheck.py did (545) - next-run.sh asks
+#   sudo once at the start, root's perf-hold.py sets kernel.perf_event_paranoid to 2 only while loadtest.py measures and
+#   puts the old value back after each session, at a crash and at the chain's end; the pack carries perf-hold.log and
+#   perf.txt (the value at the pack). Start next-run.sh from a terminal, so sudo can ask.
 # Iteration 716 (chain C processed - results/followup-roles-seed96-roles-c.md): none - the roles next (the owner's
 #   choices first: the smallest, the fastest portable's tie, the x86-32 tie by size), then self-hosting phase 6 on them.
 # Iteration 714 (chain B processed; the owner: 6 hours, "our goal is not to lose any potentially good designs"): chain C -
