@@ -515,9 +515,9 @@ static UNS8 *mem;                                                  /* the dictio
 #include <sys/mman.h>
 #include <signal.h>
 #define PAGE 4096
-static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((aligned(PAGE)));
+static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((aligned(PAGE), section(".bss.mem_dict")));   /* 734: engine/data-layout.ld */
 #else
-static UNS8 mem[MEMSIZE + CELL_BYTES - 1];
+static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((section(".bss.mem_dict")));
 #endif
 #define STK_END ((UNS64)(uintptr_t)base + MEMSIZE)
 #endif

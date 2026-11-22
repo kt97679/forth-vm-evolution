@@ -1,0 +1,74 @@
+# The fixed data layout, step 1 - measured (Iteration 734; engine/data-layout.ld, results/drafts/early-games-713.md)
+
+A scratch clone of 576a30f4 (Iteration 733, numfirst applied) against the same tree without the layout. The engine's
+small variables in one page-aligned block (.bss.hot), the tables a run touches after it (.bss.tab, ending with t_obuf
+and the loader's heads - buffers used from their start), the other buffers of 4 KB and more after them (.bss.big).
+GNU ld and lld both take the script (-T with INSERT); lab/evolve/data-layout-check.py lists each section's members
+from a link map (run-tests: --self-test, two roles).
+
+## The ten roles, 8-byte cells (results/drafts/data-layout-734.py, medians of 7)
+
+| role | engine B | outputs | start-up faults | start-up data+BSS pages present | rss KB (the record's reading) | the workloads' faults, new - base | corpus instructions new / base |
+|---|---:|---|---:|---:|---:|---|---:|
+| best-all-round | 34216 / 34216 | same | 33 -> 25 | 10 -> 7 (of 135, 134) | 332 -> 296 | kernel -9, fib -9, corpus -9, loop -9, bubble -7, ackermann -7, apps -7 | 1.0000 |
+| fastest-x86-32 | 30516 / 30516 | same | 31 -> 24 | 9 -> 7 (of 129, 129) | 288 -> 260 | kernel -7, fib -6, corpus -7, loop -9, bubble -7, ackermann -7, apps -5 | 1.0000 |
+| fastest-x86-64 | 33256 / 33256 | same | 32 -> 25 | 10 -> 8 (of 132, 131) | 316 -> 292 | kernel -9, fib -7, corpus -6, loop -7, bubble -7, ackermann -5, apps -12 | 1.0000 |
+| least-memory | 7574 / 7574 | same | 15 -> 15 | 5 -> 5 (of 91, 91) | 104 -> 108 | kernel +1, fib +0, corpus +0, loop +1, bubble +1, ackermann +0, apps +0 | 1.0000 |
+| portable-arm | 26790 / 26790 | same | 18 -> 15 | 7 -> 5 (of 103, 103) | 132 -> 124 | kernel -2, fib -2, corpus -4, loop -2, bubble -2, ackermann -2, apps -3 | 1.0000 |
+| portable-fastest | 16336 / 16336 | same | 21 -> 17 | 10 -> 6 (of 105, 104) | 144 -> 124 | kernel -5, fib -3, corpus -5, loop -4, bubble -4, ackermann -4, apps -5 | 1.0000 |
+| portable-knee | 9424 / 9424 | same | 20 -> 15 | 9 -> 5 (of 104, 103) | 136 -> 116 | kernel -5, fib -5, corpus -5, loop -5, bubble -5, ackermann -5, apps -5 | 1.0000 |
+| portable-small | 8806 / 8806 | same | 18 -> 15 | 7 -> 5 (of 97, 97) | 120 -> 112 | kernel -2, fib -2, corpus -1, loop -2, bubble -1, ackermann -2, apps -4 | 1.0000 |
+| small-jit | 18676 / 18676 | same | 27 -> 21 | 9 -> 6 (of 102, 102) | 240 -> 220 | kernel -3, fib -4, corpus -5, loop -4, bubble -3, ackermann -3, apps -5 | 1.0000 |
+| smallest | 4246 / 4246 | same | 16 -> 14 | 6 -> 4 (of 91, 90) | 112 -> 104 | kernel -2, fib -2, corpus -2, loop -2, bubble -2, ackermann -3, apps -2 | 1.0000 |
+data-layout: every output the same
+
+## Three at 4-byte cells (medians of 5; cachegrind does not run the 32-bit engines)
+
+| role | engine B | outputs | start-up faults | start-up data+BSS pages present | rss KB (the record's reading) | the workloads' faults, new - base | corpus instructions new / base |
+|---|---:|---|---:|---:|---:|---|---:|
+| smallest | 5254 / 5254 | same | 20 -> 19 | 6 -> 4 (of 87, 86) | 132 -> 120 | kernel -3, fib -2, corpus -2, loop -3, bubble -3, ackermann -2, apps -3 | - |
+| portable-fastest | 17056 / 17056 | same | 26 -> 19 | 9 -> 5 (of 100, 99) | 156 -> 132 | kernel -6, fib -3, corpus -5, loop -3, bubble -4, ackermann -5, apps -5 | - |
+| fastest-x86-32 | 29288 / 29288 | same | 33 -> 27 | 8 -> 6 (of 112, 112) | 272 -> 248 | kernel -7, fib -7, corpus -6, loop -6, bubble -5, ackermann -6, apps -5 | - |
+data-layout: every output the same
+
+## The caches (results/drafts/data-layout-cache-734.py, cachegrind --cache-sim=yes)
+
+| role | workload | instructions new / base | L1 data misses base -> new | last-level data misses base -> new |
+|---|---|---:|---:|---:|
+| best-all-round | corpus | 1.0000 | 1525 -> 1525 (+0.00 %) | 1327 -> 1320 |
+| best-all-round | kernel | 1.0000 | 3042 -> 3049 (+0.23 %) | 1970 -> 1963 |
+| least-memory | corpus | 1.0000 | 249 -> 249 (+0.00 %) | 249 -> 249 |
+| least-memory | kernel | 1.0000 | 1480 -> 1485 (+0.34 %) | 996 -> 995 |
+| smallest | corpus | 1.0000 | 242 -> 241 (-0.41 %) | 242 -> 241 |
+| smallest | kernel | 1.0000 | 1443 -> 1440 (-0.21 %) | 984 -> 982 |
+| portable-fastest | corpus | 1.0000 | 441 -> 438 (-0.68 %) | 441 -> 438 |
+| portable-fastest | kernel | 1.0000 | 1858 -> 1855 (-0.16 %) | 1247 -> 1244 |
+
+## least-memory, 25 runs a workload (faults: value, count)
+
+| workload | without the layout | with it |
+|---|---|---|
+| BYE | 14 [14x14, 15x8, 16x3] | 15 [14x9, 15x14, 16x2] |
+| kernel | **27** [26x12, 27x11, 28x2] | **27** [26x11, 27x10, 28x4] |
+| fib | 15 [14x5, 15x15, 16x5] | 15 [14x11, 15x12, 16x2] |
+| corpus | 20 [19x10, 20x12, 21x3] | 20 [19x6, 20x17, 21x2] |
+| loop | 15 [14x11, 15x12, 16x1, 17x1] | 15 [14x7, 15x15, 16x3] |
+| bubble | 16 [15x10, 16x13, 17x2] | 16 [15x9, 16x13, 17x3] |
+| ackermann | 15 [14x10, 15x12, 16x3] | 15 [14x7, 15x16, 16x2] |
+
+The record's memory, the largest median, the kernel workload's: 108 KB either way. Its medians of 7 read 104 or 108 on
+the old layout from run to run (26 or 27 at the kernel workload) - the table's 104 -> 108 is that. Its small variables
+had fallen on two pages already touched (with dispatch.1, heads and t_obuf - results/drafts/bss-pages-713.py): the
+layout luck that went its way. Nine roles gain 8-36 KB at 8-byte cells, the three at 4-byte cells 12-24 KB; start-up
+2-8 faults fewer; no engine byte, output or instruction count moves.
+
+## Two variants measured and not taken
+
+- **The small block straight after .data, in the file page's tail** (no page alignment): the nine gained as much or
+  a page more (smallest 100 KB, fastest-x86-32 252), but least-memory paid a fault on every workload (BYE 15 -> 16,
+  kernel 27 -> 28 over 25 runs; the same pages present, under gdb at exit_group): that page is the file's, mapped
+  from the page cache, and the first write to it is a copy-on-write fault of its own - free only where .data is
+  written anyway. Page-aligned (as taken), least-memory 15 and 27 again.
+- **The four initialized variables a run writes made zero at load** (t_otty, t_seek0, jit_used, the JIT's l_tor -
+  each a lazy "not asked yet" flag; 0 for it, the value + 1 or + 2 after): so the file's last page is never written.
+  No fault fewer that the medians show, and the engines +2 to +48 B (portable-arm 48, best-all-round 30): reverted.

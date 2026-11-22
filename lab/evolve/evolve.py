@@ -885,6 +885,7 @@ def cc():
     return os.environ.get('EVOLVE_CC', 'cc').split()
 
 RTC = os.path.join(ROOT, 'engine', 'rt-linux-x86_64.c')
+DATA_LD = ['-Wl,-T,' + os.path.join(ROOT, 'engine', 'data-layout.ld')]   # Iteration 734: the fixed data layout, step 1 (GNU ld; -fdata-sections' sections by name)
 def rt():
     """Iteration 75 (the owner): every engine WITHOUT the C library - its
     system calls from engine/rt-linux-x86_64.c, linked statically - so the
@@ -903,7 +904,7 @@ def rt():
                      # calls appear only in LTO's code, after the linker plugin resolved raise as unused: GCC's lto=1 designs
                      # did not link on rage (seed 86's chain). Named undefined on the command line, raise stays global.
                      '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-Wl,-u,raise', '-DRTLIB=1', os.path.join(ROOT, 'engine', 'rt-linux-armv7.c'),
-                     '-lgcc', '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
+                     '-lgcc', '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections'] + DATA_LD
     if (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
     # Iteration 331: building 32-bit x86 here (EVOLVE_CC with -m32) - the i386 runtime, static
     # as the x86-64 one: a 32-bit check's binaries run where no 32-bit C library is (dream.lan)
@@ -913,7 +914,7 @@ def rt():
     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
                  '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', rtc, '-lgcc',
-                 '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
+                 '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections'] + DATA_LD
     # --gc-sections (Iteration 113): the runtime is one object file, so code
     # nothing calls came along - vsnprintf, snprintf, execvp, syscall,
     # getrusage, memmove: 1.9-2.7 KB of every engine, dead. Dropped.

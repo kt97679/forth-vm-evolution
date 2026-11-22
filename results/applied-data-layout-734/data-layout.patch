@@ -1,0 +1,191 @@
+diff --git a/engine/data-layout.ld b/engine/data-layout.ld
+new file mode 100644
+index 00000000..f1698df6
+--- /dev/null
++++ b/engine/data-layout.ld
+@@ -0,0 +1,59 @@
++/* engine/data-layout.ld - the engine's writable data in a fixed layout (Iteration 734; results/drafts/early-games-713.md,
++   the 8-bit games' hand-placed RAM, step 1). Given to GNU ld with -T: INSERT keeps the default script and adds three
++   output sections to it. The engine is built with -fdata-sections, so every variable is a section of its own,
++   .bss.NAME (a function's static: NAME, NAME.N or FUNCTION.NAME). In the order a start-up meets them:
++
++     .data           as before - the initialized variables, on the file's last page
++     .bss.hot        every small variable, from the next page on: the few hundred bytes a run touches on one page
++                     with the tables after them. Not in the file page's tail: that page is the file's, and the first
++                     write to it is a fault of its own (copy on write) - free only where .data is written anyway; the
++                     least-memory role paid a fault for it (results/drafts/data-layout-734.txt)
++     .bss.tab        the tables of 512 B to 2 KB a run touches (dispatch, the tag's maps, the JIT's per-word marks),
++                     then the two buffers a run touches from their start: t_obuf (written from 0 at every output) and
++                     the loader's heads (8 bytes a chain of its 32 KB) - so their used part continues the block
++     .bss            whatever no pattern here names - empty on today's engines
++     .bss.big        the other buffers of 4 KB and more, the stacks first; each touched only where it is used
++
++   A section is placed by the first statement that names it, and the statements here come before the default
++   script's, so .bss.big's and .bss.tab's names win over .bss.hot's catch-all. A buffer of 4 KB or more missing
++   from the lists lands in .bss.hot and costs pages, not correctness: lab/evolve/data-layout-check.py lists
++   each output section's members from the link map. Step 2 (the two stack tops on one page) is not here. */
++
++SECTIONS
++{
++  .bss.big (NOLOAD) : ALIGN(4096)
++  {
++    *(.bss.stackmem)
++    *(.bss.mem_dict)
++    *(.bss.t_fbb .bss.g_altstack)
++    *(.bss.jit_ic .bss.jit_st .bss.jit_k .bss.map .bss.map.* .bss.*.map)
++    *(.bss.jn_w .bss.jn_end .bss.jp_w .bss.jp_at .bss.jp_t .bss.jp_l)
++    *(.bss.buf .bss.buf.* .bss.*.buf .bss.dir .bss.dir.* .bss.*.dir)
++    *(.bss.tw_ .bss.tw_.* .bss.*.tw_ .bss.tc_ .bss.tc_.* .bss.*.tc_)
++    *(.bss.prof .bss.pair .bss.trip .bss.callc .bss.ipc .bss.rcnt .bss.rtgt .bss.tr_*)
++  }
++}
++INSERT AFTER .bss;
++
++SECTIONS
++{
++  .bss.tab (NOLOAD) :
++  {
++    *(.bss.dispatch .bss.dispatch.* .bss.*.dispatch)
++    *(.bss.t2tab .bss.t2tab.* .bss.*.t2tab .bss.t2esc .bss.t2esc.* .bss.*.t2esc)
++    *(.bss.dtab256 .bss.dtab256.* .bss.*.dtab256)
++    *(.bss.jitk_tg .bss.tg .bss.tg.* .bss.*.tg .bss.jit_fz)
++    *(.bss.t_obuf .bss.*.t_obuf)
++    *(.bss.heads .bss.heads.* .bss.*.heads)
++  }
++}
++INSERT BEFORE .bss;
++
++SECTIONS
++{
++  .bss.hot (NOLOAD) : ALIGN(4096)
++  {
++    *(.bss.* COMMON)
++  }
++}
++INSERT BEFORE .bss.tab;
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 81e7c3a7..92a3a244 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -515,9 +515,9 @@ static UNS8 *mem;                                                  /* the dictio
+ #include <sys/mman.h>
+ #include <signal.h>
+ #define PAGE 4096
+-static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((aligned(PAGE)));
++static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((aligned(PAGE), section(".bss.mem_dict")));   /* 734: engine/data-layout.ld */
+ #else
+-static UNS8 mem[MEMSIZE + CELL_BYTES - 1];
++static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((section(".bss.mem_dict")));
+ #endif
+ #define STK_END ((UNS64)(uintptr_t)base + MEMSIZE)
+ #endif
+diff --git a/lab/evolve/data-layout-check.py b/lab/evolve/data-layout-check.py
+new file mode 100644
+index 00000000..59104d0e
+--- /dev/null
++++ b/lab/evolve/data-layout-check.py
+@@ -0,0 +1,60 @@
++#!/usr/bin/env python3
++"""lab/evolve/data-layout-check.py MAP [MAP ...] | --self-test - engine/data-layout.ld checked on a link map (ld -Map; Iteration 734):
++each of .bss.hot, .bss.tab, .bss and .bss.big with its members (name, size), and a FAULT for a member of 4 KB or more
++outside .bss.big (t_obuf and heads excepted: .bss.tab's end, by design) or one of 512 B or more in .bss.hot (a name engine/data-layout.ld's lists missed). Exit 1 on a fault.
++--self-test: two roles built by the lab with a map, checked (run-tests)."""
++import os, re, shutil, sys, tempfile
++
++OUT = ('.bss.hot', '.bss.tab', '.bss', '.bss.big')
++bad = 0
++maps = sys.argv[1:]
++if maps[:1] == ['--self-test']:
++    # run-tests: two roles built by the lab with a link map beside them - best-all-round (the JIT, the tag, tos: every
++    # buffer the engine has) and least-memory (GCC) - and checked; on a host without GNU ld's script (EVOLVE_LIBC,
++    # profiling) nothing is linked by it and there is nothing to check
++    import json
++    ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++    sys.path.insert(0, os.path.join(ROOT, 'lab', 'evolve')); sys.argv = ['x']
++    import evolve as E
++    E.setup(); tmp = tempfile.mkdtemp(prefix='dlc-'); maps = []
++    for n in ('best-all-round', 'least-memory'):
++        g = json.load(open(os.path.join(ROOT, 'designs', n, 'record.json')))['genome']
++        m = os.path.join(tmp, n + '.map'); E._EXTRA_CFLAGS[:] = ['-Wl,-Map=' + m]
++        E.build(E.canon(g), os.path.join(tmp, n)); maps.append(m)
++    E._EXTRA_CFLAGS[:] = []
++for path in maps:
++    lines = open(path).read().split('\n')
++    cur, mem, size = None, {k: [] for k in OUT}, {}
++    i = 0
++    while i < len(lines):
++        l = lines[i]
++        m = re.match(r'^(\.\S+)\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)', l)
++        m1 = re.match(r'^(\.\S+)\s*$', l)
++        if m or m1:          # an output section: its name at the line's start (the address on the next line if long)
++            name = (m or m1).group(1)
++            if m1 and i + 1 < len(lines):
++                m2 = re.match(r'^\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)', lines[i + 1])
++                if m2: size[name] = int(m2.group(2), 16)
++            elif m: size[name] = int(m.group(3), 16)
++            cur = name if name in OUT else None
++            i += 1; continue
++        if cur:
++            m = re.match(r'^ (\.bss\S*|COMMON)\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)', l)
++            m1 = re.match(r'^ (\.bss\S*|COMMON)\s*$', l)
++            if m1 and i + 1 < len(lines):
++                m2 = re.match(r'^\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)', lines[i + 1])
++                if m2: m, i = (m1.group(1), int(m2.group(2), 16)), i + 1
++            elif m: m = (m.group(1), int(m.group(3), 16))
++            if m and m[1]: mem[cur].append(m)
++        i += 1
++    print('%s:' % path)
++    for k in OUT:
++        if k not in size and not mem[k]: continue
++        ms = sorted(mem[k], key=lambda x: -x[1])
++        print('  %-9s %7d B  %3d members: %s' % (k, size.get(k, 0), len(ms), ', '.join('%s %d' % (n[5:] or n, s) for n, s in ms[:12]) + (' ...' if len(ms) > 12 else '')))
++        for n, s in ms:
++            if (k != '.bss.big' and s >= 4096 and not (k == '.bss.tab' and re.search(r'(^|\.)(t_obuf|heads)(\.\d+)?$', n[5:]))) or (k == '.bss.hot' and s >= 512):
++                print('  FAULT     %s (%d B) in %s - engine/data-layout.ld names it nowhere it belongs' % (n, s, k)); bad += 1
++if 'tmp' in dir(): shutil.rmtree(tmp, ignore_errors=True)
++print('data-layout-check: %s' % ('PASS - %d links, every buffer of 4 KB or more in .bss.big' % len(maps) if not bad else 'FAILED - %d' % bad))
++sys.exit(1 if bad else 0)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 5a73b123..444d7f5d 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -885,6 +885,7 @@ def cc():
+     return os.environ.get('EVOLVE_CC', 'cc').split()
+ 
+ RTC = os.path.join(ROOT, 'engine', 'rt-linux-x86_64.c')
++DATA_LD = ['-Wl,-T,' + os.path.join(ROOT, 'engine', 'data-layout.ld')]   # Iteration 734: the fixed data layout, step 1 (GNU ld; -fdata-sections' sections by name)
+ def rt():
+     """Iteration 75 (the owner): every engine WITHOUT the C library - its
+     system calls from engine/rt-linux-x86_64.c, linked statically - so the
+@@ -903,7 +904,7 @@ def rt():
+                      # calls appear only in LTO's code, after the linker plugin resolved raise as unused: GCC's lto=1 designs
+                      # did not link on rage (seed 86's chain). Named undefined on the command line, raise stays global.
+                      '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-Wl,-u,raise', '-DRTLIB=1', os.path.join(ROOT, 'engine', 'rt-linux-armv7.c'),
+-                     '-lgcc', '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
++                     '-lgcc', '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections'] + DATA_LD
+     if (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
+     # Iteration 331: building 32-bit x86 here (EVOLVE_CC with -m32) - the i386 runtime, static
+     # as the x86-64 one: a 32-bit check's binaries run where no 32-bit C library is (dream.lan)
+@@ -913,7 +914,7 @@ def rt():
+     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
+     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
+                  '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', rtc, '-lgcc',
+-                 '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
++                 '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections'] + DATA_LD
+     # --gc-sections (Iteration 113): the runtime is one object file, so code
+     # nothing calls came along - vsnprintf, snprintf, execvp, syscall,
+     # getrusage, memmove: 1.9-2.7 KB of every engine, dead. Dropped.
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index b213bb20..b9c387e9 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -624,6 +624,9 @@ rm -rf "$SH"
+ # tarballs past the newest two go - and no seed pack, the runs' records, ever goes. A made-up runs directory; the
+ # tool as it was failed 8 of the 12 checks, among them two that would have lost seed packs.
+ echo
++echo "the engine's data layout (lab/evolve/data-layout-check.py --self-test - Iteration 734, engine/data-layout.ld):"
++if out=$(python3 "$ROOT/lab/evolve/data-layout-check.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' datalayout "$(printf '%s' "$out" | tail -1 | cut -c20-140)"
++else printf '  %-12s FAIL   %s\n' datalayout "$(printf '%s' "$out" | grep FAULT | head -1 | cut -c1-110)$(printf '%s' "$out" | tail -1 | cut -c1-80)"; FAILED=1; fi
+ echo "the runs directory's tidying (tools/test-clean-runs.sh):"
+ if out=$(sh "$ROOT/tools/test-clean-runs.sh" 2>&1); then printf '  %-12s ok     %s\n' clean-runs "$(printf '%s' "$out" | tail -1)"
+ else printf '  %-12s FAIL   %s\n' clean-runs "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; rc=1; fi

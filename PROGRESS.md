@@ -12207,3 +12207,22 @@ Files: forth/cv8-numfirst.4, forth/cv8t-numfirst.4, results/applied-numfirst-733
 results/applied-numfirst-733/ORDER.md, results/drafts/numfirst-733.txt, results/drafts/numfirst-probe-733.py;
 engine/vm-lab.c, tools/layout.py, tools/gen-msc.py, tools/gen-tos.py, lab/evolve/evolve.py, lab/evolve/export-genes.py,
 lab/evolve/GENES.md.
+
+## Iteration 734 - 2026-11-22 - Claude
+
+The fixed data layout's step 1 built and applied (results/applied-data-layout-734/; batch-check PASS) - the engine's
+writable data placed by name through an augmenting linker script, engine/data-layout.ld (-fdata-sections makes each
+variable a section; GNU ld and lld take -T with INSERT): every small variable in one page-aligned block, the tables a
+run touches after it (ending with t_obuf and the loader's heads, buffers used from their start), the other buffers of
+4 KB and more after them. No C changed but the dictionary's array form named. The ten roles (results/drafts/
+data-layout-734.txt): the engines the same size, every output and instruction count the same; the record's memory
+8-36 KB less on nine at 8-byte cells, 12-24 KB on three at 4; least-memory the same (108 KB: 25 runs a workload - its
+small variables had already fallen on touched pages); start-up 2-8 faults fewer; the L1 and last-level data misses
+within 1 % (cachegrind's simulation; the time is the laptop's). Not taken, measured: the block in the file page's tail
+(the nine a page better still, but a copy-on-write fault where a run never writes .data - least-memory +1 on every
+workload, found under gdb at exit_group with the same pages present) and the written initialized variables made zero
+at load (no fault fewer, +2-48 B of engine). lab/evolve/data-layout-check.py lists each section's members from a link
+map (run-tests: --self-test). The stages' engines and the shipped designs as they were until exported again.
+Files: engine/data-layout.ld, lab/evolve/data-layout-check.py, results/applied-data-layout-734/data-layout.patch,
+results/applied-data-layout-734/ORDER.md, results/drafts/data-layout-734.py, results/drafts/data-layout-cache-734.py,
+results/drafts/data-layout-734.txt; engine/vm-lab.c, lab/evolve/evolve.py, tools/run-tests.sh.

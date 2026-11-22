@@ -624,6 +624,9 @@ rm -rf "$SH"
 # tarballs past the newest two go - and no seed pack, the runs' records, ever goes. A made-up runs directory; the
 # tool as it was failed 8 of the 12 checks, among them two that would have lost seed packs.
 echo
+echo "the engine's data layout (lab/evolve/data-layout-check.py --self-test - Iteration 734, engine/data-layout.ld):"
+if out=$(python3 "$ROOT/lab/evolve/data-layout-check.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' datalayout "$(printf '%s' "$out" | tail -1 | cut -c20-140)"
+else printf '  %-12s FAIL   %s\n' datalayout "$(printf '%s' "$out" | grep FAULT | head -1 | cut -c1-110)$(printf '%s' "$out" | tail -1 | cut -c1-80)"; FAILED=1; fi
 echo "the runs directory's tidying (tools/test-clean-runs.sh):"
 if out=$(sh "$ROOT/tools/test-clean-runs.sh" 2>&1); then printf '  %-12s ok     %s\n' clean-runs "$(printf '%s' "$out" | tail -1)"
 else printf '  %-12s FAIL   %s\n' clean-runs "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; rc=1; fi

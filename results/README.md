@@ -573,3 +573,4 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `applied-hashk-cross-731/ORDER.md` - hashk in the self-hosting compiler (Iteration 731): HASH8, G-HASHK and THASH - three hashk designs self-built at both widths.
 - `applied-chainorder-732/ORDER.md` - The gene chainorder (Iteration 732): each chain's most looked-up names first, forward links their own form - converter-only, measured, applied.
 - `applied-numfirst-733/ORDER.md` - The gene numfirst (Iteration 733): a token of digits converted without its lookup while no name has that form - two forms (the engine's (FIND), INTERPRET8), measured, applied.
+- `applied-data-layout-734/ORDER.md` - The fixed data layout, step 1 (Iteration 734): the engine's small variables on one page by an augmenting linker script (engine/data-layout.ld), the big buffers after - measured, applied.

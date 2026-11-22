@@ -36,6 +36,7 @@ What each script here does, from its own first line (Iteration 275). What each g
 GENES.md; running the evolution on the laptop: RUNNING.md; the rest of this file
 is the evolver's development history, phase by phase, then iteration by iteration.
 
+- `data-layout-check.py` - (Iteration 734) engine/data-layout.ld checked on a link map: each output section's members, and a fault for a buffer of 4 KB or more outside .bss.big or one of 512 B or more in .bss.hot; `--self-test` builds two roles with a map (run-tests).
 - `draft-results.py` - a returned seed's results file drafted from process-seed.sh's output (Iteration 551): the facts - records, the true front, the hypervolume, the extremes, one round first, the operators, the JIT designs, the fast end re-measured, the experiments, the remote checks.
 - `process-run.sh` ITERATION [ARCHIVE] - a returned seed's processing, its mechanical part, one detached job (Iteration 560): process-seed.sh, draft-results.py, the batch checked and applied (git apply --index), process-checks.sh, and the control.
 - `process-followup.sh` N ITERATION ROLES [ARCHIVE] - a returned follow-up chain's processing in one command (Iteration 615): unpacked, its lines checked, the readings by session, the pooled pick, each role against its holder.

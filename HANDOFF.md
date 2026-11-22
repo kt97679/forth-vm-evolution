@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 733.
+- master: Iteration 734.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -415,7 +415,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   outputs the same; the corpus's instructions 0.756-0.999 of off, parse 0.683-0.994 (the smallest with hashk 0.725,
   0.587); +55-106 B of image; off, every byte as before. Not yet in the self-hosting compiler (G-NOT-YET): HEADER8 as
   the last X8 and INTERPRET8 for the Forth form - built if a final role takes the gene, as chainorder's.
-  **Next: the fixed data layout's step 1, then the rehearsal of the new genes together.**
+  **734: the fixed data layout's step 1 built and applied** (results/applied-data-layout-734/; batch-check PASS) -
+  engine/data-layout.ld, an augmenting linker script: the small variables on one page of their own, the tables a run
+  touches after them (then t_obuf and heads, used from their start), the big buffers after those. The ten roles
+  (results/drafts/data-layout-734.txt): no byte of engine, output or instruction moved; the memory 8-36 KB less on
+  nine, least-memory the same; start-up 2-8 faults fewer. Every run's memory reads lower from here: records of the
+  runs before (and the ten roles' 718 records) are on the old layout - the series' pooled picks measure again, as
+  727's fixed environment already asks. The designs shipped carry it when exported again (export-designs.py copies
+  the script into src/). Step 2 (the stack tops on one page) open, priced apart.
+  **Next: the rehearsal of the new genes together (jitdead, jitfew, hashk, chainorder, numfirst) on this engine; then
+  the series' first seed, seed 97 - its hours the owner's.**
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
