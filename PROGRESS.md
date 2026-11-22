@@ -12127,4 +12127,5 @@ bytes), ncw3's Forth: all in the lab already or not for us but one. New, priced:
 ((v*K) & 0xFFFF) >> (16 - log2 chains) with K searched on the held-out programs - out of sample alone -5 to -15 % of
 the corpus's entries visited, -4 to -47 % of parse's, -6 to -18 % of the five programs'; with chainorder -7 to -34 %,
 -51 to -61 %, -29 to -40 % (smallest and portable-fastest, 16-128 chains). Names stored as hashes rejected on paper.
-Files: results/drafts/demoscene-ioccc-727.md, results/drafts/hashseed-727.py, results/drafts/hashseed-727.txt.
+Files: results/drafts/demoscene-ioccc-727.md, results/drafts/hashseed-727.py, results/drafts/hashseed-727.txt;
+hashk's prototype begun - results/drafts/hashk-727.4 (HASH8), results/drafts/hashk-727.py (its harness; built, not yet measured).
