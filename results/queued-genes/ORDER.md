@@ -21,8 +21,8 @@ G-JITDEAD and G-JITX in the genes, read by name so a genes.4 without them still 
 the ten shipped designs' genes); --jit-dead out of G-NOT-YET. Tested: results/drafts/jitdead-cross-723.sh (on the
 queue applied) - four JIT records with jitdead, PASS at both widths (results/drafts/jitdead-cross-723.md).
 
-batch-check (713, on 6f91bb0 - 3 patches): PASS - run-tests PASS (the generators: 118 paths), validate 7 of 7 IDENTICAL,
-the jail PASS.
+batch-check (724, on af0ef242 - 4 patches): PASS - run-tests PASS (the generators: 118 paths), validate 7 of 7
+IDENTICAL, the jail PASS.
 
 **jitdead-after-seed96.patch** (engine/jit.c, engine/vm-lab.c, forth/cv8t-jitd.4, lab/evolve/GENES.md,
 lab/evolve/engines-check.py, lab/evolve/evolve.py, lab/evolve/export-genes.py, tools/layout.py, tools/sod16.py) - the
