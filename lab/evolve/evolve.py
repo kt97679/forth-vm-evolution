@@ -375,7 +375,7 @@ def all_dump_names():
             for t in (('', '-iplus') if l == '-loopall' else ('',))
             for v in (('', '-var') if f else ('',)) for i in (('', '-inl') if f else ('',)) for c in (('', '-const') if f else ('',))
             for e in (('', '-empty') if b == bt else ('',)) for j in (('', '-jit', '-jitd') if b == bt else ('',))
-            for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or v or i or c or e or j or y or b == bt]
+            for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or v or i or c or e or j or y or b == bt] + [KW() + '-bg.txt']   # 735: the plain design's with hashk, chainorder or numfirst
 def prebuild_dumps():
     """Iteration 697: a search makes and checks every dump before its workers start, at each width it selects at - so a
     dump that does not load whole stops the run at its start (dump_guard), as setup() did before 694; a check tool
@@ -1238,7 +1238,13 @@ def _build(g, d):
     fuse += '-inl' if rtinline_on(g) else ''                                                           # rtinline: 694
     fuse += '-const' if rtconst_on(g) else ''                                                          # rtconst: 691
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
-    dump = dump_file((KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + (('-jitd' if jitdead_on(g) else '-jit') if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+    dname = ((KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + (('-jitd' if jitdead_on(g) else '-jit') if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+    # Iteration 735: a design of no other part (the plain -b dump, tools/build-stages.sh's - cv8.4 and cv8b.4 alone) with
+    # hashk, chainorder or numfirst on takes a dump of its own, made here with their files (-bg: boot_files reads no part
+    # from it); off, the old dump still - the lab's own -b would differ in INCLUDE-BUFFER's leftover text, not one byte
+    # of the design's (the rehearsal's short run: 395e2f44e9, hashk on, did not convert).
+    if dname == KW() + '-b.txt' and any(express(g).get(k) for k in ('hashk', 'chainorder', 'numfirst')): dname = KW() + '-bg.txt'
+    dump = dump_file(dname)
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.

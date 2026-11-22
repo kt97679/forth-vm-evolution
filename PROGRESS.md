@@ -12226,3 +12226,23 @@ map (run-tests: --self-test). The stages' engines and the shipped designs as the
 Files: engine/data-layout.ld, lab/evolve/data-layout-check.py, results/applied-data-layout-734/data-layout.patch,
 results/applied-data-layout-734/ORDER.md, results/drafts/data-layout-734.py, results/drafts/data-layout-cache-734.py,
 results/drafts/data-layout-734.txt; engine/vm-lab.c, lab/evolve/evolve.py, tools/run-tests.sh.
+
+## Iteration 735 - 2026-11-22 - Claude
+
+The new genes rehearsed together (results/rehearsal-735.md) - jitdead, jitfew, hashk, chainorder, numfirst on the
+engine with the fixed layout. The ten roles evaluated off and on (evolve.evaluate, 3 rounds, both widths, two pairs):
+every evaluation ok; the totals +38-567 B (the JIT roles' application code about 690 B less - jitdead); the JIT
+roles' memory 30-72 KB less (jitfew); the sandbox's time too noisy for the genes (0.92-1.05). By instructions
+(rehearsal-instr-735.py, cachegrind): the selection 0.944-1.004 - the corpus 0.71-0.99, parse (held out) 0.46-0.98,
+the programs unmoved, the kernel workload +0.5-1.3 % (small-jit +3.8 %, jitfew's second pass). The short run (pop 8,
+2 generations, both widths) found a death of the new genes: a design of no other part with hashk on did not convert -
+its dump is build-stages.sh's k64-b.txt, without the genes' files; fixed (results/applied-plain-dump-735/; batch-check
+PASS): such a design with hashk, chainorder or numfirst on takes a dump of its own (-bg); off, the old one (the lab's
+own plain dump differs in INCLUDE-BUFFER's leftover text). A method note: a `cp -a` clone keeps build/work's symlinks
+into its source tree - setup() wrote through them into master's forth/ (the same bytes; their times moved). NEXT-RUN:
+`seed 97 16h widths` (the owner: "let's do next run 16 hours") - the new series' first run; its method line in
+results/stopping-series.md; predictions 5 (results/predictions.md).
+Files: results/rehearsal-735.md, results/applied-plain-dump-735/plain-dump.patch, results/applied-plain-dump-735/ORDER.md,
+results/drafts/rehearsal-735.py, results/drafts/rehearsal-instr-735.py, results/drafts/plain-genes-735.py,
+results/drafts/plain-genes-735.json; lab/evolve/evolve.py, lab/evolve/NEXT-RUN, results/stopping-series.md,
+results/predictions.md.

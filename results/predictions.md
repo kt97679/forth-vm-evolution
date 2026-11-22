@@ -1640,3 +1640,19 @@ steps' packs and nothing failed - 85/15.
 Scored (Iteration 726; results/rage-designs-726.md, selfhost-speed-726.md): (1) right - PASS, the GCC three the lab's bytes,
 each running its shipped self-built image32.img to 49. (2) right - 0.9974 at 8-byte cells, 0.9867 at 4. (3) right - both
 steps ok, both packs, 586 s. 3 of 3.
+
+## Seed 97, the new series' first run (16 hours - the owner; both widths) - predicted (Iteration 735)
+
+The reopened search's genes since seed 96 - jitdead, jitfew, hashk, chainorder, numfirst (rehearsed together,
+results/rehearsal-735.md) - on the fixed measuring environment (727) and the fixed data layout (734); the newest four
+databases carried (seeds 93-96), measured again in generation 0 on this engine. A series' first run: nothing earlier to
+gain on (stopping.py), so these are about the run itself. (1) No design dies of the new genes (no "did not convert",
+no wrong output with one of the five on) and the deaths are only the 16-bit families' reach and the frozen founders -
+65/35 (the rehearsal's short run found one such death, fixed at 735; seeds 94 and 96 each had a stall). (2) The memory
+extreme (every alive design) at or below 104 KB - 70/30 (seed 96's 108; the layout took the smallest role 112 -> 100-104
+and least-memory 108 -> 108, results/drafts/data-layout-734.txt). (3) The fastest at 64 bits, from every alive design,
+below seed 96's 0.1190 - 40/60 (the series edged 0.8-1.3 % a run; the five genes' instructions on the JIT roles 0.999-
+1.004, results/drafts/rehearsal-instr-735.py - the JIT designs' time is the native code's). (4) numfirst on in 5 % or
+more of the true front at the last generation - 55/45 (the selection's instructions 0.944-0.999 on the portable and
+smallest roles, the corpus 0.71-0.99; mutation reaches it about 1 % of the time, some hundreds of tries in a run). (5)
+The smallest below 22,409 B - 15/85 (unmoved since seed 94's generation 4; each new gene adds bytes).

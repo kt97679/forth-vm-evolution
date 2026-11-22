@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 734.
+- master: Iteration 735.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -423,8 +423,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   runs before (and the ten roles' 718 records) are on the old layout - the series' pooled picks measure again, as
   727's fixed environment already asks. The designs shipped carry it when exported again (export-designs.py copies
   the script into src/). Step 2 (the stack tops on one page) open, priced apart.
-  **Next: the rehearsal of the new genes together (jitdead, jitfew, hashk, chainorder, numfirst) on this engine; then
-  the series' first seed, seed 97 - its hours the owner's.**
+  **735: the rehearsal** (results/rehearsal-735.md): the ten roles off and on, every evaluation ok; by instructions the
+  selection 0.944-1.004 (the corpus 0.71-0.99, parse 0.46-0.98, the kernel workload +0.5-3.8 %), the JIT roles' memory
+  30-72 KB less, the totals +38-567 B. Its short run found and the iteration fixed a death of the new genes - a design
+  of no other part with hashk on had no HASH8 in build-stages.sh's plain dump; now such a design with hashk, chainorder
+  or numfirst on takes a dump of its own (results/applied-plain-dump-735/; batch-check PASS). **NEXT-RUN: `seed 97 16h
+  widths`** (the owner: "let's do next run 16 hours") - the new series' first run (its method line in
+  results/stopping-series.md: the genes, the environment, the layout); predictions 5. **Next: process seed 97** - its
+  results file, the stopping rule's first line of the series, then the next seed or the roles' follow-up chains, and
+  relf's handoff once at the end (results/handoff-relf-726.md and the iter726 package held, not sent).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
@@ -550,7 +557,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): none (NEXT-RUN none). Scored: the rage check again and portable-fastest's
+- **Predictions due** (results/predictions.md): seed 97's five (Iteration 735) - scored when it is processed. Scored: the rage check again and portable-fastest's
   gate (725) 3 of 3; chain D's (717-720) 4 of 7, one void; chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage
   check's (654) 1 of 1; the final check's (648-649) 2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the

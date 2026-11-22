@@ -228,6 +228,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `rtinline-694.md` - The gene rtinline (a short body copied for its call at run time): the programs 5-15 % faster alone; and the dumps made when first asked for (setup 63 s -> 1.6 s).
 - `does-at-695.md` - DOES> @ as a variable's fetch, in rtvar: shellmix 0.606 on fastest-x86-64 (the JIT now translates its DOES> words' callers), 0.783 on portable-fastest.
 - `rehearsal-696.md` - Step 4's rehearsal of rtvar, rtconst and rtinline together: the front alive; the programs gain, the corpus pays (the compile layer); the score 0.94-1.01; rtinline's scan made cheaper.
+- `rehearsal-735.md` - The new genes rehearsed together (jitdead, jitfew, hashk, chainorder, numfirst): every evaluation ok; by instructions the selection 0.944-1.004; one death found and fixed.
 - `jit-throw-unwind-673.md` - relf's report (its Iteration 942) fixed: on the jitexec designs a THROW from a nested interpreter now unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; tests in designs/test.sh.
 - `relf-questions-665.md` - What relf asked this lab (its Iteration 716), answered as far as the generic search can, from the ten winners' expressed genes: (+LOOP) and operand forms yes; XF@/XV@, DEFER and PICK not in the search.
 - `article-check-659.md` - The article's figures checked (Iteration 659): the same numbers in both drafts, 195 of 197 distinctive figures in the records; part one's image sizes regenerate at a105e59, not at master.
@@ -574,3 +575,4 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `applied-chainorder-732/ORDER.md` - The gene chainorder (Iteration 732): each chain's most looked-up names first, forward links their own form - converter-only, measured, applied.
 - `applied-numfirst-733/ORDER.md` - The gene numfirst (Iteration 733): a token of digits converted without its lookup while no name has that form - two forms (the engine's (FIND), INTERPRET8), measured, applied.
 - `applied-data-layout-734/ORDER.md` - The fixed data layout, step 1 (Iteration 734): the engine's small variables on one page by an augmenting linker script (engine/data-layout.ld), the big buffers after - measured, applied.
+- `applied-plain-dump-735/ORDER.md` - The plain design's dump with hashk, chainorder or numfirst (Iteration 735): a dump of its own with their files - found by the rehearsal, fixed, applied.
