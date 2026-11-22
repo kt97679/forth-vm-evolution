@@ -12118,3 +12118,13 @@ V1' -, fixenv, jitfew, jitdead in the cross compiler) - batch-check PASS on 537f
 stages rebuilt; the ten roles' lab build unchanged (pack-designs.py: 20 of 20 builds 9 of 9 right, the 40 checksums
 718's). Next, the sandbox's: chainorder's prototype, numfirst as a gene, the fixed data layout's step 1, their rehearsal.
 Files: results/applied-genes-727/ (moved; ORDER.md's head).
+
+## Iteration 728 - 2026-11-21 - Claude
+
+The owner: the demoscene's and the IOCCC's implementations checked against the register - crinkler, smol, vondehi,
+Teensy ELF, sizecoding's Linux and 256-byte tricks; IOCCC buzzard.2, 1996 august, OTCC, 2024-2025's VMs (SUBLEQ in 366
+bytes), ncw3's Forth: all in the lab already or not for us but one. New, priced: hashk, the chain hash
+((v*K) & 0xFFFF) >> (16 - log2 chains) with K searched on the held-out programs - out of sample alone -5 to -15 % of
+the corpus's entries visited, -4 to -47 % of parse's, -6 to -18 % of the five programs'; with chainorder -7 to -34 %,
+-51 to -61 %, -29 to -40 % (smallest and portable-fastest, 16-128 chains). Names stored as hashes rejected on paper.
+Files: results/drafts/demoscene-ioccc-727.md, results/drafts/hashseed-727.py, results/drafts/hashseed-727.txt.

@@ -568,3 +568,4 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `rage-designs-726.md` - The rage check again (Iteration 726): PASS - the Tegra's GCC builds the GCC three's forth-arm, the lab's bytes, running their self-built images; the chain's 586 s.
 - `selfhost-speed-726.md` - The self-hosting gate's speed half on portable-fastest (Iteration 726): pass (0.9974, 0.9867) - it stays self-built.
 - `handoff-relf-726.md` - The relf handoff for the new roles (Iteration 726): the ten by `make` target, self-built or not, their genes, the package forth-vm-evolution-designs-iter726.tar.gz; held, not sent (the owner, 727: after the reopened search).
+- `drafts/demoscene-ioccc-727.md` - The demoscene's and the IOCCC's techniques against the register (Iteration 727): all covered or not for us but one - the hash seed searched per image (hashk), priced: with chainorder up to three fifths of the lookup's walk.

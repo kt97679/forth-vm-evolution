@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 727.
+- master: Iteration 728.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -367,6 +367,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (a gene in its two forms - 'offer trade-offs as genes'), the fixed data layout's step 1 (GOALS.md's register, 713)
   each built as a gene where its prototype pays; the rehearsal of them together; then the series' first seed (the
   owner's hours), the stopping rule, the roles' follow-up chains, the handoff.
+  **728 (the owner: the demoscene's and the IOCCC's implementations)**: results/drafts/demoscene-ioccc-727.md - all
+  covered or not for an interpreter but one: **hashk**, the chain hash's seed searched per image (crinkler's per-program
+  brute force; results/drafts/hashseed-727.py, .txt): out of sample alone -5 to -15 % of the corpus's walk, -4 to -47 %
+  of parse's; with chainorder up to three fifths - built with chainorder's prototype (both place names in chains).
+  Names stored as hashes rejected (FIND must be exact).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
