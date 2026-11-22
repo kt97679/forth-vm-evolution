@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 723.
+- master: Iteration 724.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -333,6 +333,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   "differ" line, which counts untracked binaries and the genes' path comment). numfirst's C form priced
   (numfirst-722.md's 723 section): on the nine klookup roles no dispatch, corpus instructions 0.905-0.990, kernel up to
   +0.37 % - the Forth form for smallest, the C one for the rest.
+  **724 (while chain D runs)**: **the queued genes rebased** - 713's patches no longer applied to master; made again
+  (one conflict), and **jitdead in the cross compiler queued** after them (results/queued-genes/jitdead-cross-after-
+  seed96.patch; ORDER.md's order now four) - four JIT records with jitdead self-host at both widths
+  (results/drafts/jitdead-cross-723.md); the shipped designs' genes need no export for it. The 723 =I?BRANCH gap left
+  open (a per-word map needed).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

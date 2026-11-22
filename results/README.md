@@ -289,6 +289,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/esolangs-717.md` - What the esoteric languages lend the search (Iteration 717, the owner's idea): most is here; literals converted before the lookup (FALSE's first-character dispatch) priced - about half the corpus's and parse's walk for a few tens of bytes - and proposed as a gene.
 - `drafts/numfirst-722.md` - numfirst priced on prototypes (Iterations 722-723): with the lookup in Forth a quarter of the corpus's dispatches go; with FIND in C the Forth test costs more, the C form saves 1-10 % of the corpus's instructions
 - `drafts/branches-723.md` - the cross compiler's fused branches on variants that use them all (Iteration 723): every form fires in the self-built images at both widths, the short ones where the design has them; after chain D's one-design rebuild rehearsed with all ten self-built - PASS
+- `drafts/jitdead-cross-723.md` - the gene jitdead in the cross compiler, queued (Iteration 724): four JIT records with it self-host at both widths; the queued genes rebased on master (one conflict)
 - `drafts/jitfew-test-713.py` - The gene jitfew off and on, interleaved: time, pages, outputs, bytes (Iteration 713).
 - `drafts/stack-pages-713.py` - Pages per selection workload from a root, outputs hashed (Iteration 713).
 - `drafts/heldout-711.py` - The search set against the held-out pair on the screen's pool (Iteration 711), by family; `.txt` its output.

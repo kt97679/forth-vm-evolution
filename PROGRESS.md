@@ -12071,3 +12071,13 @@ chain D rehearsal could not run (chain C's archive not on this machine). (3) num
 to +0.37 %, +64-320 engine bytes. run-tests PASS. Files: results/drafts/branches-723.md,
 results/drafts/selfhost-variants-723.sh, results/drafts/fusedcount-723.py, results/drafts/rebuild-rehearsal-723.sh,
 results/drafts/numfirst-c-723.py; results/drafts/numfirst-722.md (723's section).
+
+## Iteration 724 - 2026-11-21 - Claude
+
+While chain D runs (the owner: "yes" - the =I?BRANCH gap, then jitdead in the cross compiler). (1) The gap not traced:
+neither a tiny `=` nor folded constants explain it; the translator's image does not map by offset for a per-word
+profile. (2) The queued genes no longer applied to master (export-genes.py moved since 713): rebased, one conflict.
+(3) jitdead in the cross compiler, queued as results/queued-genes/jitdead-cross-after-seed96.patch: four JIT records
+with jitdead self-host at both widths (jitimg with and without jitx, and none); an older genes.4 still builds (make
+selfhost 20 of 20). batch-check on the queue: see results/queued-genes/ORDER.md. Files:
+results/drafts/jitdead-cross-723.md, results/drafts/jitdead-cross-723.sh; results/queued-genes/ (rebased, the new patch).
