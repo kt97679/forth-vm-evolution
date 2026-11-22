@@ -372,6 +372,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   brute force; results/drafts/hashseed-727.py, .txt): out of sample alone -5 to -15 % of the corpus's walk, -4 to -47 %
   of parse's; with chainorder up to three fifths - built with chainorder's prototype (both place names in chains).
   Names stored as hashes rejected (FIND must be exact).
+  **hashk's prototype in progress (728)**: results/drafts/hashk-727.4 (HASH8, K 2643, 128 chains) and hashk-727.py
+  (numfirst-722.py's harness; run in a scratch clone whose tools/layout.py threads by HASHK=K - the switch is two lines
+  before _wl_hash's and wl_hash's returns). Built: the smallest's image 9,053 B against 9,037. Not yet measured: the
+  harness's VMPROF file (build/hashk/vmprof.txt) is not written, the same engine writes /tmp/hk-vmprof.txt - look there
+  first. Then chainorder's prototype on the same harness, then K with chainorder.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
