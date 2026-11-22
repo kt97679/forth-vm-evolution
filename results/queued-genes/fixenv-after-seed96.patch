@@ -1,8 +1,8 @@
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 33118e8..9bb146f 100644
+index 14449c31..8d409295 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
-@@ -716,6 +716,27 @@ def _contain(cpu, kind=None):
+@@ -721,6 +721,27 @@ def _contain(cpu, kind=None):
          if kind == 'engine':
              resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
      return f
@@ -30,7 +30,7 @@ index 33118e8..9bb146f 100644
  def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
      """Run cmd in a process group of its own and kill the WHOLE group on
      timeout. A broken design executes arbitrary code, and the engine's
-@@ -728,6 +749,7 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
+@@ -733,6 +754,7 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
      waiting its turn on a loaded laptop is not. timeout, wall-clock, is
      only the backstop for one that blocks. SIGXCPU counts as a timeout."""
      kind = _kind(cmd)

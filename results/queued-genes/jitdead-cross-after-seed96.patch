@@ -1,0 +1,154 @@
+diff --git a/forth/cross-cv8.4 b/forth/cross-cv8.4
+index 28f9c7fa..6fc040ea 100644
+--- a/forth/cross-cv8.4
++++ b/forth/cross-cv8.4
+@@ -24,6 +24,12 @@
+ 
+ \ Target cell width in bytes: the genes' G-CELL - 8, or 4 for a 32-bit
+ \ target (forth/cross.4's one line).
++\ 723: gene constants an older genes.4 lacks (0 there) - so the ten designs' genes need no export for them.
++CREATE GENE-BUF 32 ALLOT
++: GENE? ( c-addr u --- n ) GENE-BUF PLACE GENE-BUF FIND IF EXECUTE ELSE DROP 0 THEN ;
++S" G-JITDEAD" GENE? CONSTANT X-JITDEAD   \ the gene jitdead (layout.py --jit-dead)
++S" G-JITX" GENE? CONSTANT X-JITX         \ --jitx
++
+ VARIABLE TARGET-CELL-BYTES
+ G-CELL TARGET-CELL-BYTES !
+ 
+@@ -333,10 +339,12 @@ VARIABLE CSP   \ Stack pointer checking between : and ;
+ CREATE T2ONE 256 ALLOT  T2ONE 256 0 FILL      \ logical number -> code + 1, or 0
+ CREATE T2ESC 256 ALLOT  T2ESC 256 0 FILL      \ ...-> escape selector + 1, or 0
+ VARIABLE T2JIT -1 T2JIT !                      \ the JIT's code
++VARIABLE T2JITN -1 T2JITN !                    \ jitdead's JITN code (65532 in the map; Iteration 723)
+ : T2-LOAD ( --- )
+   G-T2-ONE LIST-COUNT 2 / 0 ?DO
+     I 2 * G-T2-ONE LIST-TOKEN TOKEN>N  I 2 * 1+ G-T2-ONE LIST-TOKEN TOKEN>N      ( L code )
+-    OVER 65533 = IF T2JIT ! DROP ELSE OVER 256 < 0= ABORT" cross: a map entry past 255" 1+ SWAP T2ONE + C! THEN
++    OVER 65533 = IF T2JIT ! DROP ELSE OVER 65532 = IF T2JITN ! DROP ELSE
++    OVER 256 < 0= ABORT" cross: a map entry past 255" 1+ SWAP T2ONE + C! THEN THEN
+   LOOP
+   G-T2-ESC LIST-COUNT 2 / 0 ?DO
+     I 2 * G-T2-ESC LIST-TOKEN TOKEN>N  I 2 * 1+ G-T2-ESC LIST-TOKEN TOKEN>N
+@@ -1091,8 +1099,19 @@ CREATE RAW-TMP 256 4 * CELLS ALLOT  VARIABLE #RAW-TMP
+ : JH-PLAIN? ( --- f )
+   TLINK @ 0= IF 0 EXIT THEN
+   #OPS @ 0 ?DO I OP-K DUP O-STR = OVER O-LOOPC = OR SWAP O-PPC = OR IF UNLOOP 0 EXIT THEN LOOP -1 ;
+-: JIT-HEADER, ( len --- ) 65533 OP,-T 1 31 LSHIFT OR 32,-T ;
+-: JH-OPB ( len --- ) JH-NAMED? TLINK @ 0= 0= AND IF JIT-HEADER, ELSE DROP THEN ;
++: JIT-HEADER, ( len --- )
++\ 723, the gene jitdead (layout.py --jit-dead, Iteration 710): the JIT's code alone - the native offset goes in the
++\ translated body's first four bytes (engine/jit.c), so the body is made four bytes long (JD-PAD,).
++  X-JITDEAD IF DROP 65533 OP,-T EXIT THEN 65533 OP,-T 1 31 LSHIFT OR 32,-T ;
++CREATE JD-AT 64 CELLS ALLOT  CREATE JD-PAD 64 ALLOT  VARIABLE #JD  0 #JD !   \ jitdead: the headed bodies, their pads
++: JD-PAD, ( xt len --- )
++\ jitdead: NOOPs after the EXIT to four bytes of body, never run (layout.py's jh_pad); the pad kept for jit_wends.
++  X-JITDEAD 0= IF 2DROP EXIT THEN
++  4 SWAP - 0 MAX  #JD @ 64 < 0= ABORT" cross: more than 64 JIT-headed words"
++  DUP #JD @ JD-PAD + C!  SWAP #JD @ CELLS JD-AT + !  1 #JD +!
++  0 ?DO 0 C,-T LOOP ;
++: JD-INDEX ( xt --- i | -1 ) #JD @ 0 ?DO DUP I CELLS JD-AT + @ = IF DROP I UNLOOP EXIT THEN LOOP DROP -1 ;
++: JH-OPB ( len --- f ) JH-NAMED? TLINK @ 0= 0= AND IF JIT-HEADER, -1 ELSE DROP 0 THEN ;
+ 
+ \ ---- the gene factor (the translator's --factor: tools/layout.py,
+ \ Iteration 267; here 715). Repeated straight-line code in cold words
+@@ -1406,9 +1425,9 @@ VARIABLE FB-BYTES
+   FAC-ON @ IF PASS @ 2 = IF FAC-KEEP THEN FAC-APPLY THEN
+   COUNTING @ IF COUNT-SITES THEN
+   JH-NAMED? IF JH-PLAIN? ELSE 0 THEN IF
+-    THERE 5 + DUP RELAX #OPS @ ADDR SWAP - JIT-HEADER,
+-  ELSE THERE RELAX THEN
+-  0 HS-FINAL !  ENCODE 0 #OPS ! ;
++    THERE DUP X-JITDEAD IF 1+ ELSE 5 + THEN DUP RELAX #OPS @ ADDR SWAP -   ( xt len )
++    DUP JIT-HEADER,  0 HS-FINAL !  ENCODE 0 #OPS !  JD-PAD,
++  ELSE THERE RELAX  0 HS-FINAL !  ENCODE 0 #OPS ! THEN ;
+ 
+ \ ---- the shadows ----------------------------------------------------
+ VARIABLE IN-KERNEL 0 IN-KERNEL !   \ on while kernel.4 is compiled: rebinding is the kernel's uses only
+@@ -1778,7 +1797,8 @@ ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
+   REDIR-K @ LAST-SHADOW @ >REDIR !
+   SWAP-K @ 0< 0= IF -1 LAST-SHADOW @ 13 CELLS + ! 0 HS-FINAL ! SKIP-DEF ELSE
+     OPB-K @ IF
+-      DEAD-NOW @ 0= IF OPB-K @ OPSIZE-T 1+ JH-OPB OPB-K @ OP,-T 1 OP,-T THEN 0 HS-FINAL ! SKIP-DEF
++      DEAD-NOW @ 0= IF THERE OPB-K @ OPSIZE-T 1+ DUP JH-OPB >R OPB-K @ OP,-T 1 OP,-T R> IF JD-PAD, ELSE 2DROP THEN THEN
++      0 HS-FINAL ! SKIP-DEF
+     ELSE
+       REDIR-K @ ?DUP 0= IF LAST-SHADOW @ THEN HS-BEGIN UNREVEAL CODE-START !CSP T]
+     THEN
+@@ -2175,7 +2195,7 @@ CREATE FP-T 20 ALLOT
+     I FP# 18 + C@ DUP 3 RSHIFT 64 + IA @ + DUP C@-T ROT 7 AND 1 SWAP LSHIFT OR SWAP C!-T
+     I FP# 18 + C@ IA @ 99 + I 2* + C!-T  I FP# 19 + C@ IA @ 100 + I 2* + C!-T
+   LOOP
+-  G-TAG2 G-JIT AND T2JIT @ 0< 0= AND IF T2JIT @ 5 ELSE 0 0 THEN IA @ 97 + C!-T IA @ 96 + C!-T
++  G-TAG2 G-JIT AND T2JIT @ 0< 0= AND IF T2JIT @ X-JITDEAD IF 1 ELSE 5 THEN ELSE 0 0 THEN IA @ 97 + C!-T IA @ 96 + C!-T
+   #FP @ IA @ 98 + C!-T ;
+ 
+ \ PART 9: THE IMAGE FILE (engine/vm-lab.c, load_image): the magic, the
+@@ -2231,19 +2251,24 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
+ \ A word's first byte: its link's - the link's length, less one, in the
+ \ top two bits of the byte before the count - or, with no header, its body's.
+   DUP 3 CELLS + @ ?DUP IF SWAP DROP DUP 1- C@-T 6 RSHIFT 1+ - ELSE @ THEN ;
++: JW-ROW? ( shadow --- shadow f )
++\ 723: with jitdead and not --jitx, the JIT-headed words' rows alone (layout.py's rows_).
++  X-JITDEAD X-JITX 0= AND IF DUP @ JD-INDEX 0< 0= ELSE -1 THEN ;
+ : JW-COLLECT ( --- )
+   0 #JW-S ! 0 #JW-I !
+   #SHADOWS @ 0 ?DO
+     I CELLS ORD-SH + @ DUP LIVE? IF
+       DUP ITEM-START #JW-I @ CELLS JW-I + ! 1 #JW-I +!
+-      DUP CELL+ @ K-DATA = 0= IF DUP @ #JW-S @ CELLS JW-S + ! 1 #JW-S +! THEN
++      DUP CELL+ @ K-DATA = 0= IF JW-ROW? IF DUP @ #JW-S @ CELLS JW-S + ! 1 #JW-S +! THEN THEN
+     THEN DROP
+-  LOOP ;
++  LOOP
++  X-JITDEAD IF #JD @ 0 ?DO 0 #JW-S @ 0 ?DO I CELLS JW-S + @ J CELLS JD-AT + @ = OR LOOP   \ an X and its X8: one body
++    0= ABORT" cross: a JIT-headed body not among the words (jitdead)" LOOP THEN ;
+ : JW-END ( s --- e )
+-\ The least first byte above s, or the image's end.
+-  THERE #JW-I @ 0 ?DO
++\ The least first byte above s, or the image's end - less jitdead's pad (723: layout.py's rows_ end before it).
++  DUP THERE #JW-I @ 0 ?DO
+     I CELLS JW-I + @ >R  OVER R@ < R@ 2 PICK < AND IF DROP R@ THEN R> DROP
+-  LOOP SWAP DROP ;
++  LOOP SWAP DROP  SWAP JD-INDEX DUP 0< IF DROP ELSE JD-PAD + C@ - THEN ;
+ : JW-NEXT ( last --- s | 0 )
+ \ The least body above last (a body is never at 0, a header is).
+   0 #JW-S @ 0 ?DO
+@@ -2276,6 +2301,7 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
+     -1 SWAP
+   REPEAT DROP
+   S" };" J-TYPE J-CR
++  X-JITDEAD IF S" #define JITN_CODE " J-TYPE T2JITN @ DUP 0< ABORT" cross: no JITN code in the map" J-NUM J-CR THEN
+   S" #define JIT_W_SQ " J-TYPE NM-SQ COUNT J-OFF J-NUM J-CR
+   S" #define JIT_W_DQ " J-TYPE NM-DQ COUNT J-OFF J-NUM J-CR
+   S" #define JIT_W_TYPE " J-TYPE S" TYPE" J-OFF J-NUM J-CR
+@@ -2303,7 +2329,7 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
+   0 #INLS !  0 #BSS !  0 ALLOT-HOOK !  0 #SHADOWS !  0 LAST-SHADOW !
+   REFD #ORD-MAX 0 FILL  FREE# #ORD-MAX CELLS 0 FILL  ALL# #ORD-MAX CELLS 0 FILL
+   0 #OPS !  0 HEADERLESS !  0 IN-KERNEL !  0 DEAD-NOW !
+-  0 #FWDP !  0 HS-ON !  0 HS-STORE !  0 HS-FINAL !  FAC-RESET ;
++  0 #FWDP !  0 HS-ON !  0 HS-STORE !  0 HS-FINAL !  FAC-RESET  0 #JD ! ;
+ 
+ : BUILD ( --- )
+   RESET
+diff --git a/lab/evolve/export-genes.py b/lab/evolve/export-genes.py
+index 0bf6c985..9cbaabcb 100644
+--- a/lab/evolve/export-genes.py
++++ b/lab/evolve/export-genes.py
+@@ -112,6 +112,8 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+     L += lst('G-T2-ESC', ['%d %d' % p for p in e1], "...logical operation, escape selector")
+     L += ['%d CONSTANT G-JIT           \\ the lazy JIT (engine/jit.c): its opcode a tag-2 code' % (-1 if '--jit' in args else 0),
+           '%d CONSTANT G-JITIMG        \\ 1: the outer interpreter\'s words given the JIT header' % int(opt(args, '--jitimg', 0)),
++          '%d CONSTANT G-JITDEAD       \\ the gene jitdead: the JIT header the code alone, bodies four bytes (723)' % (-1 if '--jit-dead' in args else 0),
++          '%d CONSTANT G-JITX          \\ --jitx: every code word in jit_wends' % (-1 if '--jitx' in args else 0),
+           '%d CONSTANT G-GUARD-ABORT   \\ the gene abortif: ABORT\" guarded by ?BRANCH (sod16.guard_aborts; 714)' % (-1 if '--guard-abort' in args else 0)]
+     m = re.search(r'^hot-inline: \d+ sites - (.*)$', tout, re.M)
+     assert ('--hot-inline' not in args) or m, 'hot-inline: the translator named no sites'
+@@ -134,7 +136,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
+     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
+     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
+-    ny = [k for k in ('--opcall-file', '--jit-dead') if k in args]       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 710: --jit-dead not yet
++    ny = [k for k in ('--opcall-file',) if k in args]       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
+     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'

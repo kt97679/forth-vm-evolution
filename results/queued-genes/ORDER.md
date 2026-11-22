@@ -9,6 +9,17 @@ BASE since 713). Then, from the repository's top:
     git apply results/queued-genes/jitdead-after-seed96.patch
     git apply results/queued-genes/fixenv-after-seed96.patch
     git apply results/queued-genes/jitfew-after-seed96.patch
+    git apply results/queued-genes/jitdead-cross-after-seed96.patch
+
+**Rebased at Iteration 723** (713's three no longer applied to master: export-genes.py had moved, 714-722): made again
+on 723's master one commit each - one conflict, G-NOT-YET's line (722 had emptied it; jitdead's --jit-dead kept
+there), the rest context; fixenv and jitfew unchanged but their offsets. **jitdead-cross-after-seed96.patch** (new,
+last; forth/cross-cv8.4, lab/evolve/export-genes.py): jitdead in the cross compiler - the header the JIT's code
+alone, the body padded to four bytes (JD-PAD,), jit_wends' ends before the pad and, without --jitx, the headed words'
+rows alone, the header length 1 in the image's table, JITN's code read from the map and written (JITN_CODE);
+G-JITDEAD and G-JITX in the genes, read by name so a genes.4 without them still builds (make selfhost: 20 of 20 on
+the ten shipped designs' genes); --jit-dead out of G-NOT-YET. Tested: results/drafts/jitdead-cross-723.sh (on the
+queue applied) - four JIT records with jitdead, PASS at both widths (results/drafts/jitdead-cross-723.md).
 
 batch-check (713, on 6f91bb0 - 3 patches): PASS - run-tests PASS (the generators: 118 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.

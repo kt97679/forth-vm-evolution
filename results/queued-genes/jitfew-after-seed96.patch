@@ -1,5 +1,5 @@
 diff --git a/engine/jit.c b/engine/jit.c
-index 9f7d81a..e318513 100644
+index 9f7d81a6..e318513d 100644
 --- a/engine/jit.c
 +++ b/engine/jit.c
 @@ -643,7 +643,9 @@ static int jit_inl1(UNS64 a, unsigned short *op, UNS64 *v) {
@@ -101,7 +101,7 @@ index 9f7d81a..e318513 100644
  
  #ifdef JIT_SCAN_MAIN
 diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
-index 0b0fdcc..5949104 100644
+index 0b0fdcca..5949104c 100644
 --- a/lab/evolve/GENES.md
 +++ b/lab/evolve/GENES.md
 @@ -79,6 +79,7 @@ as the record of what each does.
@@ -113,7 +113,7 @@ index 0b0fdcc..5949104 100644
  | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
  | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
 diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
-index 8d93902..df703e6 100755
+index 8d939029..df703e61 100755
 --- a/lab/evolve/engines-check.py
 +++ b/lab/evolve/engines-check.py
 @@ -76,6 +76,9 @@ VARIANTS = [                                     # (name, genes set on s6, genes
@@ -127,7 +127,7 @@ index 8d93902..df703e6 100755
      ('the JIT, jitdead with jitexec, jitmul, jitcfa, jitimg', dict(JIT, jitdead=1, jitexec=1, jitmul=1, jitcfa=1, jitimg=1), ['jitdead', 'jitexec', 'jitimg']),
      ('the JIT, jitdead on the wide tag', dict(JIT, jitdead=1, t2wide=1, jitexec=1, jitmul=1), ['jitdead', 't2wide']),
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 8d40929..c32c386 100644
+index 8d409295..c32c3863 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
 @@ -215,6 +215,7 @@ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGN
