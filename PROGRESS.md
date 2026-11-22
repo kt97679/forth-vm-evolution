@@ -12188,3 +12188,22 @@ results/applied-chainorder-732/chainorder.patch, results/applied-chainorder-732/
 results/drafts/chainorder-use-732.py, results/drafts/chainorder-gene-732.py, results/drafts/chainorder-732.txt;
 engine/vm-lab.c, tools/layout.py, lab/evolve/evolve.py, lab/evolve/export-genes.py, lab/evolve/test-resume.py,
 lab/evolve/GENES.md.
+
+## Iteration 733 - 2026-11-22 - Claude
+
+numfirst built as a gene in its two forms and applied (results/applied-numfirst-733/; batch-check PASS). While no name
+of the form -?[0-9]+ is defined, a token of that form goes to NUMBER? without FIND's walk; the flag is the prologue's
+last padding byte (START + 2 cells - 1), so SAVE-SYSTEM keeps it, and HEADER8 sets it when it lays such a name. With
+klookup the engine's (FIND) answers c-addr 0 at once (-DNUMFIRST; vm-lab.c, gen-msc.py's and gen-tos.py's copies);
+without, forth/cv8-numfirst.4's INTERPRET8 skips FIND for [0-9]+ (nine roles the C form, the smallest the Forth).
+The ten roles (results/drafts/numfirst-733.txt): outputs the same at 8-byte cells, three at 4, with hashk on three;
+the probe's programs (numfirst-probe-733.py - signs, bases, a name of digits defined, a token of digits not a number)
+the same off and on; the corpus's instructions 0.756-0.999 of off, parse 0.683-0.994 (the smallest with hashk 0.725
+and 0.587); images +55-106 B, engines +0-384 B. Off: the 40 engines and images byte for byte 718's. Found on the way:
+the first C form tested the name buffer (FIND's copy of the previous token) - after a number every lookup was skipped;
+the first build changed the five tag-2 roles off - layout.py's hot-inline pass foresees the X8 swap and took
+cv8t-numfirst.4's HEADER8 for HEADER's body (HEADER>HERE#9 over :>]#1): the drop moved before that pass.
+Files: forth/cv8-numfirst.4, forth/cv8t-numfirst.4, results/applied-numfirst-733/numfirst.patch,
+results/applied-numfirst-733/ORDER.md, results/drafts/numfirst-733.txt, results/drafts/numfirst-probe-733.py;
+engine/vm-lab.c, tools/layout.py, tools/gen-msc.py, tools/gen-tos.py, lab/evolve/evolve.py, lab/evolve/export-genes.py,
+lab/evolve/GENES.md.

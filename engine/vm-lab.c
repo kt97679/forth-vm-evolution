@@ -528,6 +528,14 @@ static UNS8 mem[MEMSIZE + CELL_BYTES - 1];
  */
 
 static UNS8 *base;
+#ifdef NUMFIRST   /* Iteration 733: the gene numfirst's C form - (FIND) answers c-addr 0 at once for a token of the form
+    -?[0-9]+ while the flag, the prologue's last padding byte (forth/cv8-numfirst.4's NF-FLAG), is clear  */
+static inline int nf_num(UNS64 nb) { unsigned n = BYTE(nb), k = 1; if (n && BYTE(nb + 1) == '-') k = 2; if (k > n) return 0;
+    for (; k <= n; k++) if ((unsigned)(BYTE(nb + k) - '0') > 9) return 0; return 1; }
+#define NF_SKIP(c, n) do { if (!BYTE((UNS64)(uintptr_t)base + 2 * CELL_BYTES - 1) && nf_num(c)) (n) = 0; } while (0)
+#else
+#define NF_SKIP(c, n) do { } while (0)
+#endif
 
 /* VM registers and related variables */
 
@@ -2176,7 +2184,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
  *  the name to NAMEBUF (32 MIN, PLACE), HASH, the thread's head, THREAD-FIND's
  *  walk, NAME>8 and the immediate bit.  */
 #if X_FIND
-L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0; NF_SKIP(c_, n_);
             if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: bfind; 402: either walk, NAME_WALK */
             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
 #endif

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 732.
+- master: Iteration 733.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -407,7 +407,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the smallest's corpus 0.903. Found on the way: bfind's bf_prev, a sixth link reader (the JIT roles crashed until it
   read the forward form); lab/evolve/test-resume.py's noise 1.0 (the gene moved its draws - the control stopped
   forking at 0.6; at 1.0 it forks with and without). The self-hosting part, when needed: forward links laid as three-
-  byte placeholders and patched at the end - one pass. **Next: numfirst as a gene.**
+  byte placeholders and patched at the end - one pass.
+  **733: numfirst built as a gene and applied** (results/applied-numfirst-733/; batch-check PASS) - while no name of
+  the form -?[0-9]+ is defined, a token of that form goes to NUMBER? without FIND's walk; the flag the prologue's last
+  padding byte (SAVE-SYSTEM keeps it), set by HEADER8. Two forms: with klookup the engine's (FIND) answers at once
+  (-DNUMFIRST), without it forth/cv8-numfirst.4's INTERPRET8 skips FIND. The ten roles (results/drafts/numfirst-733.txt):
+  outputs the same; the corpus's instructions 0.756-0.999 of off, parse 0.683-0.994 (the smallest with hashk 0.725,
+  0.587); +55-106 B of image; off, every byte as before. Not yet in the self-hosting compiler (G-NOT-YET): HEADER8 as
+  the last X8 and INTERPRET8 for the Forth form - built if a final role takes the gene, as chainorder's.
+  **Next: the fixed data layout's step 1, then the rehearsal of the new genes together.**
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

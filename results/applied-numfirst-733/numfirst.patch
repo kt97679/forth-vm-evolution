@@ -1,0 +1,304 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 4bd6561f..81e7c3a7 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -528,6 +528,14 @@ static UNS8 mem[MEMSIZE + CELL_BYTES - 1];
+  */
+ 
+ static UNS8 *base;
++#ifdef NUMFIRST   /* Iteration 733: the gene numfirst's C form - (FIND) answers c-addr 0 at once for a token of the form
++    -?[0-9]+ while the flag, the prologue's last padding byte (forth/cv8-numfirst.4's NF-FLAG), is clear  */
++static inline int nf_num(UNS64 nb) { unsigned n = BYTE(nb), k = 1; if (n && BYTE(nb + 1) == '-') k = 2; if (k > n) return 0;
++    for (; k <= n; k++) if ((unsigned)(BYTE(nb + k) - '0') > 9) return 0; return 1; }
++#define NF_SKIP(c, n) do { if (!BYTE((UNS64)(uintptr_t)base + 2 * CELL_BYTES - 1) && nf_num(c)) (n) = 0; } while (0)
++#else
++#define NF_SKIP(c, n) do { } while (0)
++#endif
+ 
+ /* VM registers and related variables */
+ 
+@@ -2176,7 +2184,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+  *  the name to NAMEBUF (32 MIN, PLACE), HASH, the thread's head, THREAD-FIND's
+  *  walk, NAME>8 and the immediate bit.  */
+ #if X_FIND
+-L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
++L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0; NF_SKIP(c_, n_);
+             if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: bfind; 402: either walk, NAME_WALK */
+             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
+ #endif
+diff --git a/forth/cv8-numfirst.4 b/forth/cv8-numfirst.4
+new file mode 100644
+index 00000000..3ecd9439
+--- /dev/null
++++ b/forth/cv8-numfirst.4
+@@ -0,0 +1,46 @@
++\ forth/cv8-numfirst.4 - the gene numfirst for cv8b.4's byte headers (Iteration 733; results/drafts/esolangs-717.md,
++\ numfirst-722.md): a token of digits is converted without its lookup while no name of the form -?[0-9]+ is defined.
++\ The flag, NF-FLAG, is the prologue's last padding byte (START + 2 cells - 1: after its two calls, never run), so
++\ SAVE-SYSTEM keeps it with the image; HEADER8 sets it when it lays such a name. Two forms: with klookup the engine's
++\ (FIND) answers c-addr 0 at once for a token of the form -?[0-9]+ (-DNUMFIRST); without it, INTERPRET8 here skips FIND
++\ for one of the form [0-9]+. Loaded into every dump with cv8b.4, before the dump tool (lab/evolve/evolve.py):
++\ tools/layout.py drops the file's words without --numfirst, INTERPRET8 too with --numfirst c; HEADER8 and INTERPRET8
++\ then take their places by the X8 rule (this HEADER8 the last, so cv8b.4's gives way) - the images with the gene off
++\ are byte for byte the old ones.
++: NUMFIRST-MARK ;   \ where this file's words start, for the converter
++
++: DIGITS? ( c-addr u --- f )
++  DUP 0= IF 2DROP 0 EXIT THEN
++  OVER + SWAP DO I C@ 48 - 10 U< 0= IF UNLOOP 0 EXIT THEN LOOP -1 ;
++
++: NF-FLAG ( --- c-addr )   START @ 2 CELLS + 1- ;
++
++: HEADER8 ( --- )
++\ cv8b.4's HEADER8, and the name tested: -?[0-9]+ sets NF-FLAG.
++  32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP DROP
++  HERE COUNT OVER C@ 45 = IF 1- SWAP 1+ SWAP THEN DIGITS? IF 1 NF-FLAG C! THEN
++  HERE COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @ HDR-HEAD !
++  HDR-HEAD @ IF HERE 3 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
++  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
++  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
++  HERE LAST !
++  HERE C@ 1+ ALLOT ;
++
++: INTERPRET8 ( ---)
++\ kernel.4's INTERPRET, and a token of digits (its first character tested inline) to NUMBER? without FIND while
++\ NF-FLAG is clear: NUMBER? and what follows exactly as for a name not found.
++  BEGIN
++   32 WORD DUP C@
++  WHILE
++   DUP 1+ C@ 48 - 10 U< IF DUP COUNT DIGITS? NF-FLAG C@ 0= AND ELSE 0 THEN
++   IF 0 0 ELSE FIND DUP THEN
++   IF
++    -1 = STATE @ AND
++    IF COMPILE, ELSE EXECUTE ?STACK THEN
++   ELSE DROP
++    NUMBER? DUP 0= HANDLER @ AND IF -13 THROW THEN 0= ABORT" Undefined word"
++    DPL @ 0< IF DROP STATE @ IF POSTPONE LITERAL ELSE ?STACK THEN
++    ELSE STATE @ IF SWAP POSTPONE LITERAL POSTPONE LITERAL ELSE ?STACK THEN THEN
++   THEN
++  REPEAT   DROP
++;
+diff --git a/forth/cv8t-numfirst.4 b/forth/cv8t-numfirst.4
+new file mode 100644
+index 00000000..c9891acd
+--- /dev/null
++++ b/forth/cv8t-numfirst.4
+@@ -0,0 +1,46 @@
++\ forth/cv8t-numfirst.4 - the gene numfirst for cv8bt.4's byte headers (Iteration 733; results/drafts/esolangs-717.md,
++\ numfirst-722.md): a token of digits is converted without its lookup while no name of the form -?[0-9]+ is defined.
++\ The flag, NF-FLAG, is the prologue's last padding byte (START + 2 cells - 1: after its two calls, never run), so
++\ SAVE-SYSTEM keeps it with the image; HEADER8 sets it when it lays such a name. Two forms: with klookup the engine's
++\ (FIND) answers c-addr 0 at once for a token of the form -?[0-9]+ (-DNUMFIRST); without it, INTERPRET8 here skips FIND
++\ for one of the form [0-9]+. Loaded into every dump with cv8bt.4, before the dump tool (lab/evolve/evolve.py):
++\ tools/layout.py drops the file's words without --numfirst, INTERPRET8 too with --numfirst c; HEADER8 and INTERPRET8
++\ then take their places by the X8 rule (this HEADER8 the last, so cv8bt.4's gives way) - the images with the gene off
++\ are byte for byte the old ones.
++: NUMFIRST-MARK ;   \ where this file's words start, for the converter
++
++: DIGITS? ( c-addr u --- f )
++  DUP 0= IF 2DROP 0 EXIT THEN
++  OVER + SWAP DO I C@ 48 - 10 U< 0= IF UNLOOP 0 EXIT THEN LOOP -1 ;
++
++: NF-FLAG ( --- c-addr )   START @ 2 CELLS + 1- ;
++
++: HEADER8 ( --- )
++\ cv8bt.4's HEADER8, and the name tested: -?[0-9]+ sets NF-FLAG.
++  32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP DROP
++  HERE COUNT OVER C@ 45 = IF 1- SWAP 1+ SWAP THEN DIGITS? IF 1 NF-FLAG C! THEN
++  HERE COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @ HDR-HEAD !
++  HDR-HEAD @ IF HERE 4 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
++  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
++  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
++  HERE LAST !
++  HERE C@ 1+ ALLOT ;
++
++: INTERPRET8 ( ---)
++\ kernel.4's INTERPRET, and a token of digits (its first character tested inline) to NUMBER? without FIND while
++\ NF-FLAG is clear: NUMBER? and what follows exactly as for a name not found.
++  BEGIN
++   32 WORD DUP C@
++  WHILE
++   DUP 1+ C@ 48 - 10 U< IF DUP COUNT DIGITS? NF-FLAG C@ 0= AND ELSE 0 THEN
++   IF 0 0 ELSE FIND DUP THEN
++   IF
++    -1 = STATE @ AND
++    IF COMPILE, ELSE EXECUTE ?STACK THEN
++   ELSE DROP
++    NUMBER? DUP 0= HANDLER @ AND IF -13 THROW THEN 0= ABORT" Undefined word"
++    DPL @ 0< IF DROP STATE @ IF POSTPONE LITERAL ELSE ?STACK THEN
++    ELSE STATE @ IF SWAP POSTPONE LITERAL POSTPONE LITERAL ELSE ?STACK THEN THEN
++   THEN
++  REPEAT   DROP
++;
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 5f48ad3d..95682892 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -82,6 +82,7 @@ as the record of what each does.
+ | the translator's arrays short first (`jitfew`: 0, 1; Iteration 713; JIT designs): engine/jit.c - jit_body's arrays (at, arg, nat, opl, tl) 128 operations long in its frame, and 1,024 (jit_body_big) only for a word with more, translated again from its start; their heads were a page each at every depth of the callees' translation (~24 KB a frame). On eight JIT designs: memory (the selection's workloads but apps) -5 to -16 pages (-11 to -23 %), apps -7 to -27 pages, the engine +224 to +544 bytes, the outputs alike, the time in the noise | results/drafts/early-computers-713.md |
+ | the chain hash with one constant (`hashk`: 0, 1; Iteration 729; every CV8 design - results/drafts/demoscene-ioccc-727.md, after the demoscene's crinkler): a name's chain ((v * 18835) >> 8) & (chains - 1), v kernel.4's HASH (the length and the first two characters) - K searched on the held-out programs for the ten roles and 16-128 chains at once (results/drafts/hashk-table-728.py; K = 256 is today's hash); forth/cv8-hashk.4's HASH8 in every dump becomes HASH's body (tools/layout.py --hashk, which threads the image by it too), the engine's L_x_hash and (FIND) by -DHASHK (vm-lab.c's CHAIN; gen-msc.py's); off, HASH8 leaves the image - every design's bytes as before. Measured (729, results/drafts/hashk-gene-729.py): the lookup's walk shorter - the smallest's parse -17.5 % of its instructions on the prototype. In the self-hosting compiler since 731: G-HASHK in THASH, cv8-hashk.4 among a design's overlays where HASH is no op | results/drafts/demoscene-ioccc-727.md |
+ | each chain's most looked-up names first (`chainorder`: 0, 1; Iteration 732; every CV8 design - results/drafts/demoscene-ioccc-727.md, chainorder-margin-731.txt): the names looked up at least 64 times in the held-out programs (lab/evolve/chainorder-use.txt, results/drafts/chainorder-use-732.py) at the front of their chains, most first, the rest newest first as before; a link to a word laid later is its own form, three bytes (tag F0-FF; tag 2's E0-FF), carved from the four-byte one (28 and 29 bits back now); backward links as before. forth/cv8-chainorder.4 and cv8t-chainorder.4 in every dump - LINK-LEN8 (the narrower reach) and NEXT-NFA88 (the forward form) swapped in by tools/layout.py --chainorder, dropped off; the engine's PREVNFA and bfind's bf_prev by -DCHAINORDER. Measured (results/drafts/chainorder-732.txt, the ten roles): the images +56-120 B; the corpus's instructions 0.987-1.031 of off (the smallest, its walk Forth, 0.987; five C walks a little better, five a little worse); parse (held out) 0.79-0.99; with hashk the smallest's corpus 0.903. Not yet in the self-hosting compiler (G-NOT-YET; its forward links fixed at three bytes, so patched at the end - built if a role takes the gene) | results/drafts/chainorder-732.txt |
++| a token of digits converted without its lookup (`numfirst`: 0, 1; Iteration 733; every byte-header CV8 design - results/drafts/esolangs-717.md, numfirst-722.md): while no name of the form -?[0-9]+ is defined, a token of that form goes to NUMBER? without FIND's walk; the flag NF-FLAG is the prologue's last padding byte (START + 2 cells - 1, never run), so SAVE-SYSTEM keeps it, and HEADER8 sets it when it lays such a name. Two forms: with klookup the engine's (FIND) answers c-addr 0 at once (-DNUMFIRST, NF_SKIP - vm-lab.c, gen-msc.py and gen-tos.py's copies); without it, forth/cv8-numfirst.4's INTERPRET8 skips FIND for [0-9]+. forth/cv8-numfirst.4 and cv8t-numfirst.4 in every dump with cv8b.4 or cv8bt.4 - tools/layout.py --numfirst c|forth keeps HEADER8 (and INTERPRET8 in the Forth form; DIGITS? and NF-FLAG headerless), drops the file's words off, before the hot-inline pass. Measured (results/drafts/numfirst-733.txt, the ten roles): the images +55-106 B, the engines +0-384 B; the corpus's instructions 0.756-0.999 of off (the smallest, the Forth form, 0.756; with hashk 0.725), parse (held out) 0.683-0.994 (with hashk 0.587). Not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/numfirst-733.txt |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 8a935d8b..5a73b123 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -217,6 +217,7 @@ gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+ gene('jitfew', values=range(2), needs=lambda g, e: jit_on(g))    # Iteration 713: the translator's arrays 128 operations long first, 1,024 only for a longer word - their pages (results/drafts/early-computers-713.md)
+ HASHK_K = 18835   # Iteration 729: the gene hashk's one constant - forth/cv8-hashk.4's literal, engine/vm-lab.c's CHAIN by -DHASHK
++gene('numfirst', values=range(2), needs=lambda g, e: g['enc'] == 'cv8' and g['bytehdr'])   # Iteration 733: a token of digits converted without its lookup - forth/cv8-numfirst.4; the C form with klookup
+ gene('chainorder', values=range(2), needs=lambda g, e: g['enc'] == 'cv8' and g['bytehdr'])   # Iteration 732: each chain's most looked-up names first (lab/evolve/chainorder-use.txt), forward links their own form - forth/cv8-chainorder.4
+ CO_MIN = 64   # Iteration 732: chainorder's hot names - looked up at least this often in the held-out programs (results/drafts/chainorder-732.txt: 4, 16, 64 measured; 64 the fewest bytes)
+ gene('hashk', values=range(2))   # Iteration 729: the chain hash ((v * K) >> 8) & (chains - 1) (results/drafts/demoscene-ioccc-727.md; the demoscene's crinkler)
+@@ -313,6 +314,11 @@ def source_names(path):
+             k += 1
+         _DEFS[path] = out
+     return _DEFS[path]
++def nf_file(files):
++    """Iteration 733: numfirst's words for the dump's header family - cv8b.4's or cv8bt.4's."""
++    return ['cv8t-numfirst.4'] if 'cv8bt.4' in files else ['cv8-numfirst.4'] if 'cv8b.4' in files else []
++
++
+ def co_file(files):
+     """Iteration 732: chainorder's link words for the dump's header family - cv8b.4's or cv8bt.4's."""
+     return ['cv8t-chainorder.4'] if 'cv8bt.4' in files else ['cv8-chainorder.4'] if 'cv8b.4' in files else []
+@@ -351,7 +357,7 @@ def dump_file(name):
+         DUMPS[cellw()] = os.path.join(O, 'dumps-' + h.hexdigest()[:12]); os.makedirs(DUMPS[cellw()], exist_ok=True)
+     p = os.path.join(DUMPS[cellw()], name)
+     if not os.path.exists(p):
+-        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['cv8-hashk.4'] + co_file(boot_files(name)) + ['dict-dump-addr.4']) + 'BYE\n'   # 729: HASHK in every dump
++        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['cv8-hashk.4'] + co_file(boot_files(name)) + nf_file(boot_files(name)) + ['dict-dump-addr.4']) + 'BYE\n'   # 729: HASHK in every dump
+         out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
+         try: dump_guard(name, boot, out)                     # Iteration 212: every file loaded, whole
+         except SystemExit as e: raise RuntimeError(str(e))   # 697: an error, not an exit - in a pool's worker an exit left
+@@ -394,7 +400,7 @@ def dump_guard(name, boot, out):
+     missing, want = {}, collections.Counter()
+     for f in re.findall(r'S" (\S+)" INCLUDED', boot):
+         src = os.path.join(ROOT, 'forth', f)
+-        if os.path.exists(src) and f not in ('dict-dump-addr.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4'):   # the base dump has those too (729: HASHK)
++        if os.path.exists(src) and f not in ('dict-dump-addr.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4', 'cv8-numfirst.4', 'cv8t-numfirst.4'):   # the base dump has those too (729: HASHK)
+             lost = [n for n in source_names(src) if n not in have]
+             if lost: missing[f] = lost
+             want.update(source_names(src))
+@@ -1126,6 +1132,7 @@ def _build(g, d):
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+     if jit_on(g) and express(g).get('jitfew'): flags.append('-DJITFEW=1')   # Iteration 713: the translator's arrays short first (engine/jit.c)
+     if express(g).get('hashk'): flags.append('-DHASHK=%d' % HASHK_K)
++    if express(g).get('numfirst') and express(g).get('klookup'): flags.append('-DNUMFIRST=1')   # Iteration 733: numfirst's C form - (FIND)
+     if express(g).get('chainorder'): flags.append('-DCHAINORDER=1')   # Iteration 732: the engine's PREVNFA reads the forward form   # Iteration 729: the engine's chain hash (vm-lab.c's CHAIN)
+     if jitdead_on(g): flags.append('-DJITDEAD=1')               # Iteration 710: the header the code alone (engine/jit.c)
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+@@ -1219,6 +1226,7 @@ def _build(g, d):
+     if hl: opts += ['--headerless', ','.join(hl)]
+     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
+     if express(g).get('hashk'): opts += ['--hashk', str(HASHK_K)]
++    if express(g).get('numfirst'): opts += ['--numfirst', 'c' if express(g).get('klookup') else 'forth']   # Iteration 733
+     if express(g).get('chainorder'): opts += ['--chainorder', os.path.join(ROOT, 'lab', 'evolve', 'chainorder-use.txt'), '--chainorder-min', str(CO_MIN)]   # Iteration 732   # Iteration 729: the image threaded by the chain hash with K
+     opts += CONVERT_EXTRA
+     img = os.path.join(d, 'image.img')
+@@ -2166,7 +2174,7 @@ def setup():
+     import shutil
+     W = os.path.join(O, 'work')
+     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-inline.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
++               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4', 'cv8-numfirst.4', 'cv8t-numfirst.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+     base = subprocess.run([S0(), KIMG()], input=b'S" cv8-hashk.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+diff --git a/lab/evolve/export-genes.py b/lab/evolve/export-genes.py
+index c7412f5d..7e50937d 100644
+--- a/lab/evolve/export-genes.py
++++ b/lab/evolve/export-genes.py
+@@ -139,7 +139,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
+     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
+     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
+-    ny = [k for k in ('--opcall-file', '--chainorder') if k in args]   # 731: --hashk done (G-HASHK); 732: --chainorder not yet       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
++    ny = [k for k in ('--opcall-file', '--chainorder', '--numfirst') if k in args]   # 731: --hashk done (G-HASHK); 732: --chainorder not yet; 733: --numfirst not yet       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
+     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index 61cf8862..b0d04fbf 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -132,7 +132,7 @@ SPECS = {
+     'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+     'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+     'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
++    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; NF_SKIP(c_, n_); if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+     'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
+     'L_x_numberq':      (['a', 'b', 'p'], ['lo', 'hi', 'f'], '{ UNS64 lo_, hi_, f_ = numberq(a, b, p, &lo_, &hi_); lo = lo_; hi = hi_; f = f_; }'),   # Iteration 295: (NUMBER?)
+     'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index c09d1d68..66d023ec 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -98,7 +98,7 @@ HOT = {
+  # Iteration 54: the input side - SCAN, SKIP: three in, two out; TABS>BL: two in
+  'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+  'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+- 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
++ 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; NF_SKIP(c_, n_); if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
+  'L_x_tonumber':   '{ UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();',
+  'L_x_numberq': '{ UNS64 p_ = tos, b_ = NOS, a_ = CELL(dsp + CELL_BYTES), lo_, hi_; tos = numberq(a_, b_, p_, &lo_, &hi_); CELL(dsp + CELL_BYTES) = lo_; NOS = hi_; } NEXT();',   # Iteration 295: (NUMBER?)
+  'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
+diff --git a/tools/layout.py b/tools/layout.py
+index db29aa28..8af731a1 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -262,6 +262,25 @@ def classify(w):
+         return 'code', ops
+     return 'data', None
+ 
++# ---- numfirst (Iteration 733): forth/cv8-numfirst.4's (cv8t-numfirst.4's) words, in every dump ------
++# The file's words from NUMFIRST-MARK on. Without --numfirst all of them out, before the hot-inline pass and the X8 rule
++# below see its HEADER8 and INTERPRET8 (hot-inline foresees the swap: the last HEADER8 its HEADER); with --numfirst c (klookup: the engine's (FIND) skips, -DNUMFIRST) INTERPRET8 out too; the marker
++# always out, DIGITS? and NF-FLAG headerless. The flag: the prologue's last padding byte (below).
++NF_MODE = _opt('--numfirst') if '--numfirst' in ARGV else None
++assert NF_MODE in (None, 'c', 'forth'), '--numfirst c or forth'
++NF_HL = set()
++_nfm = [i for i, w in enumerate(order) if w['n'] == 'NUMFIRST-MARK']
++if _nfm:
++    _nfw = [w for w in order[_nfm[-1]:] if w['n'] in ('NUMFIRST-MARK', 'DIGITS?', 'NF-FLAG', 'HEADER8', 'INTERPRET8')]
++    _keep = set() if NF_MODE is None else {'DIGITS?', 'NF-FLAG', 'HEADER8'} | ({'INTERPRET8'} if NF_MODE == 'forth' else set())
++    _drop = {w['s'] for w in _nfw if w['n'] not in _keep}
++    order = [w for w in order if w['s'] not in _drop]
++    NF_HL = {w['s'] for w in _nfw if w['n'] in ('DIGITS?', 'NF-FLAG') and w['s'] not in _drop}
++    if NF_MODE:
++        assert not [w for w in order if re.fullmatch(r'-?[0-9]+', w['n'])], 'numfirst: the image defines a name of digits'
++    print('numfirst: %s' % {None: 'off', 'c': 'the C form - HEADER8 sets the flag', 'forth': 'the Forth form - INTERPRET8 and HEADER8'}[NF_MODE])
++elif NF_MODE: sys.exit('numfirst: --numfirst, and no cv8-numfirst.4 in the dump')
++
+ # ---- inlining at the hottest call sites (Iteration 92): --hot-inline FILE K
+ # The list (lab/evolve/hotsites.py): [[caller, callee, k, share], ...], the
+ # hottest first. The first K this design can inline safely (sod16.py,
+@@ -299,6 +318,7 @@ for w in order:
+     k, i = classify(w)
+     kind[w['s']], info[w['s']] = k, i
+ 
++
+ if CV8_COMPILER:
+     # `X8` body becomes `X`'s body, so the image's compiler emits CV8.
+     _by = {}
+@@ -844,6 +864,7 @@ _hl_req = [n for n in (_opt('--headerless') or '').split(',') if n]
+ _hl_count = _co.Counter(w['n'] for w in order)
+ HL = {w['s'] for w in order if w['n'] in _hl_req and _hl_count[w['n']] == 1}
+ HL |= FACTOR_KEYS                     # Iteration 267: the gene factor's bodies - code alone, never named
++HL |= NF_HL                           # Iteration 733: numfirst's DIGITS? and NF-FLAG - reached by their calls alone
+ if _hl_req:
+     _kept = [n for n in _hl_req if _hl_count[n] != 1]
+     print('headerless: %d words, %d header bytes out%s' % (len(HL),
+@@ -1345,6 +1366,7 @@ def emit(path):
+             _t = START + i * CELL + CELL + v
+             _cm.append('C %d %d %d %d 1 (prologue) %s' % (len(img), len(callbytes(_t)), new_target_off(_t), _t, _tname(_t)))
+         img += callbytes(START + i * CELL + CELL + v)
++    if NF_MODE: assert PROLOGUE == 5 * CELL and len(img) < PROLOGUE - 3 * CELL, 'numfirst: no padding byte in the prologue for its flag'   # 733: NF-FLAG, START + 2 cells - 1, zero
+     while len(img) < PROLOGUE - 3 * CELL: img += b'\x00'
+     for i in (2, 3, 4): img += cel(pro[START + i * CELL])
+     assert len(img) == PROLOGUE, "prologue emitted %d, expected %d" % (len(img), PROLOGUE)

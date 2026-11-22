@@ -217,6 +217,7 @@ gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and 
 gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
 gene('jitfew', values=range(2), needs=lambda g, e: jit_on(g))    # Iteration 713: the translator's arrays 128 operations long first, 1,024 only for a longer word - their pages (results/drafts/early-computers-713.md)
 HASHK_K = 18835   # Iteration 729: the gene hashk's one constant - forth/cv8-hashk.4's literal, engine/vm-lab.c's CHAIN by -DHASHK
+gene('numfirst', values=range(2), needs=lambda g, e: g['enc'] == 'cv8' and g['bytehdr'])   # Iteration 733: a token of digits converted without its lookup - forth/cv8-numfirst.4; the C form with klookup
 gene('chainorder', values=range(2), needs=lambda g, e: g['enc'] == 'cv8' and g['bytehdr'])   # Iteration 732: each chain's most looked-up names first (lab/evolve/chainorder-use.txt), forward links their own form - forth/cv8-chainorder.4
 CO_MIN = 64   # Iteration 732: chainorder's hot names - looked up at least this often in the held-out programs (results/drafts/chainorder-732.txt: 4, 16, 64 measured; 64 the fewest bytes)
 gene('hashk', values=range(2))   # Iteration 729: the chain hash ((v * K) >> 8) & (chains - 1) (results/drafts/demoscene-ioccc-727.md; the demoscene's crinkler)
@@ -313,6 +314,11 @@ def source_names(path):
             k += 1
         _DEFS[path] = out
     return _DEFS[path]
+def nf_file(files):
+    """Iteration 733: numfirst's words for the dump's header family - cv8b.4's or cv8bt.4's."""
+    return ['cv8t-numfirst.4'] if 'cv8bt.4' in files else ['cv8-numfirst.4'] if 'cv8b.4' in files else []
+
+
 def co_file(files):
     """Iteration 732: chainorder's link words for the dump's header family - cv8b.4's or cv8bt.4's."""
     return ['cv8t-chainorder.4'] if 'cv8bt.4' in files else ['cv8-chainorder.4'] if 'cv8b.4' in files else []
@@ -351,7 +357,7 @@ def dump_file(name):
         DUMPS[cellw()] = os.path.join(O, 'dumps-' + h.hexdigest()[:12]); os.makedirs(DUMPS[cellw()], exist_ok=True)
     p = os.path.join(DUMPS[cellw()], name)
     if not os.path.exists(p):
-        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['cv8-hashk.4'] + co_file(boot_files(name)) + ['dict-dump-addr.4']) + 'BYE\n'   # 729: HASHK in every dump
+        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['cv8-hashk.4'] + co_file(boot_files(name)) + nf_file(boot_files(name)) + ['dict-dump-addr.4']) + 'BYE\n'   # 729: HASHK in every dump
         out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
         try: dump_guard(name, boot, out)                     # Iteration 212: every file loaded, whole
         except SystemExit as e: raise RuntimeError(str(e))   # 697: an error, not an exit - in a pool's worker an exit left
@@ -394,7 +400,7 @@ def dump_guard(name, boot, out):
     missing, want = {}, collections.Counter()
     for f in re.findall(r'S" (\S+)" INCLUDED', boot):
         src = os.path.join(ROOT, 'forth', f)
-        if os.path.exists(src) and f not in ('dict-dump-addr.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4'):   # the base dump has those too (729: HASHK)
+        if os.path.exists(src) and f not in ('dict-dump-addr.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4', 'cv8-numfirst.4', 'cv8t-numfirst.4'):   # the base dump has those too (729: HASHK)
             lost = [n for n in source_names(src) if n not in have]
             if lost: missing[f] = lost
             want.update(source_names(src))
@@ -1126,6 +1132,7 @@ def _build(g, d):
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
     if jit_on(g) and express(g).get('jitfew'): flags.append('-DJITFEW=1')   # Iteration 713: the translator's arrays short first (engine/jit.c)
     if express(g).get('hashk'): flags.append('-DHASHK=%d' % HASHK_K)
+    if express(g).get('numfirst') and express(g).get('klookup'): flags.append('-DNUMFIRST=1')   # Iteration 733: numfirst's C form - (FIND)
     if express(g).get('chainorder'): flags.append('-DCHAINORDER=1')   # Iteration 732: the engine's PREVNFA reads the forward form   # Iteration 729: the engine's chain hash (vm-lab.c's CHAIN)
     if jitdead_on(g): flags.append('-DJITDEAD=1')               # Iteration 710: the header the code alone (engine/jit.c)
     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
@@ -1219,6 +1226,7 @@ def _build(g, d):
     if hl: opts += ['--headerless', ','.join(hl)]
     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
     if express(g).get('hashk'): opts += ['--hashk', str(HASHK_K)]
+    if express(g).get('numfirst'): opts += ['--numfirst', 'c' if express(g).get('klookup') else 'forth']   # Iteration 733
     if express(g).get('chainorder'): opts += ['--chainorder', os.path.join(ROOT, 'lab', 'evolve', 'chainorder-use.txt'), '--chainorder-min', str(CO_MIN)]   # Iteration 732   # Iteration 729: the image threaded by the chain hash with K
     opts += CONVERT_EXTRA
     img = os.path.join(d, 'image.img')
@@ -2166,7 +2174,7 @@ def setup():
     import shutil
     W = os.path.join(O, 'work')
     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-inline.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4', 'cv8-numfirst.4', 'cv8t-numfirst.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
     base = subprocess.run([S0(), KIMG()], input=b'S" cv8-hashk.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout

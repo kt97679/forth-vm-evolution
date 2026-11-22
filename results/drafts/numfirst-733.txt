@@ -1,0 +1,51 @@
+# The gene numfirst checked (Iteration 733; a scratch clone of c48731ad's tree)
+
+Gene off: the ten roles' 40 engines and images byte for byte results/drafts/designs-sha256-718.txt's (pack-designs.py, sha256sum -c: 40 of 40);
+run-tests, validate. A first build failed it (20 of 40: the five tag-2 roles at both widths) - tools/layout.py's hot-inline pass
+foresees the X8 swap before numfirst's words were dropped, so it took cv8t-numfirst.4's HEADER8 for HEADER's body and chose
+HEADER>HERE#9 over :>]#1; the drop moved before that pass, the bytes the old ones. The same move fixes the gene on's C form,
+whose hot-inline had planned sites in INTERPRET8, dropped later.
+
+Semantics (results/drafts/numfirst-probe-733.py; smallest - the Forth form -, portable-fastest and best-all-round - the C form,
+the second with the JIT and tos): '77 . -5 . 0 . -0 . HEX 10 . 1A . DECIMAL 2 BASE ! 101 . DECIMAL 3 1+ .', ': 123 456 ; 123 . -7 . 8 .'
+(456: a name of digits turns the fast path off), ': -9 1 ; -9 . 9 .', '2 BASE ! 12 .' (Undefined word 12, as before) - every
+output the same off and on. A first C form read the name buffer (FIND's copy of the previous token) instead of the token:
+after a number every lookup was skipped (Undefined word HEX) - fixed, NF_SKIP(c_, n_).
+
+# numfirst checked, 8-byte cells (results/drafts/chainorder-gene-732.py)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| best-all-round | df097ba2e2 | 128 | 34216 / 34376 | 10332 / 10395 | same | 0.9925 | 0.9752 |
+| fastest-x86-32 | 11f956db93 | 128 | 30516 / 30596 | 9424 / 9487 | same | 0.9909 | 0.9778 |
+| fastest-x86-64 | 9b15ba26f7 | 128 | 33256 / 33336 | 10152 / 10215 | same | 0.9899 | 0.9748 |
+| least-memory | fb0d57c8a2 | 32 | 7574 / 7702 | 9566 / 9634 | same | 0.9787 | 0.9780 |
+| portable-arm | a8d35bdccc | 128 | 26790 / 27174 | 10055 / 10124 | same | 0.9994 | 0.9937 |
+| portable-fastest | d727605472 | 32 | 16336 / 16432 | 10256 / 10311 | same | 0.9323 | 0.9244 |
+| portable-knee | 48a012411a | 16 | 9424 / 9520 | 9105 / 9168 | same | 0.9080 | 0.8982 |
+| portable-small | ae99617f06 | 16 | 8806 / 8934 | 9135 / 9208 | same | 0.9298 | 0.9247 |
+| small-jit | 15eda54ebd | 16 | 18676 / 18772 | 8321 / 8384 | same | 0.9194 | 0.9149 |
+| smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9143 | same | 0.7556 | 0.6826 |
+
+gene-check: PASS - every output the same
+
+# numfirst and hashk checked, 8-byte cells (results/drafts/chainorder-gene-732.py)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9135 | same | 0.7248 | 0.5871 |
+| portable-fastest | d727605472 | 32 | 16336 / 16448 | 10256 / 10327 | same | 0.9243 | 0.8623 |
+| best-all-round | df097ba2e2 | 128 | 34216 / 34408 | 10332 / 10379 | same | 0.9888 | 0.9687 |
+
+gene-check: PASS - every output the same
+
+# numfirst checked, 4-byte cells (results/drafts/chainorder-gene-732.py; the instructions not measured - cachegrind does not run the 32-bit engines; the outputs real)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| smallest | 219878ec89 | 16 | 5254 / 5254 | 8301 / 8407 | same | 0.0000 | 0.0000 |
+| portable-fastest | d727605472 | 32 | 17056 / 17136 | 9604 / 9663 | same | 0.0000 | 0.0000 |
+| fastest-x86-32 | 11f956db93 | 128 | 29288 / 29376 | 8512 / 8571 | same | 0.0000 | 0.0000 |
+
+gene-check: PASS - every output the same
+

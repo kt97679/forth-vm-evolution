@@ -262,6 +262,25 @@ def classify(w):
         return 'code', ops
     return 'data', None
 
+# ---- numfirst (Iteration 733): forth/cv8-numfirst.4's (cv8t-numfirst.4's) words, in every dump ------
+# The file's words from NUMFIRST-MARK on. Without --numfirst all of them out, before the hot-inline pass and the X8 rule
+# below see its HEADER8 and INTERPRET8 (hot-inline foresees the swap: the last HEADER8 its HEADER); with --numfirst c (klookup: the engine's (FIND) skips, -DNUMFIRST) INTERPRET8 out too; the marker
+# always out, DIGITS? and NF-FLAG headerless. The flag: the prologue's last padding byte (below).
+NF_MODE = _opt('--numfirst') if '--numfirst' in ARGV else None
+assert NF_MODE in (None, 'c', 'forth'), '--numfirst c or forth'
+NF_HL = set()
+_nfm = [i for i, w in enumerate(order) if w['n'] == 'NUMFIRST-MARK']
+if _nfm:
+    _nfw = [w for w in order[_nfm[-1]:] if w['n'] in ('NUMFIRST-MARK', 'DIGITS?', 'NF-FLAG', 'HEADER8', 'INTERPRET8')]
+    _keep = set() if NF_MODE is None else {'DIGITS?', 'NF-FLAG', 'HEADER8'} | ({'INTERPRET8'} if NF_MODE == 'forth' else set())
+    _drop = {w['s'] for w in _nfw if w['n'] not in _keep}
+    order = [w for w in order if w['s'] not in _drop]
+    NF_HL = {w['s'] for w in _nfw if w['n'] in ('DIGITS?', 'NF-FLAG') and w['s'] not in _drop}
+    if NF_MODE:
+        assert not [w for w in order if re.fullmatch(r'-?[0-9]+', w['n'])], 'numfirst: the image defines a name of digits'
+    print('numfirst: %s' % {None: 'off', 'c': 'the C form - HEADER8 sets the flag', 'forth': 'the Forth form - INTERPRET8 and HEADER8'}[NF_MODE])
+elif NF_MODE: sys.exit('numfirst: --numfirst, and no cv8-numfirst.4 in the dump')
+
 # ---- inlining at the hottest call sites (Iteration 92): --hot-inline FILE K
 # The list (lab/evolve/hotsites.py): [[caller, callee, k, share], ...], the
 # hottest first. The first K this design can inline safely (sod16.py,
@@ -298,6 +317,7 @@ kind, info, tok = {}, {}, {}
 for w in order:
     k, i = classify(w)
     kind[w['s']], info[w['s']] = k, i
+
 
 if CV8_COMPILER:
     # `X8` body becomes `X`'s body, so the image's compiler emits CV8.
@@ -844,6 +864,7 @@ _hl_req = [n for n in (_opt('--headerless') or '').split(',') if n]
 _hl_count = _co.Counter(w['n'] for w in order)
 HL = {w['s'] for w in order if w['n'] in _hl_req and _hl_count[w['n']] == 1}
 HL |= FACTOR_KEYS                     # Iteration 267: the gene factor's bodies - code alone, never named
+HL |= NF_HL                           # Iteration 733: numfirst's DIGITS? and NF-FLAG - reached by their calls alone
 if _hl_req:
     _kept = [n for n in _hl_req if _hl_count[n] != 1]
     print('headerless: %d words, %d header bytes out%s' % (len(HL),
@@ -1345,6 +1366,7 @@ def emit(path):
             _t = START + i * CELL + CELL + v
             _cm.append('C %d %d %d %d 1 (prologue) %s' % (len(img), len(callbytes(_t)), new_target_off(_t), _t, _tname(_t)))
         img += callbytes(START + i * CELL + CELL + v)
+    if NF_MODE: assert PROLOGUE == 5 * CELL and len(img) < PROLOGUE - 3 * CELL, 'numfirst: no padding byte in the prologue for its flag'   # 733: NF-FLAG, START + 2 cells - 1, zero
     while len(img) < PROLOGUE - 3 * CELL: img += b'\x00'
     for i in (2, 3, 4): img += cel(pro[START + i * CELL])
     assert len(img) == PROLOGUE, "prologue emitted %d, expected %d" % (len(img), PROLOGUE)
