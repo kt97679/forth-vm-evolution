@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 722.
+- master: Iteration 723.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -327,6 +327,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **numfirst priced** (results/drafts/numfirst-722.md; prototype numfirst-722.4, .py): smallest's dispatches corpus
   0.748, parse 0.672, kernel and apps 0.99, +148 B; with FIND and NUMBER? in C (portable-fastest) the Forth test adds
   dispatches (corpus 1.095; instructions 0.984) - a gene in two forms for the reopened search (the owner's call).
+  **723 (while chain D runs; the owner: "go ahead")**: the fused branches checked on variants that use them all - every
+  form fires self-built, both widths (results/drafts/branches-723.md); **after chain D, rehearse the one-design rebuild
+  with `sh results/drafts/rebuild-rehearsal-723.sh NAME`** (PASS for small-jit; read its check, not roles-build's own
+  "differ" line, which counts untracked binaries and the genes' path comment). numfirst's C form priced
+  (numfirst-722.md's 723 section): on the nine klookup roles no dispatch, corpus instructions 0.905-0.990, kernel up to
+  +0.37 % - the Forth form for smallest, the C one for the rest.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

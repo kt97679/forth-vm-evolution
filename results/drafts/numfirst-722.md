@@ -30,3 +30,31 @@ more dispatches than the lookup it skips (+9.5 % corpus, +15.5 % parse), though 
 digits-only token - an engine change, not priced. So numfirst is two forms: the Forth test for designs without
 klookup (+~100 B, -25 % on the corpus), the C test for those with it (+tens of engine bytes, ~-2 % instructions on
 the corpus) - offered to the reopened search as a gene (the owner's call), the Forth form first.
+
+## 723: the C form priced
+
+results/drafts/numfirst-c-723.py: (FIND) - klookup's C lookup - answers c-addr 0 at once for a token of the form
+-?[0-9]+, what its walk would answer while no name of that form is defined (the flag assumed clear: none of the
+workloads defines one); INTERPRET's NUMBER? converts it as before, so BASE does not enter and nothing else changes.
+The engine's copy patched at L_x_find (vm-lab.c's and gen-tos.py's TOS body) under -DNUMFIRST_C=1, the image the
+same. Every role with klookup (nine; smallest has none - the Forth form is its), 8-byte cells, instructions under
+cachegrind, C form / base; dispatches 1.0000 everywhere (by construction, checked); every output the same.
+
+| design | kernel | corpus | parse (held out) | apps | engine bytes |
+|---|---|---|---|---|---|
+| best-all-round df097ba2e2 | 1.0037 | 0.9870 | 0.9709 | 1.0003 | +144 |
+| fastest-x86-32 11f956db93 | 1.0033 | 0.9864 | 0.9763 | 1.0001 | +80 |
+| fastest-x86-64 9b15ba26f7 | 1.0037 | 0.9902 | 0.9774 | 1.0002 | +64 |
+| least-memory fb0d57c8a2 | 1.0001 | 0.9742 | 0.9761 | 0.9999 | +96 |
+| portable-arm a8d35bdccc | 1.0017 | 0.9908 | 0.9864 | 1.0000 | +320 |
+| portable-fastest d727605472 | 1.0009 | **0.9287** | **0.9226** | 0.9997 | +96 |
+| portable-knee 48a012411a | 1.0001 | **0.9054** | **0.8974** | 0.9995 | +80 |
+| portable-small ae99617f06 | 0.9993 | **0.9251** | **0.9227** | 0.9996 | +96 |
+| small-jit 15eda54ebd | 0.9989 | **0.9160** | **0.9139** | 0.9908 | +96 |
+
+**Read**: the C form costs no dispatch and saves 1-10 % of the corpus's instructions and 1.4-10 % of parse's - most on
+the portable designs and small-jit, least on the three fastest (why not traced); the kernel workload, its
+tokens nearly all names, pays the test on every FIND: up to +0.37 % on the fastest three, nothing elsewhere; apps flat.
+The real gene adds the flag (one load in (FIND), the header word's test per definition). So numfirst prices as two
+forms: the Forth one for designs without klookup (smallest: dispatches corpus 0.748), the C one with it (instructions
+corpus 0.905-0.990) - for the reopened search, the owner's call.

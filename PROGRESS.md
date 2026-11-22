@@ -12057,3 +12057,17 @@ parse 0.672, kernel and apps 0.99 (+148 B); on portable-fastest (FIND and NUMBER
 (corpus 1.095), instructions -1.6 % - there the test belongs in C. Files: results/drafts/selfspeed-pf-722.txt,
 results/drafts/numfirst-722.md, results/drafts/numfirst-722.py, results/drafts/numfirst-722.4; forth/cross-cv8.4,
 lab/evolve/export-genes.py, designs/.
+
+## Iteration 723 - 2026-11-21 - Claude
+
+While chain D runs (the owner: "go ahead as you suggested"). (1) The fused branches on variants of d727605472 that use
+them all (+?NBRANCH; + the short forms; a control without DUP?NBRANCH): all three self-host at both widths, and every
+form fires in the self-built images by the profiler (DUP?NBRANCH 903 / 2,887 against the translator's 951 / 3,127 on
+the kernel and corpus; the short forms wherever present; =I?BRANCH 1.6-1.8 times the translator's, not traced, outputs
+the same). (2) After chain D's one-design rebuild rehearsed with all ten self-built (small-jit=15eda54ebd through
+roles-build-718.sh in a scratch clone): PASS, the same design byte for byte but the genes' path comment; 721's
+chain D rehearsal could not run (chain C's archive not on this machine). (3) numfirst's C form ((FIND) refusing a
+-?[0-9]+ token) on the nine klookup roles: no dispatch, instructions corpus 0.905-0.990, parse 0.897-0.986, kernel up
+to +0.37 %, +64-320 engine bytes. run-tests PASS. Files: results/drafts/branches-723.md,
+results/drafts/selfhost-variants-723.sh, results/drafts/fusedcount-723.py, results/drafts/rebuild-rehearsal-723.sh,
+results/drafts/numfirst-c-723.py; results/drafts/numfirst-722.md (723's section).
