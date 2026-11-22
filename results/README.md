@@ -287,6 +287,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/early-computers-713.md` - What the early computers lend the search (Iteration 713, the owner's idea): working sets - the JIT translator's frame, 10-19 pages, the gene jitfew built and queued; demand-zero FILL and more priced.
 - `drafts/handoff-relf-draft-721.md` - relf's handoff for the new roles, drafted while chain D runs (Iteration 721): what changed since 657, the ten, the adoption notes; [chain D] marks what its processing fills in.
 - `drafts/esolangs-717.md` - What the esoteric languages lend the search (Iteration 717, the owner's idea): most is here; literals converted before the lookup (FALSE's first-character dispatch) priced - about half the corpus's and parse's walk for a few tens of bytes - and proposed as a gene.
+- `drafts/numfirst-722.md` - numfirst priced on a prototype (Iteration 722): where the lookup is Forth a quarter of the corpus's dispatches and a third of parse's go (+148 B); with FIND and NUMBER? in C the Forth test costs more than it saves - there the test belongs in C
 - `drafts/jitfew-test-713.py` - The gene jitfew off and on, interleaved: time, pages, outputs, bytes (Iteration 713).
 - `drafts/stack-pages-713.py` - Pages per selection workload from a root, outputs hashed (Iteration 713).
 - `drafts/heldout-711.py` - The search set against the held-out pair on the screen's pool (Iteration 711), by family; `.txt` its output.

@@ -12045,3 +12045,15 @@ fixed (found by the rehearsal, results/drafts/chainD-rehearsal-721.sh: PASS), re
 Files: results/drafts/selfspeed-counts-721.py, results/drafts/chainD-rehearsal-721.sh,
 results/drafts/handoff-relf-draft-721.md; lab/evolve/written-list.py, process-followup.sh, followup-roles.py,
 tools/selfhost-ship.sh.
+
+## Iteration 722 - 2026-11-21 - Claude
+
+While chain D runs. (1) The fused =I?BRANCH and DUP?NBRANCH in forth/cross-cv8.4 as sod16.py does them (EQI-PASS: EQI n
+?BRANCH as one operation, O-EQBR, the opcode, n and the offset from itself; KEEP-PASS: DUP before the fused 0= ?BRANCH);
+G-NOT-YET empty. portable-fastest d727605472 self-hosts at both widths (9,977 / 9,341 B against the translator's 10,256 /
+9,604), instructions self / translator 0.9988 at both, no workload above 1.0000; shipped - all ten self-built,
+designs/TRANSLATOR-BUILT gone; run-tests PASS. (2) numfirst priced on a prototype: smallest's dispatches corpus 0.748,
+parse 0.672, kernel and apps 0.99 (+148 B); on portable-fastest (FIND and NUMBER? in C) the Forth test adds dispatches
+(corpus 1.095), instructions -1.6 % - there the test belongs in C. Files: results/drafts/selfspeed-pf-722.txt,
+results/drafts/numfirst-722.md, results/drafts/numfirst-722.py, results/drafts/numfirst-722.4; forth/cross-cv8.4,
+lab/evolve/export-genes.py, designs/.

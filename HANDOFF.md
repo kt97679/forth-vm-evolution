@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 721.
+- master: Iteration 722.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -319,6 +319,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   `HANDOFF=results/handoff-relf-657.md PRED=717 sh lab/evolve/process-followup.sh 96-jitband ITERATION
   smalljit=15eda54ebd` (the laptop and dream only: the JIT designs' two classes), results/drafts/chainB-714.py and
   chainC-716.py's pairing on its readings; a beater by the rule replaces 15eda54ebd.
+  **722 (while chain D runs)**: the fused =I?BRANCH / DUP?NBRANCH in forth/cross-cv8.4 (EQI-PASS, KEEP-PASS; G-NOT-YET
+  empty) - portable-fastest d727605472 self-hosts at both widths, instructions self / translator 0.9988
+  (results/drafts/selfspeed-pf-722.txt), **shipped self-built: all ten, designs/TRANSLATOR-BUILT gone**; run-tests PASS.
+  Chain D's selfhost-speed.md has no reading for it (named translator-built in the laptop's tree, so skipped): its
+  timing is the next laptop run's, the counts the gate meanwhile - do not ship it translator-built on chain D's gate.
+  **numfirst priced** (results/drafts/numfirst-722.md; prototype numfirst-722.4, .py): smallest's dispatches corpus
+  0.748, parse 0.672, kernel and apps 0.99, +148 B; with FIND and NUMBER? in C (portable-fastest) the Forth test adds
+  dispatches (corpus 1.095; instructions 0.984) - a gene in two forms for the reopened search (the owner's call).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
@@ -335,8 +343,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   build, so no cross GCC), the package, relf told how to fetch the ten (a new results/handoff-relf-NNN.md). Then the rest
   of the plan (the roles were step 6 - results/drafts/new-roles-plan-705.md): designs/ and the
   package made again (`sh results/drafts/freeze-build-645.sh . RECORDS NAME=ID,...`), self-hosting phase 6 on them (the
-  gate: a design the cross compiler cannot build ships translator-built, named - d727605472 and 5f7e66b12d need the fused
-  =I?BRANCH / DUP?NBRANCH), relf told how to fetch them. From the early games (results/drafts/early-games-713.md): a fixed
+  gate: a design the cross compiler cannot build ships translator-built, named - since 722 every role self-builds), relf
+  told how to fetch them. From the early games (results/drafts/early-games-713.md): a fixed
   layout of the engine's writable data, a prototype for the reopened search; queued genes (results/queued-genes:
   jitdead, fixenv - results/drafts/fixenv-713.md -, jitfew - results/drafts/early-computers-713.md) applied after the
   roles, chainorder if its prototype pays, then the reopened search's series; the article.
@@ -442,7 +450,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): chain D (717, 719, 720) - eight. Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
+- **Predictions due** (results/predictions.md): chain D (717, 719, 720) - eight (722: portable-fastest has no selfhost-speed reading in chain D). Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first

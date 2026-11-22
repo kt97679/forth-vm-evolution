@@ -1,0 +1,41 @@
+\ results/drafts/numfirst-722.4 - the gene numfirst's prototype (Iteration 722; results/drafts/esolangs-717.md):
+\ a token of the form [0-9]+ is converted before the lookup, while BASE is at least 10 (so it always converts) and no
+\ name of that form is defined. Loaded last among a design's overlays by results/drafts/numfirst-722.py: INTERPRET8's
+\ body becomes INTERPRET's (tools/layout.py's X8 swap). The rest of INTERPRET is the kernel's, step for step.
+\ Not built: the header word setting NUMNAMES when a program defines such a name (a test per definition, not per
+\ token - none of the workloads defines one, and the outputs are compared); a leading '-' takes the old path.
+
+VARIABLE NUMNAMES  0 NUMNAMES !
+
+: DIGITS? ( c-addr u --- f )
+  DUP 0= IF 2DROP 0 EXIT THEN
+  OVER + SWAP DO I C@ 48 - 10 U< 0= IF UNLOOP 0 EXIT THEN LOOP -1 ;
+
+: NUMFIRST? ( c-addr --- f )
+\ The first character a digit already (INTERPRET8's test): the rest, BASE, the flag.
+  COUNT DIGITS? BASE @ 10 < 0= AND NUMNAMES @ 0= AND ;
+
+: INTERPRET8 ( ---)
+  BEGIN
+   32 WORD DUP C@
+  WHILE
+   DUP 1+ C@ 48 - 10 U< IF DUP NUMFIRST? ELSE 0 THEN
+   IF
+    NUMBER? DROP DROP STATE @ IF POSTPONE LITERAL ELSE ?STACK THEN
+   ELSE
+    FIND DUP
+    IF
+     -1 = STATE @ AND
+     IF
+      COMPILE,
+     ELSE
+      EXECUTE ?STACK
+     THEN
+    ELSE DROP
+     NUMBER? DUP 0= HANDLER @ AND IF -13 THROW THEN 0= ABORT" Undefined word"
+     DPL @ 0< IF DROP STATE @ IF POSTPONE LITERAL ELSE ?STACK THEN
+     ELSE STATE @ IF SWAP POSTPONE LITERAL POSTPONE LITERAL ELSE ?STACK THEN THEN
+    THEN
+   THEN
+  REPEAT   DROP
+;
