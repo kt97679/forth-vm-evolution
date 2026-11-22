@@ -177,6 +177,11 @@ static char **g_argv;
 #if TAG2 && defined(MEMSIZE) && MEMSIZE > (1 << 30)
 #error "TAG2: a call reaches 1 GB from the image base - MEMSIZE at most that"
 #endif
+#ifdef HASHK   /* Iteration 729: the gene hashk - a chain from the name's v by ((v * K) >> 8) (forth/cv8-hashk.4) */
+#define CHAIN(v, t) ((((UNS64)(v) * (UNS64)HASHK) >> 8) & ((t) - 1))
+#else
+#define CHAIN(v, t) ((v) & ((t) - 1))
+#endif
 #if TAG2
 /*  A byte-header link, read backwards from the name: the byte before it
  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
@@ -2135,7 +2140,7 @@ L_x_parse: { UNS64 c_ = DS0, u_ = DS1, a_ = DS2, p_ = a_, s_;
 #if X_HASH
 L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
              h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2;
-             DS0 = (h_ ^ u_) & (t_ - 1); } NEXT();
+             DS0 = CHAIN(h_ ^ u_, t_); } NEXT();
 #endif
 /*  Iteration 57: (FIND) ( c-addr nb ctx n --- c-addr 0 | xt 1 | xt -1 ) -
  *  the kernel's FIND with kfast's SEARCH-WORDLIST8 (forth/cv8b-klookup.4):
@@ -2144,7 +2149,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
  *  walk, NAME>8 and the immediate bit.  */
 #if X_FIND
 L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
-            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: bfind; 402: either walk, NAME_WALK */
+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: bfind; 402: either walk, NAME_WALK */
             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
 #endif
 /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER

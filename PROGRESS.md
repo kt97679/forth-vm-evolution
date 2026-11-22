@@ -12141,3 +12141,18 @@ roles -11 to -24 % of the corpus's visits. chainorder priced from hashk's instru
 Files: results/drafts/hashk-727.txt, results/drafts/chainorder-est-727.py, results/drafts/hashk-transfer-728.py,
 results/drafts/hashk-transfer-728.txt, results/drafts/hashk-table-728.py, results/drafts/hashk-table-728.txt; hashk-727.4
 and hashk-727.py corrected; results/drafts/demoscene-ioccc-727.md's last sections.
+
+## Iteration 730 - 2026-11-22 - Claude
+
+hashk built as a gene and applied (results/applied-hashk-730/; batch-check PASS on b9f60491): forth/cv8-hashk.4's HASHK
+in every dump, swapped into HASH by tools/layout.py --hashk 18835 and dropped always; the engine's hashes by -DHASHK
+(vm-lab.c's CHAIN; gen-msc.py's and gen-tos.py's copies - five in all, the JIT designs died until gen-tos.py had it);
+export-genes.py lists --hashk in G-NOT-YET. Off, every byte as before: the 68 stage images, the ten roles' 40 engines and
+images (718's checksums), run-tests, validate, engines-check 113 of 113. On (results/drafts/hashk-gene-729.py, .txt):
+the ten roles' outputs the same at 8-byte cells, three at 4; the corpus's instructions 0.914-0.994 of off, parse's
+0.833-1.000 - most at 16 chains; the engine +0-32 B. Two slips of mine on the way: run-tests started with sh, not bash
+(its "Bad substitution"), and the dump guard counting HASHK twice (the base dump has it, as it has dict-dump-addr.4).
+Next: hashk in the cross compiler (THASH by G-HASHK), then chainorder's build.
+Files: forth/cv8-hashk.4, results/applied-hashk-730/hashk.patch, results/applied-hashk-730/ORDER.md,
+results/drafts/hashk-gene-729.py, results/drafts/hashk-gene-729.txt; engine/vm-lab.c, tools/layout.py, tools/gen-msc.py,
+tools/gen-tos.py, lab/evolve/evolve.py, lab/evolve/export-genes.py, lab/evolve/GENES.md.

@@ -1,0 +1,12 @@
+\ forth/cv8-hashk.4 - the gene hashk's chain hash (Iteration 729; results/drafts/demoscene-ioccc-727.md, after the
+\ demoscene's crinkler, which finds its imports by hash and brute-forces its parameters per program). HASH's v - the
+\ length and the first two characters - times one constant, its middle bits: ((v * 18835) >> 8) & (#threads - 1). K was
+\ searched over every odd value on the held-out programs, for the ten roles and 16-128 chains at once
+\ (results/drafts/hashk-table-728.py); K = 256 is today's hash. Loaded into every dump, before the dump tool
+\ (lab/evolve/evolve.py): with --hashk tools/layout.py makes HASHK's body HASH's and threads the image by the same
+\ expression; with or without, HASHK leaves the image - the images with the gene off are byte for byte the old ones.
+\ The engine's own hashes (vm-lab.c's L_x_hash and (FIND), tools/gen-msc.py's) by -DHASHK=18835 (CHAIN).
+: HASHK ( c-addr u #threads --- n )
+  >R OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
+   THEN XOR
+  18835 * 8 RSHIFT R> 1- AND ;

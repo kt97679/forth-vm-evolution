@@ -168,6 +168,7 @@ if '--escape' in ARGV:
     G['ESC_PRIMS'].update(G['ESC_PRIMS_ALL'])
     if '--escape2' in ARGV: G['ESC_PRIMS'].update(G['ESC2_PRIMS'])
 if '--no-varslot' in ARGV: G['VARSLOT'] = False
+HASHK_K = int(_opt('--hashk')) if '--hashk' in ARGV else None   # Iteration 729: the gene hashk's K (forth/cv8-hashk.4)
 UB = 1 if V8 else 2                # bytes per stream unit
 DOVARP = len(G['prims']) + 1       # after LIT32
 DODOES = len(G['prims']) + 2
@@ -368,6 +369,22 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED:   # 589: the lean-off switc
     _gone = [w for w in order if w['s'] in _out]
     order = [w for w in order if w['s'] not in _out]
     print('drop-x8: %d copies out, %d bytes of the old image' % (len(_gone), sum(w['e'] - w['link'] for w in _gone)))
+
+# ---- hashk (Iteration 729): forth/cv8-hashk.4's HASHK, in every dump ------
+# With --hashk its body becomes the newest HASH's (unless HASH is a primitive's stub - the engine's hash then, by
+# -DHASHK); with or without, HASHK leaves the image - nothing may refer to it.
+_hk = [w for w in order if w['n'] == 'HASHK']
+if _hk:
+    _h = _hk[-1]
+    assert _h['s'] not in _refs([w for w in order if w['s'] != _h['s']]), 'hashk: a word refers to HASHK'
+    if HASHK_K:
+        _d = [w for w in order if w['n'] == 'HASH' and w['s'] < _h['s']]
+        assert _d and kind[_h['s']] == 'code' and info[_h['s']] is not None, 'hashk: no HASH, or HASHK not translatable'
+        if stub_ops(_d[-1]) is None:
+            kind[_d[-1]['s']], info[_d[-1]['s']] = 'code', list(info[_h['s']]); SRC_OF[_d[-1]['s']] = _h['s']
+    order = [w for w in order if w['s'] != _h['s']]
+    print('hashk: %s; HASHK out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
+elif HASHK_K: sys.exit('hashk: --hashk, and no HASHK in the dump (forth/cv8-hashk.4)')
 
 # ---- the dump tool and dead shadowed words left out (Iteration 39) ---
 # tools/dict-dump-addr.4 is loaded LAST, to write this very dump: its
@@ -787,6 +804,7 @@ def _wl_hash(name):
     v = len(b) ^ (b[0] << 1)
     if len(b) > 1:
         v ^= b[1] << 2
+    if HASHK_K: return ((v * HASHK_K) >> 8) & (_NTH - 1)   # Iteration 729: hashk (forth/cv8-hashk.4's HASHK)
     return v & (_NTH - 1)
 
 
@@ -894,6 +912,7 @@ def wl_hash(name):
     v = len(b) ^ (b[0] << 1)
     if len(b) > 1:
         v ^= b[1] << 2
+    if HASHK_K: return ((v * HASHK_K) >> 8) & (NTHREADS - 1)   # Iteration 729: hashk - all must agree
     return v & (NTHREADS - 1)
 
 

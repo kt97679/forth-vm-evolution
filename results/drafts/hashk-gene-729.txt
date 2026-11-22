@@ -1,0 +1,28 @@
+# hashk checked, 8-byte cells (results/drafts/hashk-gene-729.py)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| best-all-round | df097ba2e2 | 128 | 34216 / 34248 | 10332 / 10316 | same | 0.9933 | 0.9999 |
+| fastest-x86-32 | 11f956db93 | 128 | 30516 / 30548 | 9424 / 9432 | same | 0.9902 | 0.9991 |
+| fastest-x86-64 | 9b15ba26f7 | 128 | 33256 / 33288 | 10152 / 10128 | same | 0.9936 | 0.9999 |
+| least-memory | fb0d57c8a2 | 32 | 7574 / 7606 | 9566 / 9550 | same | 0.9870 | 0.9858 |
+| portable-arm | a8d35bdccc | 128 | 26790 / 26790 | 10055 / 10063 | same | 0.9910 | 0.9965 |
+| portable-fastest | d727605472 | 32 | 16336 / 16352 | 10256 / 10272 | same | 0.9700 | 0.9447 |
+| portable-knee | 48a012411a | 16 | 9424 / 9456 | 9105 / 9122 | same | 0.9728 | 0.9330 |
+| portable-small | ae99617f06 | 16 | 8806 / 8838 | 9135 / 9104 | same | 0.9767 | 0.9543 |
+| small-jit | 15eda54ebd | 16 | 18676 / 18708 | 8321 / 8354 | same | 0.9866 | 0.9538 |
+| smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9029 | same | 0.9137 | 0.8332 |
+
+hashk-gene: PASS - every output the same
+
+## At 4-byte cells (HK_W4=1; three roles - the Forth hash, the C lookup, the JIT with the cached top)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| smallest | 219878ec89 | 16 | 5254 / 5254 | 8301 / 8301 | same | 0.0000 | 0.0000 |
+| portable-fastest | d727605472 | 32 | 17056 / 17072 | 9604 / 9616 | same | 0.0000 | 0.0000 |
+| fastest-x86-32 | 11f956db93 | 128 | 29288 / 29304 | 8512 / 8520 | same | 0.0000 | 0.0000 |
+
+hashk-gene: PASS - every output the same
+
+(The 4-byte instructions are not measured: cachegrind does not run the 32-bit engines here, so both counts were 0. The outputs are real - each role's corpus to CORPUS-REACHED-END and parse to PARSE-DONE with the gene on, checked by hand.)

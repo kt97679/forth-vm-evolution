@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 729.
+- master: Iteration 730.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -379,6 +379,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   hashk - but the model misreads the corpus; its build (signed links) after hashk's. **Next: hashk built as a gene**
   (a scratch clone, a patch, batch-check): an always-compiled HASHK swapped into HASH when on, dropped when off (the 718
   checksums prove the off-images), -DHASHK for the engine's two hashes (and gen-msc's), the cross compilers' THASH.
+  **730: hashk built and applied** (results/pending/hashk.patch, now results/applied-hashk-730/; batch-check PASS):
+  off, every byte as before (the 718 checksums, the stage images, run-tests, validate, engines-check 113 of 113); on, the
+  ten roles' outputs the same at 8-byte cells, three at 4 (results/drafts/hashk-gene-729.py, .txt) - corpus 0.914-0.994
+  of the instructions, parse 0.833-1.000, most at 16 chains. Found on the way: the hash had five copies, not three -
+  gen-msc.py's and gen-tos.py's too (the JIT designs died until gen-tos.py had CHAIN). **Next: hashk in the cross
+  compiler** (cross-cv8.4's and cross.4's THASH by G-HASHK; G-NOT-YET lists --hashk until then), then chainorder's build.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

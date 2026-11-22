@@ -1,0 +1,224 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index c20a8ab3..cf0786d1 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -177,6 +177,11 @@ static char **g_argv;
+ #if TAG2 && defined(MEMSIZE) && MEMSIZE > (1 << 30)
+ #error "TAG2: a call reaches 1 GB from the image base - MEMSIZE at most that"
+ #endif
++#ifdef HASHK   /* Iteration 729: the gene hashk - a chain from the name's v by ((v * K) >> 8) (forth/cv8-hashk.4) */
++#define CHAIN(v, t) ((((UNS64)(v) * (UNS64)HASHK) >> 8) & ((t) - 1))
++#else
++#define CHAIN(v, t) ((v) & ((t) - 1))
++#endif
+ #if TAG2
+ /*  A byte-header link, read backwards from the name: the byte before it
+  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
+@@ -2135,7 +2140,7 @@ L_x_parse: { UNS64 c_ = DS0, u_ = DS1, a_ = DS2, p_ = a_, s_;
+ #if X_HASH
+ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+              h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2;
+-             DS0 = (h_ ^ u_) & (t_ - 1); } NEXT();
++             DS0 = CHAIN(h_ ^ u_, t_); } NEXT();
+ #endif
+ /*  Iteration 57: (FIND) ( c-addr nb ctx n --- c-addr 0 | xt 1 | xt -1 ) -
+  *  the kernel's FIND with kfast's SEARCH-WORDLIST8 (forth/cv8b-klookup.4):
+@@ -2144,7 +2149,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+  *  walk, NAME>8 and the immediate bit.  */
+ #if X_FIND
+ L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+-            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: bfind; 402: either walk, NAME_WALK */
++            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: bfind; 402: either walk, NAME_WALK */
+             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
+ #endif
+ /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER
+diff --git a/forth/cv8-hashk.4 b/forth/cv8-hashk.4
+new file mode 100644
+index 00000000..bcc38749
+--- /dev/null
++++ b/forth/cv8-hashk.4
+@@ -0,0 +1,12 @@
++\ forth/cv8-hashk.4 - the gene hashk's chain hash (Iteration 729; results/drafts/demoscene-ioccc-727.md, after the
++\ demoscene's crinkler, which finds its imports by hash and brute-forces its parameters per program). HASH's v - the
++\ length and the first two characters - times one constant, its middle bits: ((v * 18835) >> 8) & (#threads - 1). K was
++\ searched over every odd value on the held-out programs, for the ten roles and 16-128 chains at once
++\ (results/drafts/hashk-table-728.py); K = 256 is today's hash. Loaded into every dump, before the dump tool
++\ (lab/evolve/evolve.py): with --hashk tools/layout.py makes HASHK's body HASH's and threads the image by the same
++\ expression; with or without, HASHK leaves the image - the images with the gene off are byte for byte the old ones.
++\ The engine's own hashes (vm-lab.c's L_x_hash and (FIND), tools/gen-msc.py's) by -DHASHK=18835 (CHAIN).
++: HASHK ( c-addr u #threads --- n )
++  >R OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
++   THEN XOR
++  18835 * 8 RSHIFT R> 1- AND ;
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 5949104c..c100e54a 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -80,6 +80,7 @@ as the record of what each does.
+ | the return-stack pointer in a register on the JIT (`jitrp`: 0, 1; Iterations 465, 494; GCC, 64-bit, JIT with jitx; enabled for seed 71 by the owner, 495): a global register variable across the stencils (r15; rbx under regpin 2, r13 under 3); loop -19% of instructions on a GCC JIT design. |
+ | the JIT's header the code alone (`jitdead`: 0, 1; Iteration 710; JIT designs - mechanism 9's V1', results/drafts/triz-706.md): [JIT], not [JIT][four bytes] - the body's end found by the converter's rule (the jitimg words' from jit_wends), the native offset written over the translated word's dead first four bytes and its trigger then JITN (a code of its own, pinned); left bytecode, a NOOP; what native code reads there at run time (S", .", (ABORT")'s resume point) copied first; bodies padded to four bytes (forth/cv8t-jitd.4, layout.py --jit-dead). -693 to -741 bytes of the five programs' code, the image -24 to -80, the engine -592 to +640; the total -0.3 to -2.9 % on ten JIT designs at both widths, instructions the same or fewer on every workload; not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/jitdead-710.md |
+ | the translator's arrays short first (`jitfew`: 0, 1; Iteration 713; JIT designs): engine/jit.c - jit_body's arrays (at, arg, nat, opl, tl) 128 operations long in its frame, and 1,024 (jit_body_big) only for a word with more, translated again from its start; their heads were a page each at every depth of the callees' translation (~24 KB a frame). On eight JIT designs: memory (the selection's workloads but apps) -5 to -16 pages (-11 to -23 %), apps -7 to -27 pages, the engine +224 to +544 bytes, the outputs alike, the time in the noise | results/drafts/early-computers-713.md |
++| the chain hash with one constant (`hashk`: 0, 1; Iteration 729; every CV8 design - results/drafts/demoscene-ioccc-727.md, after the demoscene's crinkler): a name's chain ((v * 18835) >> 8) & (chains - 1), v kernel.4's HASH (the length and the first two characters) - K searched on the held-out programs for the ten roles and 16-128 chains at once (results/drafts/hashk-table-728.py; K = 256 is today's hash); forth/cv8-hashk.4's HASHK in every dump becomes HASH's body (tools/layout.py --hashk, which threads the image by it too), the engine's L_x_hash and (FIND) by -DHASHK (vm-lab.c's CHAIN; gen-msc.py's); off, HASHK leaves the image - every design's bytes as before. Measured (729, results/drafts/hashk-gene-729.py): the lookup's walk shorter - the smallest's parse -17.5 % of its instructions on the prototype. Not yet in the self-hosting compiler (G-NOT-YET: cross-cv8.4's THASH) | results/drafts/demoscene-ioccc-727.md |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c32c3863..69fa9171 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -216,6 +216,8 @@ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGN
+ gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+ gene('jitfew', values=range(2), needs=lambda g, e: jit_on(g))    # Iteration 713: the translator's arrays 128 operations long first, 1,024 only for a longer word - their pages (results/drafts/early-computers-713.md)
++HASHK_K = 18835   # Iteration 729: the gene hashk's one constant - forth/cv8-hashk.4's literal, engine/vm-lab.c's CHAIN by -DHASHK
++gene('hashk', values=range(2))   # Iteration 729: the chain hash ((v * K) >> 8) & (chains - 1) (results/drafts/demoscene-ioccc-727.md; the demoscene's crinkler)
+ gene('jitdead', values=range(2), needs=lambda g, e: jit_on(g))   # Iteration 710: mechanism 9's V1' - the JIT's header the code alone, the offset in the dead body (results/drafts/triz-706.md)
+ gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
+ gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
+@@ -342,7 +344,7 @@ def dump_file(name):
+         DUMPS[cellw()] = os.path.join(O, 'dumps-' + h.hexdigest()[:12]); os.makedirs(DUMPS[cellw()], exist_ok=True)
+     p = os.path.join(DUMPS[cellw()], name)
+     if not os.path.exists(p):
+-        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['dict-dump-addr.4']) + 'BYE\n'
++        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['cv8-hashk.4', 'dict-dump-addr.4']) + 'BYE\n'   # 729: HASHK in every dump
+         out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
+         try: dump_guard(name, boot, out)                     # Iteration 212: every file loaded, whole
+         except SystemExit as e: raise RuntimeError(str(e))   # 697: an error, not an exit - in a pool's worker an exit left
+@@ -385,7 +387,7 @@ def dump_guard(name, boot, out):
+     missing, want = {}, collections.Counter()
+     for f in re.findall(r'S" (\S+)" INCLUDED', boot):
+         src = os.path.join(ROOT, 'forth', f)
+-        if os.path.exists(src) and f != 'dict-dump-addr.4':     # the base dump has that one too
++        if os.path.exists(src) and f not in ('dict-dump-addr.4', 'cv8-hashk.4'):   # the base dump has those too (729: HASHK)
+             lost = [n for n in source_names(src) if n not in have]
+             if lost: missing[f] = lost
+             want.update(source_names(src))
+@@ -1116,6 +1118,7 @@ def _build(g, d):
+     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+     if jit_on(g) and express(g).get('jitfew'): flags.append('-DJITFEW=1')   # Iteration 713: the translator's arrays short first (engine/jit.c)
++    if express(g).get('hashk'): flags.append('-DHASHK=%d' % HASHK_K)   # Iteration 729: the engine's chain hash (vm-lab.c's CHAIN)
+     if jitdead_on(g): flags.append('-DJITDEAD=1')               # Iteration 710: the header the code alone (engine/jit.c)
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
+@@ -1207,6 +1210,7 @@ def _build(g, d):
+         opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) >= 3 else ()))]
+     if hl: opts += ['--headerless', ','.join(hl)]
+     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
++    if express(g).get('hashk'): opts += ['--hashk', str(HASHK_K)]   # Iteration 729: the image threaded by the chain hash with K
+     opts += CONVERT_EXTRA
+     img = os.path.join(d, 'image.img')
+     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
+@@ -2153,10 +2157,10 @@ def setup():
+     import shutil
+     W = os.path.join(O, 'work')
+     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-inline.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
++               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'cv8-hashk.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+-    base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
++    base = subprocess.run([S0(), KIMG()], input=b'S" cv8-hashk.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
+     # Iteration 694: no dumps made here - dump_file() makes each the first time a design asks for it (2,699 of them,
+     # 63 s at every start, and every run-time gene doubled the fused ones); old dump directories pruned
+diff --git a/lab/evolve/export-genes.py b/lab/evolve/export-genes.py
+index 9cbaabcb..87948ae1 100644
+--- a/lab/evolve/export-genes.py
++++ b/lab/evolve/export-genes.py
+@@ -136,7 +136,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
+     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
+     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
+-    ny = [k for k in ('--opcall-file',) if k in args]       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
++    ny = [k for k in ('--opcall-file', '--hashk') if k in args]   # 729: --hashk not yet (cross-cv8.4's THASH)       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
+     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index b0165656..61cf8862 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -132,11 +132,11 @@ SPECS = {
+     'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+     'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+     'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
++    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+     'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
+     'L_x_numberq':      (['a', 'b', 'p'], ['lo', 'hi', 'f'], '{ UNS64 lo_, hi_, f_ = numberq(a, b, p, &lo_, &hi_); lo = lo_; hi = hi_; f = f_; }'),   # Iteration 295: (NUMBER?)
+     'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+-    'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = (h_ ^ u) & (t - 1); n = h_; }'),
++    'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = CHAIN(h_ ^ u, t); n = h_; }'),
+     'L_x_place':        (['s', 'n', 'd'], [], '{ UNS64 d_ = d, s_ = s, n_ = n; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } }'),
+     'L_x_cmove':        (['s', 'd', 'u'], [], '{ UNS64 s_ = s, d_ = d, u_ = u; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } }'),
+ }
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index 326cc9e4..c09d1d68 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -98,11 +98,11 @@ HOT = {
+  # Iteration 54: the input side - SCAN, SKIP: three in, two out; TABS>BL: two in
+  'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+  'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+- 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
++ 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = CHAIN(h_ ^ u_, CELL(w_)); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); NAME_WALK(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
+  'L_x_tonumber':   '{ UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();',
+  'L_x_numberq': '{ UNS64 p_ = tos, b_ = NOS, a_ = CELL(dsp + CELL_BYTES), lo_, hi_; tos = numberq(a_, b_, p_, &lo_, &hi_); CELL(dsp + CELL_BYTES) = lo_; NOS = hi_; } NEXT();',   # Iteration 295: (NUMBER?)
+  'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
+- 'L_x_hash':       '{ UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 * CELL_BYTES; h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2; tos = (h_ ^ u_) & (t_ - 1); } NEXT();',
++ 'L_x_hash':       '{ UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 * CELL_BYTES; h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2; tos = CHAIN(h_ ^ u_, t_); } NEXT();',
+  'L_x_place':      '{ UNS64 d_ = tos, n_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();',
+  'L_x_cmove':      '{ UNS64 u_ = tos, d_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();',
+  'L_x_execute': '{ UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();',
+diff --git a/tools/layout.py b/tools/layout.py
+index a08244cb..fa7149e3 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -168,6 +168,7 @@ if '--escape' in ARGV:
+     G['ESC_PRIMS'].update(G['ESC_PRIMS_ALL'])
+     if '--escape2' in ARGV: G['ESC_PRIMS'].update(G['ESC2_PRIMS'])
+ if '--no-varslot' in ARGV: G['VARSLOT'] = False
++HASHK_K = int(_opt('--hashk')) if '--hashk' in ARGV else None   # Iteration 729: the gene hashk's K (forth/cv8-hashk.4)
+ UB = 1 if V8 else 2                # bytes per stream unit
+ DOVARP = len(G['prims']) + 1       # after LIT32
+ DODOES = len(G['prims']) + 2
+@@ -369,6 +370,22 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED:   # 589: the lean-off switc
+     order = [w for w in order if w['s'] not in _out]
+     print('drop-x8: %d copies out, %d bytes of the old image' % (len(_gone), sum(w['e'] - w['link'] for w in _gone)))
+ 
++# ---- hashk (Iteration 729): forth/cv8-hashk.4's HASHK, in every dump ------
++# With --hashk its body becomes the newest HASH's (unless HASH is a primitive's stub - the engine's hash then, by
++# -DHASHK); with or without, HASHK leaves the image - nothing may refer to it.
++_hk = [w for w in order if w['n'] == 'HASHK']
++if _hk:
++    _h = _hk[-1]
++    assert _h['s'] not in _refs([w for w in order if w['s'] != _h['s']]), 'hashk: a word refers to HASHK'
++    if HASHK_K:
++        _d = [w for w in order if w['n'] == 'HASH' and w['s'] < _h['s']]
++        assert _d and kind[_h['s']] == 'code' and info[_h['s']] is not None, 'hashk: no HASH, or HASHK not translatable'
++        if stub_ops(_d[-1]) is None:
++            kind[_d[-1]['s']], info[_d[-1]['s']] = 'code', list(info[_h['s']]); SRC_OF[_d[-1]['s']] = _h['s']
++    order = [w for w in order if w['s'] != _h['s']]
++    print('hashk: %s; HASHK out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
++elif HASHK_K: sys.exit('hashk: --hashk, and no HASHK in the dump (forth/cv8-hashk.4)')
++
+ # ---- the dump tool and dead shadowed words left out (Iteration 39) ---
+ # tools/dict-dump-addr.4 is loaded LAST, to write this very dump: its
+ # words (NFA ... DUMP) came into every image, 490-688 bytes of seed 6's
+@@ -787,6 +804,7 @@ def _wl_hash(name):
+     v = len(b) ^ (b[0] << 1)
+     if len(b) > 1:
+         v ^= b[1] << 2
++    if HASHK_K: return ((v * HASHK_K) >> 8) & (_NTH - 1)   # Iteration 729: hashk (forth/cv8-hashk.4's HASHK)
+     return v & (_NTH - 1)
+ 
+ 
+@@ -894,6 +912,7 @@ def wl_hash(name):
+     v = len(b) ^ (b[0] << 1)
+     if len(b) > 1:
+         v ^= b[1] << 2
++    if HASHK_K: return ((v * HASHK_K) >> 8) & (NTHREADS - 1)   # Iteration 729: hashk - all must agree
+     return v & (NTHREADS - 1)
+ 
+ 
