@@ -12129,3 +12129,15 @@ the corpus's entries visited, -4 to -47 % of parse's, -6 to -18 % of the five pr
 -51 to -61 %, -29 to -40 % (smallest and portable-fastest, 16-128 chains). Names stored as hashes rejected on paper.
 Files: results/drafts/demoscene-ioccc-727.md, results/drafts/hashseed-727.py, results/drafts/hashseed-727.txt;
 hashk's prototype begun - results/drafts/hashk-727.4 (HASH8), results/drafts/hashk-727.py (its harness; built, not yet measured).
+
+## Iteration 729 - 2026-11-22 - Claude
+
+hashk measured on a prototype (a scratch clone: the converter, the Forth HASH by an overlay, the engine's two hashes by
+-DHASHK): the smallest -9.0 % of the corpus's instructions, -17.5 % of parse's, the image -16 B; portable-fastest -3.6 %,
+-3.2 %, +8 B; every output the same, twice. The smallest's chain count corrected (the threads gene 3 is 16 chains, not
+128). One K for every design and chain count does as well as one per image: ((v * 18835) >> 8) & (chains - 1), the ten
+roles -11 to -24 % of the corpus's visits. chainorder priced from hashk's instructions a visit: parse -21.6 % (smallest),
+-7.4 % (portable-fastest), above hashk; the model misreads the corpus. Next: hashk built as a gene.
+Files: results/drafts/hashk-727.txt, results/drafts/chainorder-est-727.py, results/drafts/hashk-transfer-728.py,
+results/drafts/hashk-transfer-728.txt, results/drafts/hashk-table-728.py, results/drafts/hashk-table-728.txt; hashk-727.4
+and hashk-727.py corrected; results/drafts/demoscene-ioccc-727.md's last sections.

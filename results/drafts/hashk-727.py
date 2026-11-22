@@ -4,7 +4,9 @@ harness, results/drafts/demoscene-ioccc-727.md's candidate): the lab's translato
 same with results/drafts/hashk-727.4 loaded last (HASH8: the multiplicative chain hash) and the converter threading the
 image by it (HASHK=K for tools/layout.py - a scratch tree's, which has the switch: run it there, from the top). The
 dispatches (VMPROF) and instructions (cachegrind) of kernel, corpus, parse (held out) and apps, proto / base, the outputs
-compared. Default the smallest (the lookup in Forth, 128 chains: K 2643, the shift 9 - hashk-727.4's literals)."""
+compared. Default the smallest (the lookup in Forth, 16 chains: K 50919, the shift 12 - hashk-727.4's literals); HK_K and
+HK_SHIFT for another design - the engine built with -DHASHK=K (EVOLVE_CFLAGS: vm-lab.c's CHAIN, the scratch tree's), so a
+lookup in C hashes as the overlay and the converter do."""
 import json, os, re, shutil, subprocess, sys
 ROOT = os.getcwd(); HERE = os.path.join(ROOT, 'lab', 'evolve'); DS = os.path.join(ROOT, 'designs')
 PHASE = os.environ.get('HK_PHASE')
@@ -19,7 +21,8 @@ if PHASE:                                   # a build process: base or proto
         E.W = nw
     E.setup()
     if PHASE == 'proto':
-        shutil.copy(os.path.join(ROOT, 'results', 'drafts', 'hashk-727.4'), os.path.join(E.W, 'hashk.4'))
+        t = open(os.path.join(ROOT, 'results', 'drafts', 'hashk-727.4')).read().replace('50919 * 65535 AND 12 RSHIFT', '%s * 65535 AND %s RSHIFT' % (os.environ['HASHK'], os.environ.get('HK_SHIFT', '12')))
+        open(os.path.join(E.W, 'hashk.4'), 'w').write(t)
         orig = E.boot_files; E.boot_files = lambda name: orig(name) + ['hashk.4']
     res = {}
     for n in names:
@@ -33,8 +36,9 @@ if PHASE:                                   # a build process: base or proto
     sys.exit(0)
 
 names = sys.argv[1:] or ['smallest']
+K, SH = os.environ.get('HK_K', '50919'), os.environ.get('HK_SHIFT', '12')   # K and 16 - log2 chains: the design's
 for ph in ('base', 'proto'):
-    subprocess.run([sys.executable, os.path.abspath(__file__)] + names, env=dict(os.environ, HK_PHASE=ph, **({'HASHK': '2643'} if ph == 'proto' else {})), check=True,
+    subprocess.run([sys.executable, os.path.abspath(__file__)] + names, env=dict(os.environ, HK_PHASE=ph, **({'HASHK': K, 'EVOLVE_CFLAGS': '-DHASHK=' + K} if ph == 'proto' else {})), check=True,
                    stdout=subprocess.DEVNULL)
 B, P = (json.load(open(os.path.join(OUT, ph + '.json'))) for ph in ('base', 'proto'))
 

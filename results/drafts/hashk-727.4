@@ -3,8 +3,8 @@
 \ (results/drafts/hashseed-727.py). Loaded last among a design's overlays by results/drafts/hashk-727.py: HASH8's body
 \ becomes HASH's (tools/layout.py's X8 swap); the converter threads the image with the same K (HASHK=K in its
 \ environment, the scratch tree's tools/layout.py). K and the shift are this prototype's literals, set by the harness:
-\ 2643 and 9 for 128 chains - the smallest's.
+\ 50919 and 12 for 16 chains - the smallest's (threads gene 3: 16 chains; evolve.py THREADS_N 32, 64, 128, 16).
 : HASH8 ( c-addr u #threads --- n )
   >R OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
    THEN XOR
-  R> DROP 2643 * 65535 AND 9 RSHIFT ;
+  R> DROP 50919 * 65535 AND 12 RSHIFT ;

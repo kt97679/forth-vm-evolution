@@ -1,0 +1,15 @@
+# hashk on a prototype: dispatches and instructions, proto / base (results/drafts/hashk-727.py)
+
+smallest (219878ec89), 8-byte cells - images 9021 / 9037 B (proto / base)
+  kernel  dispatches     9,034,741 ->     8,893,432  0.9844   instructions    131,266,337 ->    129,170,879  0.9840   output same
+  corpus  dispatches    55,415,205 ->    50,455,381  0.9105   instructions    788,904,237 ->    718,324,838  0.9105   output same
+  parse   dispatches   140,194,266 ->   115,244,872  0.8220   instructions  1,989,812,373 ->  1,641,876,420  0.8251   output same
+  apps    dispatches    46,277,563 ->    45,791,053  0.9895   instructions    739,122,307 ->    732,242,508  0.9907   output same
+
+
+portable-fastest (d727605472), 8-byte cells - images 10248 / 10256 B (proto / base)
+  kernel  dispatches     1,804,119 ->     1,800,329  0.9979   instructions     22,898,797 ->     22,815,123  0.9963   output same
+  corpus  dispatches     4,254,016 ->     4,245,844  0.9981   instructions     64,296,893 ->     61,989,201  0.9641   output same
+  parse   dispatches     8,057,335 ->     8,057,335  1.0000   instructions    131,946,964 ->    127,710,783  0.9679   output same
+  apps    dispatches    29,025,824 ->    29,025,682  1.0000   instructions    302,680,370 ->    302,576,021  0.9997   output same
+

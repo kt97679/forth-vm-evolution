@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 728.
+- master: Iteration 729.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -372,11 +372,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   brute force; results/drafts/hashseed-727.py, .txt): out of sample alone -5 to -15 % of the corpus's walk, -4 to -47 %
   of parse's; with chainorder up to three fifths - built with chainorder's prototype (both place names in chains).
   Names stored as hashes rejected (FIND must be exact).
-  **hashk's prototype in progress (728)**: results/drafts/hashk-727.4 (HASH8, K 2643, 128 chains) and hashk-727.py
-  (numfirst-722.py's harness; run in a scratch clone whose tools/layout.py threads by HASHK=K - the switch is two lines
-  before _wl_hash's and wl_hash's returns). Built: the smallest's image 9,053 B against 9,037. Not yet measured: the
-  harness's VMPROF file (build/hashk/vmprof.txt) is not written, the same engine writes /tmp/hk-vmprof.txt - look there
-  first. Then chainorder's prototype on the same harness, then K with chainorder.
+  **hashk measured (728)** on a prototype (results/drafts/hashk-727.py, .txt; the survey document's last sections): the
+  smallest -9.0 % of the corpus's instructions, -17.5 % of parse's (image -16 B); portable-fastest -3.6 %, -3.2 % (+8 B);
+  outputs the same. **One K for all**: h = ((v * 18835) >> 8) & (chains - 1) (hashk-table-728.txt: the ten roles
+  -11 to -24 % of the corpus's visits). chainorder priced from it (chainorder-est-727.py): parse -21.6 % / -7.4 %, above
+  hashk - but the model misreads the corpus; its build (signed links) after hashk's. **Next: hashk built as a gene**
+  (a scratch clone, a patch, batch-check): an always-compiled HASHK swapped into HASH when on, dropped when off (the 718
+  checksums prove the off-images), -DHASHK for the engine's two hashes (and gen-msc's), the cross compilers' THASH.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

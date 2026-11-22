@@ -1,0 +1,34 @@
+One K for the ten roles and every chain count: K = 18835 (h = ((v * K) >> 8) & (chains - 1)); the held-out objective 0.942 of today's
+
+| role | id | chains | workload | today | the one K | its own K (727's form) |
+|---|---|---:|---|---:|---:|---:|
+| best-all-round | df097ba2e2 | 128 | corpus | 3.44 | 2.63 (-23%) | 3.05 (-11%) |
+| best-all-round | df097ba2e2 | 128 | parse | 2.50 | 2.38 (-5%) | 2.00 (-20%) |
+| best-all-round | df097ba2e2 | 128 | the five programs | 3.33 | 2.71 (-19%) | 2.76 (-17%) |
+| fastest-x86-32 | 11f956db93 | 128 | corpus | 3.39 | 2.59 (-23%) | 3.02 (-11%) |
+| fastest-x86-32 | 11f956db93 | 128 | parse | 2.50 | 2.38 (-5%) | 2.00 (-20%) |
+| fastest-x86-32 | 11f956db93 | 128 | the five programs | 3.12 | 2.64 (-15%) | 2.67 (-14%) |
+| fastest-x86-64 | 9b15ba26f7 | 128 | corpus | 3.43 | 2.63 (-23%) | 3.04 (-11%) |
+| fastest-x86-64 | 9b15ba26f7 | 128 | parse | 2.50 | 2.38 (-5%) | 2.00 (-20%) |
+| fastest-x86-64 | 9b15ba26f7 | 128 | the five programs | 3.32 | 2.70 (-19%) | 2.73 (-18%) |
+| least-memory | fb0d57c8a2 | 32 | corpus | 12.35 | 9.37 (-24%) | 10.56 (-15%) |
+| least-memory | fb0d57c8a2 | 32 | parse | 12.62 | 9.00 (-29%) | 8.13 (-36%) |
+| least-memory | fb0d57c8a2 | 32 | the five programs | 10.59 | 9.26 (-13%) | 8.72 (-18%) |
+| portable-arm | a8d35bdccc | 128 | corpus | 3.39 | 2.58 (-24%) | 3.02 (-11%) |
+| portable-arm | a8d35bdccc | 128 | parse | 2.50 | 2.38 (-5%) | 2.00 (-20%) |
+| portable-arm | a8d35bdccc | 128 | the five programs | 3.26 | 2.60 (-20%) | 2.68 (-18%) |
+| portable-fastest | d727605472 | 32 | corpus | 12.61 | 9.62 (-24%) | 10.51 (-17%) |
+| portable-fastest | d727605472 | 32 | parse | 13.00 | 8.62 (-34%) | 10.25 (-21%) |
+| portable-fastest | d727605472 | 32 | the five programs | 11.04 | 9.76 (-12%) | 9.96 (-10%) |
+| portable-knee | 48a012411a | 16 | corpus | 23.58 | 20.88 (-11%) | 22.54 (-4%) |
+| portable-knee | 48a012411a | 16 | parse | 22.87 | 16.12 (-30%) | 14.88 (-35%) |
+| portable-knee | 48a012411a | 16 | the five programs | 19.91 | 17.13 (-14%) | 17.14 (-14%) |
+| portable-small | ae99617f06 | 16 | corpus | 23.39 | 20.68 (-12%) | 22.23 (-5%) |
+| portable-small | ae99617f06 | 16 | parse | 22.37 | 16.12 (-28%) | 14.88 (-34%) |
+| portable-small | ae99617f06 | 16 | the five programs | 19.66 | 16.80 (-15%) | 16.81 (-15%) |
+| small-jit | 15eda54ebd | 16 | corpus | 23.38 | 20.75 (-11%) | 22.26 (-5%) |
+| small-jit | 15eda54ebd | 16 | parse | 22.25 | 15.87 (-29%) | 15.13 (-32%) |
+| small-jit | 15eda54ebd | 16 | the five programs | 19.77 | 16.97 (-14%) | 16.95 (-14%) |
+| smallest | 219878ec89 | 16 | corpus | 23.79 | 20.91 (-12%) | 22.40 (-6%) |
+| smallest | 219878ec89 | 16 | parse | 23.37 | 16.62 (-29%) | 14.88 (-36%) |
+| smallest | 219878ec89 | 16 | the five programs | 20.21 | 17.28 (-15%) | 17.10 (-15%) |

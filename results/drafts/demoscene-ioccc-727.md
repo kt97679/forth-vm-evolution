@@ -51,13 +51,13 @@ lookup, definitions going in front as they come (results/drafts/hashseed-727.py;
 
 | design | chains | workload | today | chainorder (707) | K | K and chainorder |
 |---|---:|---|---:|---:|---:|---:|
-| smallest 219878ec89 (the lookup in Forth; threads 3 - 128 chains) | 128 | corpus | 3.40 | -6 % | -11 % | -16 % |
+| smallest 219878ec89 (the lookup in Forth; threads 3 - 16 chains) | 128 | corpus | 3.40 | -6 % | -11 % | -16 % |
 | | 128 | parse | 2.63 | -43 % | -19 % | -52 % |
 | | 128 | the five programs | 3.26 | -26 % | -17 % | -35 % |
 | | 32 | corpus | 12.30 | -7 % | -15 % | -34 % |
 | | 32 | parse | 12.62 | -45 % | -38 % | -61 % |
 | | 32 | the five programs | 10.55 | -34 % | -18 % | -39 % |
-| portable-fastest d727605472 (FIND in C; threads 0 - 16 chains) | 16 | corpus | 24.37 | -8 % | -5 % | -25 % |
+| portable-fastest d727605472 (FIND in C; threads 0 - 32 chains) | 16 | corpus | 24.37 | -8 % | -5 % | -25 % |
 | | 16 | parse | 23.75 | -47 % | -35 % | -59 % |
 | | 16 | the five programs | 20.92 | -36 % | -14 % | -40 % |
 | | 64 | corpus | 6.55 | -7 % | -8 % | -7 % |
@@ -65,6 +65,9 @@ lookup, definitions going in front as they come (results/drafts/hashseed-727.py;
 | | 64 | the five programs | 5.67 | -30 % | -14 % | -32 % |
 
 Every chain count of both designs: results/drafts/hashseed-727.txt (the script's output, both runs).
+
+(Corrected at 728: the threads gene's values are 32, 64, 128 and 16 chains - evolve.py's THREADS_N -, so the
+smallest has 16 and portable-fastest 32; the rows are by chain count, each figure as computed.)
 
 **Read**: a searched K alone shortens the walk by 5-15 % on the corpus (most of whose walk is misses - literals - which
 chainorder cannot shorten and a better spread can) and 4-47 % on parse, with no link changed; with chainorder the two
@@ -79,3 +82,39 @@ time: in a C walk a visit is a few instructions, in a Forth walk several dispatc
 (callgrind) and dispatches (VMPROF), as chainorder's is to. Proposed as a gene, 0/1, beside chainorder; built in the
 reopened search's preparation (HANDOFF.md, 727), chainorder's prototype and this one together - both change how a name
 is placed in a chain.
+
+## The prototype (Iteration 728) - hashk measured
+
+results/drafts/hashk-727.py (numfirst-722.py's harness) on a scratch clone: the lab's translator build of each record
+against the same with K - the converter threading by it (tools/layout.py, HASHK=K), the Forth HASH by it
+(results/drafts/hashk-727.4, HASH8), the engine's L_x_hash and C FIND by it (vm-lab.c's CHAIN macro, -DHASHK=K through
+EVOLVE_CFLAGS). Each design at its own chain count with K searched for it on the held-out three (hashseed-727.txt). Every
+output the same; results/drafts/hashk-727.txt, twice, the same figures.
+
+| design | chains, K | kernel | corpus | parse (held out) | apps | bytes |
+|---|---|---:|---:|---:|---:|---|
+| smallest 219878ec89 (the lookup in Forth) | 16, 50919 | -1.6 % | -9.0 % | -17.5 % | -0.9 % | image -16 B, engine the same |
+| portable-fastest d727605472 (klookup, C) | 32, 11855 | -0.4 % | -3.6 % | -3.2 % | -0.03 % | image -8 B, engine +16 B |
+
+(Instructions, cachegrind; the smallest's dispatches the same shares, portable-fastest's unchanged - its walk is C.)
+**hashk pays**: a lookup-heavy workload's tenth to a sixth where the walk is Forth, 3-4 % where it is C, at no or 8 bytes.
+
+**chainorder, priced from it** (results/drafts/chainorder-est-727.py: the instructions K saved over the visits it saved
+in the model give the instructions one visit costs; chainorder's visits priced at that): parse - the smallest -21.6 %
+alone, -26.2 % with K; portable-fastest -7.4 %, -9.8 %. Not to be read on the corpus: there the cost of a visit comes
+out 3.6 times parse's (2.1 for the C walk) - the model's token stream is not the corpus workload's lookups, so its visits
+are not its walk. chainorder likely pays above hashk on parse; how much elsewhere only its build says (signed links: the
+converter's linkbytes, both PREVNFA, cv8b.4's link words, every chain walker - +19-73 B, 710).
+
+## One K for every design (Iteration 728) - the gene's form
+
+Searching K per image buys little: another design's K does as well on the workloads (results/drafts/hashk-transfer-728.py,
+.txt - the held-out three are a noisy objective; at 64 chains the smallest's own K leaves parse at 5.62 visits, another's
+3.25). So one constant, and a form the same at every chain count: **h = ((v * K) >> 8) & (chains - 1), K = 18835** -
+searched over every odd K on the held-out three, the ten roles and the four chain counts counting alike
+(results/drafts/hashk-table-728.py, .txt). K = 256 is today's hash exactly. Each role at its own chain count, entries
+visited a lookup: corpus -11 to -24 %, parse -5 to -34 %, the five programs -12 to -20 % - better on the corpus than a
+K searched per image for every role, worse only on parse (at 128 chains -5 % against -20 %). The gene: hashk 0/1, the
+one K - the converter's threading and an always-compiled word HASHK it swaps into HASH when on and drops when off (the
+images with it off byte for byte today's - no stage variants), the engine's L_x_hash and C FIND by -DHASHK=18835, the
+self-hosting compiler's THASH after.

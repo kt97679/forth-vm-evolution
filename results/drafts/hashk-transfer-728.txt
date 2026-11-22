@@ -1,0 +1,30 @@
+
+219878ec89: entries visited a lookup - today, its own K, the recorded Ks (hashseed-727.txt, K alone)
+
+| chains | K | corpus | parse | the five programs |
+|---:|---|---:|---:|---:|
+| 16 | today | 23.79 | 23.37 | 20.21 |
+| 16 | own 50919 | 22.40 | 14.88 | 17.10 |
+| 32 | today | 12.30 | 12.62 | 10.55 |
+| 32 | own 56451 | 10.44 | 7.88 | 8.64 |
+| 32 | recorded 11855 | 9.96 | 9.75 | 9.32 |
+| 64 | today | 6.19 | 5.88 | 5.40 |
+| 64 | own 55757 | 5.39 | 5.62 | 5.08 |
+| 64 | recorded 13577 | 5.89 | 3.25 | 4.67 |
+| 128 | today | 3.40 | 2.63 | 3.26 |
+| 128 | own 2643 | 3.03 | 2.13 | 2.70 |
+
+d727605472: entries visited a lookup - today, its own K, the recorded Ks (hashseed-727.txt, K alone)
+
+| chains | K | corpus | parse | the five programs |
+|---:|---|---:|---:|---:|
+| 16 | today | 24.37 | 23.75 | 20.92 |
+| 16 | own 50919 | 23.16 | 15.50 | 18.08 |
+| 32 | today | 12.61 | 13.00 | 11.04 |
+| 32 | own 11855 | 10.51 | 10.25 | 9.96 |
+| 32 | recorded 56451 | 11.14 | 9.37 | 9.24 |
+| 64 | today | 6.55 | 6.12 | 5.67 |
+| 64 | own 13577 | 6.04 | 3.25 | 4.89 |
+| 64 | recorded 55757 | 5.72 | 6.25 | 5.31 |
+| 128 | today | 3.46 | 2.50 | 3.44 |
+| 128 | own 2643 | 3.09 | 2.00 | 2.88 |
