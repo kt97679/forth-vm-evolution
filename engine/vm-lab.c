@@ -1705,7 +1705,12 @@ static void virtual_machine(void) {
 #endif
 #if X_JIT     /* the lazy JIT's opcode (JIT.md): a code, no slot in the table */
 #define T2_JIT  0xFFFD
+#if JITDEAD   /* Iteration 710, the gene jitdead: a translated word's trigger - its own code, the same handler */
+#define T2_JITN 0xFFFC
+#define T2JIT(x) (x) == T2_JIT || (x) == T2_JITN ? &&L_x_jit :
+#else
 #define T2JIT(x) (x) == T2_JIT ? &&L_x_jit :
+#endif
 #else
 #define T2JIT(x)
 #endif
@@ -2192,9 +2197,17 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
  *  EXIT does. The return stack crosses in jit_rp, for loops and >R.
  *  Here among the ordinary handlers: gen-tos.py must wrap it in SPILL
  *  and FILL - after the tag's call handlers it is left bare (Iteration 81). */
+#if JITDEAD
+/*  Iteration 710 (jitdead, engine/jit.c): [JIT] - translated now; [JITN][offset] - native. Left bytecode, the
+ *  trigger is a NOOP and the body follows it - ip is there already.  */
+L_x_jit:   { uint32_t f_;
+             jit_cbase = cbase;
+             f_ = BYTE(ip - 1) == JIT_CODE ? jit_word(ip - 1, 0) : jit_ld32(ip);
+#else
 L_x_jit:   { uint32_t f_ = jit_ld32(ip);
              jit_cbase = cbase;
              if (f_ & 0x80000000u) f_ = jit_word(ip - 1, 0);
+#endif
              if (JIT_NATIVE(f_)) {
                  spn_st r_;
 #if JITRP && defined(__x86_64__)
@@ -2216,7 +2229,11 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
 #endif
                  rp = JIT_RP_GET(); dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
                  ip = RS; rp += CELL_BYTES;
+#if JITDEAD
+             } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); } } NEXT();   /* bytecode: its caller skips the NOOP next time */
+#else
              } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
+#endif
 #endif
 L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
 #if ENC == 3

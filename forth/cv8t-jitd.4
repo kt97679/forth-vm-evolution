@@ -1,0 +1,25 @@
+\ cv8t-jitd.4 - the lazy JIT's header as the code alone (Iteration 710, the
+\ gene jitdead: mechanism 9's V1', results/drafts/triz-706.md). Loaded last
+\ instead of cv8t-jit.4, only for designs with the gene (lab/evolve). Every
+\ colon word compiled at run time begins [JIT]: translated at its first call
+\ (engine/jit.c), its end found as the converter finds a body's - then its
+\ trigger becomes JITN and the body's first four bytes the native offset,
+\ the bytecode dead; or a NOOP, the word left bytecode. The body is padded
+\ to four bytes after its EXIT: room for the offset. cv8t-jit.4's [JIT]
+\ [four bytes] cost every definition four bytes more.
+
+0 CONSTANT JIT-OP              \ tag 2: layout.py writes this design's code
+VARIABLE JIT-AT                \ the body's start, while compiling
+
+: :8 ( "ccc" --- )
+\ As kernel.4's :, then the header.
+  !CSP HEADER ]
+  JIT-OP OP,  HERE JIT-AT !  0 LAST-OP ! ;
+
+: ;8 ( --- )
+\ As the ;8 before this one, then NOOPs to four bytes of body.
+  POSTPONE ;8
+  JIT-AT @ ?DUP IF
+    4 + HERE -  DUP 0> IF 0 DO 0 C, LOOP ELSE DROP THEN
+    0 JIT-AT !
+  THEN ; IMMEDIATE

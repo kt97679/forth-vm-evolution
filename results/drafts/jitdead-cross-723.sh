@@ -1,6 +1,6 @@
 #!/bin/sh
 # results/drafts/jitdead-cross-723.sh - the gene jitdead in the cross compiler (Iteration 723, on the queued genes'
-# branch: results/queued-genes applied). Four JIT records from designs/ with jitdead on: jd-small (small-jit 15eda54ebd:
+# branch: results/applied-genes-727 applied). Four JIT records from designs/ with jitdead on: jd-small (small-jit 15eda54ebd:
 # jitimg, jitx), jd-bar (best-all-round df097ba2e2), jd-lm (least-memory fb0d57c8a2: no jitimg, no jitx - jit_wends
 # the headed words alone, none), jd-small-nx (small-jit with jitx off: the headed words' rows, their pads off the
 # ends) - each through results/drafts/selfhost-ids-714.sh at both widths (the export by the translator, the genes,

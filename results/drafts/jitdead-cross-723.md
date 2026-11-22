@@ -1,12 +1,12 @@
 # The gene jitdead in the cross compiler; the queued genes rebased (Iteration 724)
 
-**The queue no longer applied.** results/queued-genes' three patches (jitdead, fixenv, jitfew; batch-checked at 713
+**The queue no longer applied.** results/applied-genes-727' three patches (jitdead, fixenv, jitfew; batch-checked at 713
 on 6f91bb0) failed `git apply` on 723's master: export-genes.py had moved (714-722's G-NOT-YET edits). Made again on
 master, one commit each (`git apply --3way`): one conflict - G-NOT-YET's line, master's kept and jitdead's
---jit-dead added to it - the rest context only. The rebased patches replace the old in results/queued-genes, and
-ORDER.md says so; its check, `env PENDING=results/queued-genes RECORD=1 sh tools/batch-check.sh`, run on them.
+--jit-dead added to it - the rest context only. The rebased patches replace the old in results/applied-genes-727, and
+ORDER.md says so; its check, `env PENDING=results/applied-genes-727 RECORD=1 sh tools/batch-check.sh`, run on them.
 
-**jitdead in the cross compiler** (results/queued-genes/jitdead-cross-after-seed96.patch, the queue's last;
+**jitdead in the cross compiler** (results/applied-genes-727/jitdead-cross-after-seed96.patch, the queue's last;
 forth/cross-cv8.4 and lab/evolve/export-genes.py), as tools/layout.py does it at 710:
 - the JIT header on the outer interpreter's words (--jitimg 1) the JIT's code alone, not [code][four bytes];
 - the body made four bytes long - NOOPs after its EXIT, never run (layout.py's jh_pad) - room for the native offset

@@ -246,6 +246,26 @@ struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; }
 #define JIT_BROPND(o) ((o)->opnd >= 6)
 #endif
 #include "vm-jit-ops.h"                 /* jit_ops[], JIT_CODE: this design's */
+/*  Iteration 710, the gene jitdead (mechanism 9's V1', results/drafts/triz-706.md): the header is the JIT's code
+ *  alone, [JIT] - no 4-byte field. The length is found as the converter finds a body's end (the first EXIT no branch
+ *  reaches past; an image word's from jit_wends), and the native offset is kept in the body itself once it is dead:
+ *  translated, a word's trigger becomes JITN_CODE and its first four bytes the offset - native code runs the whole
+ *  word, so its bytecode is not run again (what it reads there at run time - an inline string, (ABORT")'s resume
+ *  point - is copied first: jit_keep). Left bytecode - refused, or a body under four bytes (jit_rd) - the trigger
+ *  becomes a NOOP (code 0): the bytecode intact, its callers re-pointed past it as before, and to native code it is
+ *  what a field of 0 was. The run-time words' bodies are padded with NOOPs to four bytes (forth/cv8t-jitd.4), the
+ *  image's (--jitimg) by the converter: the room is the body and the NOOPs after its end.  */
+#ifndef JITDEAD
+#define JITDEAD 0
+#endif
+#if JITDEAD
+#define JIT_HDR 1
+#if JIT_PRICE
+#error "jitdead: a translated word's bytecode is its offset - JIT_PRICE (jitstack.py) runs the bytecode"
+#endif
+#else
+#define JIT_HDR 5
+#endif
 #define JIT_NOPS ((int)(sizeof jit_ops / sizeof jit_ops[0]))
 #ifndef T2_ESC
 #define T2_ESC  0xFFFE
@@ -354,7 +374,11 @@ static int jit_init(void) {
 #else
             t_[0] = 0x48; t_[1] = 0xB8; memcpy(t_ + 2, &a_, 8); t_[10] = 0xFF; t_[11] = 0xE0;
 #endif
+#if JITDEAD
+            jit_sentinel[0] = (UNS8)JITN_CODE; memcpy(jit_sentinel + 1, &o_, 4);   /* 710: a native word's form */
+#else
             jit_sentinel[0] = (UNS8)JIT_CODE; memcpy(jit_sentinel + 1, &o_, 4);
+#endif
         }
 #endif
     }
@@ -406,7 +430,7 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
    point it past the header - that call site then skips the JIT dispatch
    for good. Anything else (EXECUTE, a target past the width) is left. */
 static void jit_repoint(UNS64 w, UNS64 ra) {
-    UNS64 t = w + 5 - jit_cbase, x;
+    UNS64 t = w + JIT_HDR - jit_cbase, x;
     int wd, i;
     for (wd = 2; wd <= 4; wd += T2_WSTEP) {
         UNS64 a = ra - (UNS64)wd;
@@ -448,7 +472,7 @@ static void jit_dump(int fd) {
         m = snprintf(b, sizeof b, "L %d %d %d %d %d %d %d %d %d\n", i, jit_ops[i].opnd, jit_ops[i].k, jit_ops[i].n,
                      jit_ops[i].st[0], jit_ops[i].st[1], jit_ops[i].st[2], jit_ops[i].st[3], jit_ops[i].st[4]); write(fd, b, (size_t)m); }
     for (i = 0; i < jn_n; i++) {        /* Iteration 220: every call of every word met, translated or not */
-        UNS64 w = jn_w[i], end = jn_end[i], a = w + 5;
+        UNS64 w = jn_w[i], end = jn_end[i], a = w + JIT_HDR;
         while (a < end) {
             UNS8 c = BYTE(a);
             if (T2_CALL(c)) {
@@ -481,8 +505,12 @@ static void jit_dump(int fd) {
     for (k = 0; k < T2_JONES; k++)
         if (jit_one[k] < (unsigned)JIT_NOPS && jit_ops[jit_one[k]].ok) { m = snprintf(b, sizeof b, "S %d\n", k < 64 ? k : k + 64); write(fd, b, (size_t)m); }
     for (i = 0; i < jn_n; i++) {
-        UNS64 w = jn_w[i], end = jn_end[i], a = w + 5;
+        UNS64 w = jn_w[i], end = jn_end[i], a = w + JIT_HDR;
+#if JITDEAD
+        uint32_t f = BYTE(w) == (UNS8)JITN_CODE ? jit_ld32(w + 1) : 0;
+#else
         uint32_t f = jit_ld32(w + 1);
+#endif
         m = snprintf(b, sizeof b, "J %llu %llu %u\n", (unsigned long long)(w - jit_cbase), (unsigned long long)(end - jit_cbase), f);
         write(fd, b, (size_t)m);
         while (f < 2 && a < end) {
@@ -615,7 +643,9 @@ static int jit_inl1(UNS64 a, unsigned short *op, UNS64 *v) {
     *op = (unsigned short)L; *v = x; return 1;
 }
 #endif
-#if JITX
+#if JITX && JITFEW
+static __attribute__((noinline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);   /* 713 */
+#elif JITX
 static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
 #else       /* without jitx, called once: inlined, the engine as it was */
 static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
@@ -624,7 +654,10 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 /* Iteration 476: a word whose body is >R then EXIT - the kernel's `: EXECUTE >R ;` (layout.py) - is EXECUTE */
 static int jit_isexec(UNS64 a) {
     unsigned L; UNS8 b;
-    if (BYTE(a) == JIT_CODE) a += 5;
+    if (BYTE(a) == JIT_CODE) a += JIT_HDR;
+#if JITDEAD
+    else if (BYTE(a) == (UNS8)JITN_CODE) return 0;      /* 710: native - its first bytes the offset */
+#endif
     b = BYTE(a); if (T2_CALL(b)) return 0;
     L = jit_one[T2_ONEIX(b)]; a++; if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
     if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 0;
@@ -637,6 +670,38 @@ static int jit_isexec(UNS64 a) {
 #endif
 /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
 static int jit_deep;                    /* 490: a translation refused below the depth limit - its callers may try again */
+#if JITDEAD
+/*  Iteration 710 (jitdead): w is being translated at depth i while jit_busy[i] is w - a call to it from below is to a
+ *  word not native meanwhile (the field's 0 did that); jit_rd[i]: its body and the NOOPs after it are under four
+ *  bytes - no room for the offset (the run-time words' and the image's are padded: never, but for a word laid
+ *  otherwise).  */
+static UNS64 jit_busy[JIT_DEPTH + 2]; static unsigned char jit_rd[JIT_DEPTH + 2];
+#if JITEXEC
+/*  What native code reads at run time from a body's first four bytes - an inline string, (ABORT")'s call and string,
+ *  where the interpreter resumes on a true flag - copied to the JIT's memory first, the offset written over them;
+ *  0: no room (the word then stays bytecode).  */
+__attribute__((noinline)) static UNS64 jit_keep(UNS64 a, unsigned n) {
+    if (jit_used + n > JIT_MEM) return 0;
+    memcpy(jit_mem + jit_used, (const void *)(uintptr_t)a, n); jit_used += n;
+    return (UNS64)(uintptr_t)(jit_mem + jit_used - n);
+}
+#endif
+__attribute__((noinline)) static uint32_t jit_word(UNS64 w, int depth) {   /* not in the interpreter's loop: once a word */
+    uint32_t f; int i, d = depth > JIT_DEPTH ? JIT_DEPTH + 1 : depth;   /* past the limit jit_body refuses at once */
+    for (i = 0; i < d; i++) if (jit_busy[i] == w) return 0;
+    if (!depth) jit_deep = 0;
+    jit_busy[d] = w; jit_rd[d] = 0;
+    f = jit_body(w, w + 1, 0, depth);       /* one call: without jitx jit_body is inlined where it is called */
+    jit_busy[d] = 0;
+#if JITLOG
+    if (!f) jitlog_refused(w);
+    jitlog_note(f && jit_rd[d] ? 'D' : 'T', w, w, f);   /* D: native, but its body under four bytes - left bytecode */
+#endif
+    if (f && !jit_rd[d]) { jit_st32(w + 1, f); BYTE(w) = (UNS8)JITN_CODE; return f; }
+    if (!(jit_deep && depth)) BYTE(w) = 0;             /* bytecode for good: a NOOP for the trigger */
+    return 0;                                          /* 490: refused for depth - its JIT code left, to translate again */
+}
+#else
 static uint32_t jit_word(UNS64 w, int depth) {
     UNS64 end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
     uint32_t f, orig = jit_ld32(w + 1);
@@ -652,13 +717,20 @@ static uint32_t jit_word(UNS64 w, int depth) {
     else if (jit_deep && depth) jit_st32(w + 1, orig);   /* 490: refused for depth - left to translate again */
     return f;
 }
+#endif
 #if JITEXEC
 /* Iteration 476: EXECUTE from native code - the token's word native when it is, translated now when it can be
    (a word with the JIT's header by jit_word, one without by its kslot, as a call's callee is), else run by the
    interpreter (jit_interp, jitre's: a sentinel return address, a longjmp back) - and the stack handed back. */
 __attribute__((force_align_arg_pointer)) static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
     UNS64 w = (UNS64)xt; uint32_t f = 0;
+#if JITDEAD
+    if (BYTE(w) == (UNS8)JITN_CODE) f = jit_ld32(w + 1);                 /* 710 */
+    else if (BYTE(w) == JIT_CODE) f = jit_word(w, 0);
+    else if (!BYTE(w)) ;                                                 /* a NOOP: left bytecode - interpreted, no jit_k */
+#else
     if (BYTE(w) == JIT_CODE) { f = jit_ld32(w + 1); if (f & 0x80000000u) f = jit_word(w, 0); }
+#endif
     else if (BYTE(w) != JIT_DOVAR) { uint32_t *k = jit_kslot(w);
         if (k) { if (*k & 0x80000000u) { *k = 1; *k = jit_body(w, w, 0, 0); } f = *k; } }
     if (f > 1) {                        /* 481: native - this site's cache remembers it */
@@ -789,6 +861,25 @@ static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, co
 
 /* The operations from a to end - end 0: find it, a word without a header
    (jitx) - of the word w: a call to w is a call to this code itself. */
+#if JITFEW
+/*  Iteration 713, the gene jitfew (results/drafts/early-computers-713.md): the translator's arrays - at, arg, nat, opl
+ *  (the logical operation; 0xFFFF a call to w, 0xFFFE a call resolved, 0xFFFD a literal) and tl (Iteration 246: this
+ *  call is a tail call - a jump) - JIT_FEWOPS long first, in jit_body's frame, and JIT_MAXOPS long only for a word
+ *  with more operations (jit_body_big). Their heads were a page each at every depth of the callees' translation:
+ *  10-19 of a JIT design's pages on a workload, none of them used past a word's few operations.  */
+#define JIT_FEWOPS 128
+#define JIT_ROOM 0xFFFFFFFFu            /* jit_body_'s answer when its cap was too few */
+#define JIT_CAP cap
+#define JIT_LONG (cap < JIT_MAXOPS ? JIT_ROOM : 0)
+static __attribute__((noinline)) uint32_t jit_body_(UNS64 w, UNS64 a, UNS64 end, int depth, int cap, UNS64 *at, UNS64 *arg,
+                                                  uint32_t *nat, unsigned short *opl, unsigned char *tl) {
+    UNS64 far = 0; uint32_t size = 0, off;
+#if !JITTAIL
+    (void)tl;
+#endif
+#else
+#define JIT_CAP JIT_MAXOPS
+#define JIT_LONG 0
 #if JITX
 static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
 #else
@@ -800,6 +891,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #if JITTAIL
     unsigned char tl[JIT_MAXOPS];       /* Iteration 246: this call is a tail call - a jump */
 #endif
+#endif
     int n = 0, i, j;
     (void)far;
     if (depth > JIT_DEPTH) {            /* 490: too deep - not cached as bytecode below the top (jit_word, the kslot) */
@@ -810,10 +902,11 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         return 0;
     }
     if (!jit_init()) return 0;
-#if JITX
+#if JITX || JITDEAD
 #if defined(JIT_NWENDS)
-    if (!end && a == w && w >= jit_cbase) {     /* 489: an image word reached without its header - its end from the converter's
-                                       table, not the first EXIT no branch passes (DABS ran on into FM/MOD's header) */
+    if (!end && (a == w || a == w + JITDEAD) && w >= jit_cbase) {     /* 489: an image word reached without its header - its
+                                       end from the converter's table, not the first EXIT no branch passes (DABS ran on into
+                                       FM/MOD's header); 710: under jitdead an image word with the header too, at w + 1 */
         UNS64 o_ = w - jit_cbase; int lo_ = 0, hi_ = JIT_NWENDS - 1;
         while (lo_ <= hi_) { int m_ = (lo_ + hi_) / 2;
             if (jit_wends[m_][0] == o_) { end = jit_cbase + jit_wends[m_][1]; break; }
@@ -833,7 +926,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
          *  what the interpreter runs as the PFA pushed on the return stack and a jump to the DOES> code, whose first
          *  operation, R>, takes it back. Here: a literal of the PFA, then the DOES> code from after that R>, to its
          *  EXIT - the return stack never touched, so the code's own order holds (results/drafts/jitapps-471.md).  */
-        if (n == 0 && JIT_DODOES >= 0 && JIT_FROMR >= 0 && b == (UNS8)JIT_DODOES && (a == w || a == w + 5)) {   /* 473: a child has
+        if (n == 0 && JIT_DODOES >= 0 && JIT_FROMR >= 0 && b == (UNS8)JIT_DODOES && (a == w || a == w + JIT_HDR)) {   /* 473: a child has
                                          no header, as a variable has none - reached as a callee, translated once (jit_kslot) */
             UNS64 t_ = ((UNS64)(BYTE(a + 1) & 0x3F) << 24) | ((UNS64)BYTE(a + 2) << 16) | ((UNS64)BYTE(a + 3) << 8) | BYTE(a + 4);
             UNS64 tail = jit_cbase + t_;
@@ -850,9 +943,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         }
 #endif
 #if JITLOG
-        if (n >= JIT_MAXOPS) { jitlog_why = 6; return 0; }           /* 471: too long, told apart */
+        if (n >= JIT_CAP) { jitlog_why = 6; return JIT_LONG; }           /* 471: too long, told apart */
 #else
-        if (n >= JIT_MAXOPS) return 0;
+        if (n >= JIT_CAP) return JIT_LONG;
 #endif
         at[n] = a;
         if (T2_CALL(b)) {               /* a call of 2, 3 or 4 bytes (2 or 4: t2wide) */
@@ -870,14 +963,21 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                                            own address kept for the interpreter to resume at when it is true */
                 UNS64 s_ = a; unsigned c_ = BYTE(s_);
                 opl[n] = JIT_L_ABORTQ; arg[n] = at[n];
+#if JITDEAD
+                if (at[n] < w + 5) {                     /* 710: the interpreter resumes there - a copy, the call and string */
+                    UNS64 k_ = jit_keep(at[n], (unsigned)(s_ + 1 + c_ - at[n])); if (!k_) return 0; arg[n] = k_; }
+#endif
                 a = s_ + 1 + c_;     /* 681: CV8's strings unpadded (cv8.4's (S")8) */
             } else
 #endif
             if (JIT_W_SQ >= 0 && JIT_W_DQ >= 0 && JIT_W_TYPE >= 0 &&
                 (arg[n] == jit_cbase + (UNS64)JIT_W_SQ || arg[n] == jit_cbase + (UNS64)JIT_W_DQ)) {
-                UNS64 s_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
-                if (n + 4 >= JIT_MAXOPS) return 0;
-                opl[n] = 0xFFFD; arg[n] = s_ + 1;
+                UNS64 s_ = a, v_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
+#if JITDEAD
+                if (s_ < w + 5 && !(v_ = jit_keep(s_, c_ + 1))) return 0;   /* 710: native code reads it - a copy */
+#endif
+                if (n + 4 >= JIT_CAP) return JIT_LONG;
+                opl[n] = 0xFFFD; arg[n] = v_ + 1;
                 n++; at[n] = ((UNS64)1 << 63) | (s_ + 1); opl[n] = 0xFFFD; arg[n] = c_;
                 if (dq_) { n++; at[n] = ((UNS64)1 << 63) | (s_ + 2); opl[n] = 0xFFFD; arg[n] = jit_cbase + (UNS64)JIT_W_TYPE;
                            n++; at[n] = ((UNS64)1 << 63) | (s_ + 3); opl[n] = JIT_L_EXECUTE;
@@ -914,7 +1014,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #endif
             default: return 0;
             }
-#if JITX
+#if JITX || JITDEAD
             if (JIT_BROPND(&jit_ops[L]) && arg[n] > far) far = arg[n];
             if (!end && jit_ends(L) && a > far) { n++; end = a; break; }   /* the end: an EXIT no branch reaches past */
 #endif
@@ -922,6 +1022,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     }
     if (a != end) return 0;
     at[n] = end;
+#if JITDEAD
+    {   UNS64 k_ = end - (w + 1);                        /* 710: the offset's room - the body's bytes, or the NOOPs */
+        if (k_ < 4 && jit_ld32(w + 1) >> (8 * k_)) jit_rd[depth] = 1;   /* after its EXIT (read by jit_word alone) */
+    }
+#if PROFILE
+    if (BYTE(w) == JIT_CODE && at[0] == w + 1) JITNOTE(w, end);
+#endif
+#endif
 #if JITX && JITCFA
     {   /* Iteration 482, the gene jitcfa: the same rule along the paths, not down the page - the depth before each
            operation (dv), a branch's target given the depth at the branch, the code after an unconditional jump or an
@@ -982,10 +1090,17 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         if (jit_isexec(arg[i])) {                                         /* 476: a call of EXECUTE - its helper; 481: its cache */
             opl[i] = JIT_L_EXECUTE; arg[i] = (UNS64)(uintptr_t)jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1]; continue; }
 #endif
+#if JITDEAD
+        if (BYTE(arg[i]) == JIT_CODE) (void)jit_word(arg[i], depth + 1);   /* 710: then JITN, a NOOP, or still JIT (depth) */
+        if (BYTE(arg[i]) == (UNS8)JITN_CODE) f = jit_ld32(arg[i] + 1);    /* native */
+        else if (BYTE(arg[i]) == JIT_CODE || !BYTE(arg[i])) f = 0;         /* refused for depth, being translated - or a NOOP:
+                                                                              left bytecode, as a field of 0 was */
+#else
         if (BYTE(arg[i]) == JIT_CODE) {
             f = jit_ld32(arg[i] + 1);
             if (f & 0x80000000u) f = jit_word(arg[i], depth + 1);
         }
+#endif
 #if JITX
         else if (BYTE(arg[i]) == JIT_DOVAR) {         /* a variable: its address, a literal */
             arg[i] = (arg[i] + 5 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1); opl[i] = 0xFFFD; continue;   /* 460: a cell's alignment - 4 at 32 bits, as L_dovar's */
@@ -1154,6 +1269,31 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     jit_used = off + size;
     return off;
 }
+#if JITFEW
+static __attribute__((noinline, cold)) uint32_t jit_body_big(UNS64 w, UNS64 a, UNS64 end, int depth) {
+    UNS64 at[JIT_MAXOPS + 1], arg[JIT_MAXOPS]; uint32_t nat[JIT_MAXOPS + 1]; unsigned short opl[JIT_MAXOPS];
+#if JITTAIL
+    unsigned char tl[JIT_MAXOPS];
+#else
+    unsigned char tl[1];
+#endif
+    return jit_body_(w, a, end, depth, JIT_MAXOPS, at, arg, nat, opl, tl);
+}
+#if JITX
+static __attribute__((noinline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
+#else
+static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
+#endif
+    UNS64 at[JIT_FEWOPS + 1], arg[JIT_FEWOPS]; uint32_t nat[JIT_FEWOPS + 1], f; unsigned short opl[JIT_FEWOPS];
+#if JITTAIL
+    unsigned char tl[JIT_FEWOPS];
+#else
+    unsigned char tl[1];
+#endif
+    f = jit_body_(w, a, end, depth, JIT_FEWOPS, at, arg, nat, opl, tl);
+    return f == JIT_ROOM ? jit_body_big(w, a, end, depth) : f;
+}
+#endif
 #endif
 
 #ifdef JIT_SCAN_MAIN

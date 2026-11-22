@@ -12108,3 +12108,13 @@ relf's handoff from 721's draft (8 of the ten changed since 657, not seven) and 
 forth-vm-evolution-designs-iter726.tar.gz - 20 of 20 builds 9 of 9 right, its 40 checksums 718's. NEXT-RUN none.
 Files: results/rage-designs-726.md, results/selfhost-speed-726.md, results/handoff-relf-726.md,
 results/drafts/chain-pack-726.py, results/drafts/relf-handoff-726.py.
+
+## Iteration 727 - 2026-11-21 - Claude
+
+The owner: "finalize design evolution and ensure we found best designs, handoff to relf project after that" - relf's
+handoff held (results/handoff-relf-726.md and the iter726 package not sent; made again from the reopened search's roles).
+The reopened search's first genes applied: results/queued-genes, now results/applied-genes-727 (jitdead - mechanism 9's
+V1' -, fixenv, jitfew, jitdead in the cross compiler) - batch-check PASS on 537f3cc2 (4 patches), applied in order, the
+stages rebuilt; the ten roles' lab build unchanged (pack-designs.py: 20 of 20 builds 9 of 9 right, the 40 checksums
+718's). Next, the sandbox's: chainorder's prototype, numfirst as a gene, the fixed data layout's step 1, their rehearsal.
+Files: results/applied-genes-727/ (moved; ORDER.md's head).

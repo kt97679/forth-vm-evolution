@@ -1,4 +1,4 @@
-# The fixed environment for engine runs - tested (Iteration 713; results/queued-genes/fixenv-after-seed96.patch)
+# The fixed environment for engine runs - tested (Iteration 713; results/applied-genes-727/fixenv-after-seed96.patch)
 
 The owner: "if you think it will help us find better designs - let's do it" (results/drafts/early-games-713.md: the
 memory reading carries the measuring process's environment). The patch: evolve.sh() gives an engine or cputime run
@@ -18,5 +18,5 @@ The outputs are alike in every run. 27 pages (108 KB) is the laptop's record for
 pack), so the laptop's own environment costs about nothing today, and the sandbox now reads as the laptop does.
 What run_env gives: PATH, CPUTIME_JAIL, EVOLVE_PAD of 903 bytes here. All of the search's measuring goes through sh()
 (E.measure: measure-ids.py, loadtest.py, xcheck.py on the remotes); lucky.py and run-spread.py, studies of a run's
-spread, launch their own. Queued with the reopened search's series (results/queued-genes/ORDER.md): its runs then
+spread, launch their own. Queued with the reopened search's series (results/applied-genes-727/ORDER.md): its runs then
 compare with each other, not with the earlier series' records.

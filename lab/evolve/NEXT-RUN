@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 727 (the owner: the design evolution finalized first, relf's handoff after it): none - the reopened search's
+#   genes built and rehearsed in the sandbox first (HANDOFF.md, 727); then a series' first seed, its hours the owner's.
 # Iteration 726 (the rage check and portable-fastest's gate processed - both PASS, results/rage-designs-726.md): none -
 #   the roles shipped (relf's handoff results/handoff-relf-726.md, the package forth-vm-evolution-designs-iter726.tar.gz);
 #   next the sandbox's: results/queued-genes (ORDER.md) before the reopened search, chainorder and V1' (708), numfirst

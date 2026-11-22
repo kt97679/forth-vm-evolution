@@ -215,6 +215,8 @@ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGN
      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
 gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
 gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+gene('jitfew', values=range(2), needs=lambda g, e: jit_on(g))    # Iteration 713: the translator's arrays 128 operations long first, 1,024 only for a longer word - their pages (results/drafts/early-computers-713.md)
+gene('jitdead', values=range(2), needs=lambda g, e: jit_on(g))   # Iteration 710: mechanism 9's V1' - the JIT's header the code alone, the offset in the dead body (results/drafts/triz-706.md)
 gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
 gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
 gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
@@ -321,7 +323,7 @@ def boot_files(name):
                    + (['cv8-fuse-inline.4'] if '-inl' in name else [])      # Iteration 694: after rtvar's, before rtconst's
                    + (['cv8-fuse-const.4'] if '-const' in name else [])     # Iteration 691: after rtvar's
                    + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
-                   + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
+                   + (['cv8t-jitd.4'] if '-jitd' in name else ['cv8t-jit.4'] if '-jit' in name else [])   # Iteration 80: last - its ;8 wraps the others'; 710: jitdead's
                    + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
                    + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3')) else [])   # Iteration 205: the rest of the file words (fsys 2)
                    + (['file-sysc3.4'] if any(k in name for k in ('-fsys3',)) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
@@ -357,7 +359,7 @@ def all_dump_names():
             for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loopall')
             for t in (('', '-iplus') if l == '-loopall' else ('',))
             for v in (('', '-var') if f else ('',)) for i in (('', '-inl') if f else ('',)) for c in (('', '-const') if f else ('',))
-            for e in (('', '-empty') if b == bt else ('',)) for j in (('', '-jit') if b == bt else ('',))
+            for e in (('', '-empty') if b == bt else ('',)) for j in (('', '-jit', '-jitd') if b == bt else ('',))
             for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or v or i or c or e or j or y or b == bt]
 def prebuild_dumps():
     """Iteration 697: a search makes and checks every dump before its workers start, at each width it selects at - so a
@@ -570,6 +572,10 @@ def recorded_genome(i):
                 except ValueError: pass
     return None
 
+def jitdead_on(g):
+    """Iteration 710, the gene jitdead (mechanism 9's V1', results/drafts/triz-706.md): the JIT's header [JIT] alone -
+    the body's end found as the converter finds it, the native offset written into the translated word's dead body."""
+    return jit_on(g) and bool(g.get('jitdead'))
 def jit_on(g):
     """Iteration 80 (JIT.md): the lazy JIT - colon words compiled at run time
     translated to native code on their first call (engine/jit.c, SPN's
@@ -716,6 +722,27 @@ def _contain(cpu, kind=None):
         if kind == 'engine':
             resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
     return f
+# Iteration 713 (the owner, from results/drafts/early-games-713.md): every engine run - the search's, a check's, a
+# remote's - with one environment, padded so that it and the engine's arguments always take RUN_ENV_BYTES of the
+# initial stack. The memory reading counts the pages a run touches, the stack's among them: the measuring process's
+# environment (the sandbox's 17 KB: 3 pages more) and the paths' lengths (the run's directory, the machine's) moved it
+# between machines and sessions - a likely reason the sandbox read chain A's holders 4-16 KB above the laptop. The
+# environment's size biases timings too (Mytkowicz et al., ASPLOS 2009); with ASLR on, as here, that part is noise.
+# No workload reads the environment; the engines need PATH alone. EVOLVE_KEEP_ENV=1: the caller's, as before.
+RUN_ENV_BYTES = 1024
+def run_env(cmd, kind):
+    """The environment of an engine run (kind 'engine' or 'cputime'): PATH, cputime's CPUTIME_JAIL, and EVOLVE_PAD
+    filling the arguments' and the environment's strings - the exec's file name (AT_EXECFN) counted too - to
+    RUN_ENV_BYTES."""
+    i = 3 if cmd and os.path.basename(str(cmd[0])) == 'taskset' else 0
+    if len(cmd) > i + 3 and os.path.basename(str(cmd[i])) == 'setarch': i += 3
+    args = [str(a) for a in cmd[i + (1 if kind == 'cputime' else 0):]]
+    e = {'PATH': '/usr/bin:/bin'}
+    if kind == 'cputime': e['CPUTIME_JAIL'] = '1'
+    used = (sum(len(a) + 1 for a in args) + len(args[0]) + 1) if args else 0
+    used += sum(len(k) + len(v) + 2 for k, v in e.items()) + len('EVOLVE_PAD') + 2
+    e['EVOLVE_PAD'] = 'x' * max(0, RUN_ENV_BYTES - used)
+    return e
 def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
     """Run cmd in a process group of its own and kill the WHOLE group on
     timeout. A broken design executes arbitrary code, and the engine's
@@ -728,6 +755,7 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
     waiting its turn on a loaded laptop is not. timeout, wall-clock, is
     only the backstop for one that blocks. SIGXCPU counts as a timeout."""
     kind = _kind(cmd)
+    if kind and env is None and os.environ.get('EVOLVE_KEEP_ENV') != '1': env = run_env(cmd, kind)   # 713
     if kind == 'cputime': env = dict(env if env is not None else os.environ, CPUTIME_JAIL='1')
     p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.PIPE if inp is not None else subprocess.DEVNULL,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain(cpu, kind), env=env)
@@ -1087,6 +1115,8 @@ def _build(g, d):
     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+    if jit_on(g) and express(g).get('jitfew'): flags.append('-DJITFEW=1')   # Iteration 713: the translator's arrays short first (engine/jit.c)
+    if jitdead_on(g): flags.append('-DJITDEAD=1')               # Iteration 710: the header the code alone (engine/jit.c)
     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
@@ -1162,6 +1192,7 @@ def _build(g, d):
     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
     for k, conv in GENE_CONVERT: opts += conv(g)                  # Iteration 276-278: the rows' own options (gene())
     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
+    if jitdead_on(g): opts.append('--jit-dead')                    # Iteration 710: the jitimg words' header, JITN's code
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
@@ -1185,7 +1216,7 @@ def _build(g, d):
     fuse += '-inl' if rtinline_on(g) else ''                                                           # rtinline: 694
     fuse += '-const' if rtconst_on(g) else ''                                                          # rtconst: 691
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
-    dump = dump_file((KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+    dump = dump_file((KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + (('-jitd' if jitdead_on(g) else '-jit') if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.
@@ -2122,7 +2153,7 @@ def setup():
     import shutil
     W = os.path.join(O, 'work')
     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-inline.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout

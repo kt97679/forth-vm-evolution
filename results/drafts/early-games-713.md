@@ -67,7 +67,7 @@ start-up, 32 on the kernel workload), and 20 KB more of it adds 5 more. The memo
 process's environment, about a page per 4 KB. That is a likely reason the sandbox read chain A's holders 4-16 KB above the laptop
 (their records at 705). Running every workload with a fixed small environment (`env -i PATH=...`) would make memory
 comparable across machines. The owner left it to whether it helps find better designs; it does - designs from
-different runs and machines meet in the pooled picks on memory. **Built and queued** (results/queued-genes/
+different runs and machines meet in the pooled picks on memory. **Built and queued** (results/applied-genes-727/
 fixenv-after-seed96.patch, with the reopened search's series; tested: results/drafts/fixenv-713.md).
 
 ## Already here - each game's trick and where the project has it

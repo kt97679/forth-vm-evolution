@@ -482,6 +482,10 @@ if V8 and '--hotcalls' in ARGV and not TAG2_ON and not _os.environ.get('SOD16_NO
 # reproducible. Before anything is sized: sizes depend on it.
 T2MAP = None
 G['JIT_ON'] = '--jit' in ARGV           # Iteration 81: the JIT's opcode among the tag's operations (sod16 t2_names)
+# Iteration 710, the gene jitdead (mechanism 9's V1', results/drafts/triz-706.md): the JIT's header the code alone - the
+# native offset kept in a translated word's dead body, its trigger then JITN (engine/jit.c), a code of its own, pinned
+G['JITDEAD_ON'] = G['JIT_ON'] and '--jit-dead' in ARGV
+JITDEAD = G['JITDEAD_ON']
 if V8 and _os.environ.get('SOD16_T2NAMES'):        # the names behind the reference ranking (lab/evolve/tag2-rank.py)
     json.dump({str(k): v for k, v in G['t2_names']().items()}, open(_os.environ['SOD16_T2NAMES'], 'w'))
 if TAG2_ON:
@@ -498,6 +502,7 @@ if TAG2_ON:
     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
     _pin += [G['T2_JIT']] if '--jit' in ARGV else []   # Iterations 80-81: every run-time word's first byte - no slot
+    _pin += [G['T2_JITN']] if JITDEAD else []           # Iteration 710: a translated word's trigger (engine/jit.c)
     # the run-time loop compiler (cv8-fuse-loopall.4; the partial cv8-fuse-loop.4
     # retired at 641): its loop opcodes, pinned - loopall has no fallback
     if any(x['n'] == 'LOOPTAB' for x in order):
@@ -745,9 +750,13 @@ def _jitimg_pick():
         if any(s0 < r < w['e'] for r in refs): continue
         JH.add(s0)
 
+def jh_pad(w):
+    """Iteration 710 (jitdead): the bytes after a JIT-headed image word's tokens - its body made four bytes long, room
+    for the native offset (engine/jit.c); 0 for any other word."""
+    return max(0, 4 - len(tok[w['s']]) * UB) if JITDEAD and w['s'] in JH else 0
 def new_body_bytes(w):
     if kind[w['s']] == 'code':
-        jh = 5 if w['s'] in JH else 0          # Iteration 341: the JIT header
+        jh = (1 + jh_pad(w) if JITDEAD else 5) if w['s'] in JH else 0          # Iteration 341: the JIT header; 710: jitdead's
         if BYTEHDR:
             return jh + len(tok[w['s']]) * UB + tail_bytes(w)
         return align_up(jh + len(tok[w['s']]) * UB, CELL) + tail_bytes(w)
@@ -1291,13 +1300,16 @@ def emit(path):
             for (ws, j), nv in xt_new.items():
                 if ws == s0: ops2[j] = ('XT', nv)
             G['CUR_WORD'][0] = s0          # Iteration 199
-            jh = 5 if s0 in JH else 0           # Iteration 341: the JIT header first, as a run-time word's
-            if jh:
+            jh = (1 if JITDEAD else 5) if s0 in JH else 0    # Iteration 341: the JIT header first, as a run-time word's
+            if jh and JITDEAD:                             # 710: the code alone (jitdead)
+                img += bytes([T2MAP['one'][G['T2_JIT']]])
+            elif jh:
                 _tb = bytes(to_tokens(ops2)) if V8 else b''.join(tk(t_) for t_ in to_tokens(ops2))
                 img += bytes([T2MAP['one'][G['T2_JIT']]]) + (len(_tb) | 0x80000000).to_bytes(4, 'little')
             if V8: img += bytes(to_tokens(ops2))
             else:
                 for t_ in to_tokens(ops2): img += tk(t_)
+            if jh and JITDEAD: img += bytes(jh_pad(w))     # NOOPs after the EXIT, never run
             if _cm is not None:
                 _c2t, _, _ts, _, _ = layout(ops2)
                 for _j, (_k, _pl) in enumerate(ops2):
@@ -1447,7 +1459,7 @@ def emit(path):
             _fb = [0] * 32
             for f_, p_ in _pairs: _fb[f_ >> 3] |= 1 << (f_ & 7)      # 695: which codes are folds - the pairs searched only for them
             data = (bytes(sum(_bits[4 * i + k] << (2 * k) for k in range(4)) for i in range(64)) + bytes(_fb)
-                    + bytes([_jit or 0, 5 if _jit is not None else 0, len(_pairs)]) + bytes(x for e in _pairs for x in e))
+                    + bytes([_jit or 0, (1 if JITDEAD else 5) if _jit is not None else 0, len(_pairs)]) + bytes(x for e in _pairs for x in e))
             assert len(data) <= 152, 'INL-OPS overflows'
             if _os.environ.get('SOD16_NO_INLINE'): data = bytes(len(data))   # =1: nothing copied - the overlay's cost alone, to measure
         elif w['n'] == 'IMM-OPS':
@@ -1744,8 +1756,9 @@ if EMIT:
             _lint = ''                  # Iteration 504: jitre retired (frozen since 455) - its interpreted-call row gone
             _jc = T2MAP['one'][G['T2_JIT']]
             def _wends():              # Iteration 489: every image word's body, start and end - the decoder's end for a word reached
-                rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_)) for w_ in order
-                               if w_['s'] in new_off and kind.get(w_['s']) == 'code')
+                rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_) - jh_pad(w_)) for w_ in order
+                               if w_['s'] in new_off and kind.get(w_['s']) == 'code'   # 710: jitdead's pad not decoded;
+                               and ('--jitx' in ARGV or not JITDEAD or w_['s'] in JH))   # with jitdead, no jitx: the jitimg words'
                 # Iteration 710 (the sweep): two bytes a number where the image's code is under 64 KB, as it is (8-11 KB) -
                 # the table was 2.6 KB of every jitx engine's 5-6 KB of rodata
                 return ('#define JIT_NWENDS %d\nstatic const unsigned %s jit_wends[][2] = {%s};\n'
@@ -1761,7 +1774,7 @@ if EMIT:
                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
                 '#define JIT_CODE %d\n#define JIT_DOVAR %d\n#define JIT_DODOES %d\n#define JIT_FROMR %d\n%s%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
                 % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]],
-                   _one('DODOES'), _one('R>'), _lint + _wends(), (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
+                   _one('DODOES'), _one('R>'), _lint + _wends() + ('#define JITN_CODE %d\n' % T2MAP['one'][G['T2_JITN']] if JITDEAD else ''), (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
                    for k_, n_ in (('SQ', '(S")'), ('DQ', '(.")'), ('TYPE', 'TYPE')))
                    + '#define JIT_L_ABORTQ %d\n#define JIT_W_AQ %d\n' % (_le + 2, _woff('(ABORT")'))
                    + '#define JIT_L_CALLX %d\n#define JIT_W_COLD %s\n' % (_le + 1, ', '.join(str(_woff(n_)) for n_ in

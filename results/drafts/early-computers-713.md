@@ -24,7 +24,7 @@ need.
 How the cost was confirmed: JIT_MAXOPS 1024 -> 128 in a scratch engine (every array 8x shorter): c7c35f9c97's
 corpus 71 -> 54 pages, c6f1c1331b's 59 -> 44, the outputs alike; 782f3ad7ff (no JIT) unchanged.
 
-**The gene jitfew** (results/queued-genes/jitfew-after-seed96.patch, after jitdead and fixenv): jit_body keeps
+**The gene jitfew** (results/applied-genes-727/jitfew-after-seed96.patch, after jitdead and fixenv): jit_body keeps
 arrays of JIT_FEWOPS = 128 operations in its own frame (3 KB) and calls the body (`jit_body_`, the arrays now its
 parameters); a word with more operations - the decoding is the only place that can run out, before anything is
 emitted or a callee translated - answers JIT_ROOM, and `jit_body_big` (cold) translates it again from its start in

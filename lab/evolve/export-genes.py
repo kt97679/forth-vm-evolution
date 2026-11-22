@@ -112,6 +112,8 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     L += lst('G-T2-ESC', ['%d %d' % p for p in e1], "...logical operation, escape selector")
     L += ['%d CONSTANT G-JIT           \\ the lazy JIT (engine/jit.c): its opcode a tag-2 code' % (-1 if '--jit' in args else 0),
           '%d CONSTANT G-JITIMG        \\ 1: the outer interpreter\'s words given the JIT header' % int(opt(args, '--jitimg', 0)),
+          '%d CONSTANT G-JITDEAD       \\ the gene jitdead: the JIT header the code alone, bodies four bytes (723)' % (-1 if '--jit-dead' in args else 0),
+          '%d CONSTANT G-JITX          \\ --jitx: every code word in jit_wends' % (-1 if '--jitx' in args else 0),
           '%d CONSTANT G-GUARD-ABORT   \\ the gene abortif: ABORT\" guarded by ?BRANCH (sod16.guard_aborts; 714)' % (-1 if '--guard-abort' in args else 0)]
     m = re.search(r'^hot-inline: \d+ sites - (.*)$', tout, re.M)
     assert ('--hot-inline' not in args) or m, 'hot-inline: the translator named no sites'
@@ -134,7 +136,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
-    ny = [k for k in ('--opcall-file',) if k in args]       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it)
+    ny = [k for k in ('--opcall-file',) if k in args]       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'

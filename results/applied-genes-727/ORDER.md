@@ -1,15 +1,24 @@
+# The reopened search's first genes - applied at Iteration 727 (results/queued-genes until then)
+
+**Applied at Iteration 727** (the owner: the design evolution finalized before relf's handoff): batch-check PASS on
+537f3cc2 (4 patches; run-tests, validate 7 of 7, the jail), `git apply` of the four in this order on master, the stages
+rebuilt, and the ten roles' lab build unchanged - pack-designs.py on results/relf-designs-718.md 20 of 20 builds 9 of 9
+right, its 40 engine and image checksums results/drafts/designs-sha256-718.txt's.
+
+As it stood before:
+
 # The reopened search's genes - after the new roles ship, before the next series (Iteration 710)
 
 The owner (708): the search reopens after the roles, chainorder and mechanism 9's V1' built as genes first. Made on
 top of the after-seed-96 batch, so applied after it: that batch went in at chain A's processing (Iteration 713,
 results/applied-after-seed96); this queue after the roles ship (designs/, the package), before the reopened search's
-first seed. Check it on master as it stands: `env PENDING=results/queued-genes RECORD=1 sh tools/batch-check.sh` (no
+first seed. Check it on master as it stands: `env PENDING=results/applied-genes-727 RECORD=1 sh tools/batch-check.sh` (no
 BASE since 713). Then, from the repository's top:
 
-    git apply results/queued-genes/jitdead-after-seed96.patch
-    git apply results/queued-genes/fixenv-after-seed96.patch
-    git apply results/queued-genes/jitfew-after-seed96.patch
-    git apply results/queued-genes/jitdead-cross-after-seed96.patch
+    git apply results/applied-genes-727/jitdead-after-seed96.patch
+    git apply results/applied-genes-727/fixenv-after-seed96.patch
+    git apply results/applied-genes-727/jitfew-after-seed96.patch
+    git apply results/applied-genes-727/jitdead-cross-after-seed96.patch
 
 **Rebased at Iteration 723** (713's three no longer applied to master: export-genes.py had moved, 714-722): made again
 on 723's master one commit each - one conflict, G-NOT-YET's line (722 had emptied it; jitdead's --jit-dead kept

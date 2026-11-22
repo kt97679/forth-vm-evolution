@@ -1136,8 +1136,10 @@ def t2_names():
     # pair out (seed 19's fastest lost R> =, and 4-10% on kernel, parse,
     # corpus). T2_JIT in engine/vm-lab.c.
     if JIT_ON: nm[T2_JIT] = 'JIT'
+    if JIT_ON and JITDEAD_ON: nm[T2_JITN] = 'JITN'   # Iteration 710, the gene jitdead: a translated word's trigger
     return nm
 T2_JIT, JIT_ON = 0xFFFD, False      # JIT_ON: layout.py --jit sets it
+T2_JITN, JITDEAD_ON = 0xFFFC, False  # Iteration 710: layout.py --jit-dead sets it
 
 def before_operand(ops, j):
     """True if op j is a call whose inline CELL operand follows it."""

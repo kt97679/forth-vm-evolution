@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 726.
+- master: Iteration 727.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -210,7 +210,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **710 (the owner: "yes" - the genes built while chain A runs)**: results/drafts/jitdead-710.md. **Chainorder
   mispriced** at 707 (byte headers' links point backward only: signed links, +19-73 B, five places to change) - the
   owner told; a converter-and-engine prototype, instructions counted, before the full build. **Mechanism 9's V1' built:
-  the gene jitdead** (results/queued-genes - its own queue, applied after the roles ship, after the after-seed-96
+  the gene jitdead** (results/applied-genes-727 - its own queue, applied after the roles ship, after the after-seed-96
   batch; batch-check with BASE=results/pending until that is applied): -700 B of the programs' code, the total -0.3 to
   -2.9 % on ten JIT designs, instructions the same or fewer; not yet in the self-hosting compiler (G-NOT-YET).
   **wends16** into the after-seed-96 batch: -1.1 KB on every jitx engine.
@@ -334,7 +334,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (numfirst-722.md's 723 section): on the nine klookup roles no dispatch, corpus instructions 0.905-0.990, kernel up to
   +0.37 % - the Forth form for smallest, the C one for the rest.
   **724 (while chain D runs)**: **the queued genes rebased** - 713's patches no longer applied to master; made again
-  (one conflict), and **jitdead in the cross compiler queued** after them (results/queued-genes/jitdead-cross-after-
+  (one conflict), and **jitdead in the cross compiler queued** after them (results/applied-genes-727/jitdead-cross-after-
   seed96.patch; ORDER.md's order now four) - four JIT records with jitdead self-host at both widths
   (results/drafts/jitdead-cross-723.md); the shipped designs' genes need no export for it. The 723 =I?BRANCH gap left
   open (a per-word map needed).
@@ -360,6 +360,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   since 657, not the draft's seven; the tag now on portable-fastest too) and the package
   forth-vm-evolution-designs-iter726.tar.gz (pack-designs.py on results/relf-designs-718.md: 20 of 20 builds 9 of 9 right,
   the 40 checksums designs-sha256-718.txt's; the lab's build - the converter's images). NEXT-RUN none.
+  **727 (the owner: "finalize design evolution and ensure we found best designs, handoff to relf project after that")**:
+  **relf's handoff held** - handoff-relf-726.md and the iter726 package not sent; both made again from the reopened
+  search's roles (results/drafts/relf-handoff-726.py adapted, pack-designs.py), one handoff at the end. The reopened
+  search's preparation now: the queued genes (jitdead = V1', fixenv, jitfew) applied; chainorder's prototype, numfirst
+  (a gene in its two forms - 'offer trade-offs as genes'), the fixed data layout's step 1 (GOALS.md's register, 713)
+  each built as a gene where its prototype pays; the rehearsal of them together; then the series' first seed (the
+  owner's hours), the stopping rule, the roles' follow-up chains, the handoff.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
@@ -373,12 +380,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   until chain D. **The owner, beside chain D**: `RAGECHECK_CMD='sh tools/rage-designs-check.sh' sh tools/rage-check.sh`
   - the Tegra's GCC 16 on the GCC designs' forth-arm (a8d35bdccc new; 17 minutes at 654) - since 720 chain D's first step.
   **After chain D** (725): small-jit unchanged; the gate's three rebuilt translator-built (done). After the rage check's
-  rerun: the package and relf's handoff (done, 726 - the owner passes relf the bundle and the package). Then the rest
+  rerun: the package and relf's handoff (made, 726; held, 727 - sent after the reopened search's roles). Then the rest
   of the plan (the roles were step 6 - results/drafts/new-roles-plan-705.md): designs/ and the
   package made again (`sh results/drafts/freeze-build-645.sh . RECORDS NAME=ID,...`), self-hosting phase 6 on them (the
   gate: a design the cross compiler cannot build ships translator-built, named - since 722 every role self-builds), relf
   told how to fetch them. From the early games (results/drafts/early-games-713.md): a fixed
-  layout of the engine's writable data, a prototype for the reopened search; queued genes (results/queued-genes:
+  layout of the engine's writable data, a prototype for the reopened search; queued genes (results/applied-genes-727:
   jitdead, fixenv - results/drafts/fixenv-713.md -, jitfew - results/drafts/early-computers-713.md) applied after the
   roles, chainorder if its prototype pays, then the reopened search's series; the article.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
@@ -415,8 +422,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (results/followup-roles-seed87.md to -seed91.md; every run: results/progress-by-run.md) - the x86 roles final at 630, the
   portable search stopped at 640 - and the final check (641-649, below): no further gain. Each step's bullet as it stood:
   HANDOFF-HISTORY.md, "The card's state at Iteration 650" (before it, the states at 597, 598 and 647).
-- **The new roles' handoff is results/handoff-relf-726.md (726)**, with the package forth-vm-evolution-designs-iter726.tar.gz;
-  the bullet below is 657's, history.
+- **relf's next handoff: after the reopened search's roles (the owner, 727)** - results/handoff-relf-726.md and the package
+  forth-vm-evolution-designs-iter726.tar.gz (726) held, not sent; made again then. The bullet below is 657's, history.
 - **The ten roles - the relf handoff, final (657)** (results/handoff-relf-657.md - one document for 611 and its four updates
   628, 631, 636 and 649, which stay as history: the roles by `make` target, how to build, run and check a design, what
   relf takes; the records results/relf-designs-649.md; the package forth-vm-evolution-designs-iter649.tar.gz): fastest-x86-64 c7c35f9c97, fastest-x86-32 ee34931cd7, best-all-round
@@ -523,6 +530,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 - Run lengths are the owner's - ask for each run's hours.
 - The roles' memory rule 8 KB (708; 4 before - one page is a design's own noise).
 - The search reopens after the new roles: chainorder and mechanism 9's V1' built as genes, then a new series (708).
+- relf's handoff once, after the reopened search's roles - "ensure we found best designs" first (727).
 - Noisy timing questions go to the laptop; here decide by deterministic counts (the profiler's dispatches, cachegrind).
 - Offer trade-offs to evolution as genes rather than deciding; size savings are exact - take them.
 - Every iteration has a PROGRESS entry, naming every file it adds under results/ (the article is written from it).

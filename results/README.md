@@ -82,7 +82,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed86/ORDER.md` - the after-seed-86 batch, consolidation's retirements (queued 583-596, applied 599 at 1b53e88): fsys45, freeze, lean, scale, varcall, doesfar, bytehdr, rtloop (ORDER.md says what each does; msc's deleted at 598, KEEP).
 - `applied-after-seed91/ORDER.md` - the after-seed-91 batch, the freeze's retirements (queued 642-643 in queued-freeze/, applied 656 on e8c6e51): rtloop and rtimmlean - two run-time overlays no pooled-front design uses; no shipped byte changes.
 - `applied-after-seed95/` - the after-seed-95 batch, applied at seed 95's processing (Iteration 703): why32, remeasure32, ticker (ORDER.md says what each does).
-- `queued-genes/ORDER.md` - The reopened search's genes - after the new roles ship, before the next series: jitdead (ORDER.md says what each does).
+- `applied-genes-727/ORDER.md` - The reopened search's first genes (results/queued-genes until 727): jitdead (V1'), fixenv, jitfew and jitdead in the cross compiler, applied at Iteration 727 (ORDER.md says what each does).
 - `applied-after-seed96/` - the after-seed-96 batch, applied at chain A's processing (Iteration 713): arm2at, armcheck, ticker, rtsc, sysstubs, imagemsg, wends16, counters (ORDER.md says what each does).
 
 ### The processing checklists
@@ -567,4 +567,4 @@ The leftovers of the chats of Iterations 213-265 (drafts/chat-to-iter265/, 3.4 M
 The drafts also hold scripts and patches - the work behind some of these, kept where it produced a recorded figure.
 - `rage-designs-726.md` - The rage check again (Iteration 726): PASS - the Tegra's GCC builds the GCC three's forth-arm, the lab's bytes, running their self-built images; the chain's 586 s.
 - `selfhost-speed-726.md` - The self-hosting gate's speed half on portable-fastest (Iteration 726): pass (0.9974, 0.9867) - it stays self-built.
-- `handoff-relf-726.md` - The relf handoff for the new roles (Iteration 726): the ten by `make` target, self-built or not, their genes, the package forth-vm-evolution-designs-iter726.tar.gz.
+- `handoff-relf-726.md` - The relf handoff for the new roles (Iteration 726): the ten by `make` target, self-built or not, their genes, the package forth-vm-evolution-designs-iter726.tar.gz; held, not sent (the owner, 727: after the reopened search).

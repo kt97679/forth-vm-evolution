@@ -75,6 +75,13 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('the JIT, jitvar, varslot 1', dict(JIT, jitvar=1, varslot=1), ['jitvar']),
     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
+    ('the JIT, jitdead', dict(JIT, jitdead=1), ['jit', 'jitdead']),        # Iteration 710: the header the code alone
+    ('the JIT, jitfew', dict(JIT, jitfew=1), ['jit', 'jitfew']),           # Iteration 713: the translator's arrays short first
+    ('the JIT, jitfew without jitx', dict(JIT, jitx=0, jitloop=0, jitinl=0, jitfew=1), ['jit', 'jitfew']),
+    ('the JIT, jitfew with jitdead, jitexec, jitmul, jitcfa', dict(JIT, jitfew=1, jitdead=1, jitexec=1, jitmul=1, jitcfa=1), ['jitfew', 'jitdead']),
+    ('the JIT, jitdead without jitx', dict(JIT, jitx=0, jitloop=0, jitinl=0, jitdead=1), ['jit', 'jitdead']),
+    ('the JIT, jitdead with jitexec, jitmul, jitcfa, jitimg', dict(JIT, jitdead=1, jitexec=1, jitmul=1, jitcfa=1, jitimg=1), ['jitdead', 'jitexec', 'jitimg']),
+    ('the JIT, jitdead on the wide tag', dict(JIT, jitdead=1, t2wide=1, jitexec=1, jitmul=1), ['jitdead', 't2wide']),
     ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259
     ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
     ('link-time optimisation', dict(lto=1), ['lto']),                           # Iteration 260
