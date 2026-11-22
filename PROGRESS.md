@@ -12270,3 +12270,17 @@ results/applied-selfhost-736/ORDER.md, results/drafts/numfirst-cross-736.sh, res
 results/drafts/chainorder-cross-736.sh, results/drafts/chainorder-cross-736.txt, results/drafts/process-rehearsal-736.sh,
 results/drafts/process-rehearsal-736.md; forth/cross-cv8.4, lab/evolve/export-genes.py, lab/evolve/review-checks.py,
 stages/s6-genes.4, lab/evolve/GENES.md.
+
+## Iteration 737 - 2026-11-22 - Claude
+
+While seed 97 runs (the owner: "start with 1"): the final shipping path rehearsed on today's tree (results/drafts/
+ship-rehearsal-737.md, ship-rehearsal-737.sh) - roles-build-718.sh's two phases on the ten roles as designs/ has them, in
+a scratch clone, then relf-handoff-726.py. All of it works on the tree as it is: export-designs.py, export-arm.py with
+clang and lld and with the cross GCC (the data layout's script in every ARM link, each design's Makefile carrying its
+copy), selfhost-ship.sh, the designs' own make, test, selfhost, 32 and libc, pack-designs.py 20 of 20 right; the 20
+images byte for byte designs/'s (only the engines, their sources and genes.4 differ - 727-736's changes); the handoff
+generator reproduces results/handoff-relf-726.md. What the final build needs that this sandbox did not have: CROSS=1's
+packages before phase 1 (lld found no ARM libgcc), the clang ARM step before the cross GCC (with it in, gcc -m32 lacks
+asm/errno.h), and the gate's verdicts handed to phase 2 as TRANSLATOR= from a file (without them the three JIT roles
+shipped self-built, not as 725 decided). No code changed.
+Files: results/drafts/ship-rehearsal-737.sh, results/drafts/ship-rehearsal-737.md.
