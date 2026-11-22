@@ -13,6 +13,11 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 725 (chain D processed): the rage check again - its first run in chain D stopped on export-arm.py's own
+#   check (a self-built image32.img asked to be the translator's; fixed at 725) before the GCC designs' bytes - then
+#   portable-fastest's selfhost-speed reading (self-built since 722, not timed in chain D). The laptop and the Tegra (no
+#   REMOTES line: rage-designs.py uses rage itself), about 40 minutes (17 at 654, the gate ~2 a design). Its processing:
+#   rage-designs.md PASS, selfhost-speed.md's gate (FAIL: TRANSLATOR= in roles-build-718.sh's phase 2, as at 725).
 # Iteration 720 (the owner: "please include all the runs you need into next run"): chain D with everything the roles still
 #   need of the machines, about 5 hours - first rage-designs.py (647: designs/' GCC designs' forth-arm built by the Tegra's
 #   own GCC 16 and checked byte for byte - a8d35bdccc, portable-arm, new; the Tegra has no REMOTES line, as it needs), then
@@ -393,5 +398,7 @@
 # (ran from 652's bundle at c8c423671f - its archive the rage check, PASS:) experiment rage-designs.py
 # Iteration 654 (the rage check processed - PASS, results/rage-designs-654.md): none - the freeze is the sandbox's; a
 # pull of this bundle must not run the rage check again.
-experiment rage-designs.py then experiment pool-sizes.py --list results/followup-seed96-jitband.md --free 0 --jit 39100 --below-jit 35980 --jit-speed 0.2116 --jit-speed32 0.2354 --minutes 40 --write build/evolve/jitband-list.md --anchors all --cap 30 then experiment measure-ids.py --ids build/evolve/jitband-list.md --rounds 3 then experiment selfhost-speed.py --rounds 10 --pairs 5 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10
+# (ran from 720's bundle at be190a273 - chain D, processed at 725: results/followup-roles-seed96-jitband.md) experiment rage-designs.py then experiment pool-sizes.py --list results/followup-seed96-jitband.md --free 0 --jit 39100 --below-jit 35980 --jit-speed 0.2116 --jit-speed32 0.2354 --minutes 40 --write build/evolve/jitband-list.md --anchors all --cap 30 then experiment measure-ids.py --ids build/evolve/jitband-list.md --rounds 3 then experiment selfhost-speed.py --rounds 10 --pairs 5 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10
 # Iteration 714's line, chain C: experiment measure-ids.py --ids results/followup-seed96-roles-c.md --rounds 3 then experiment pool-sizes.py --list results/followup-seed96-roles-c.md  ... (loadtest.py 10 times)
+
+experiment rage-designs.py then experiment selfhost-speed.py --rounds 10 --pairs 5 portable-fastest

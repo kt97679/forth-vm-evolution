@@ -10,7 +10,9 @@ the rule written into OUT/NAME/Makefile as `forth-arm`, its compiler $(CCARM):
   a GCC design: built as on an ARM host (evolve.ARM32), CCARM `cc` - the ARM host's own: on the Tegra natively (the bytes
       it measured, GCC 16); on x86-64 with --gcc CC (arm-linux-gnueabihf-gcc), the Tegra simulated - the rule and its
       running checked, not the Tegra's bytes.
-The image must be the one exported for 4-byte cells (OUT/NAME/image32.img). Then the check, in a fresh directory holding
+The image must be the one exported for 4-byte cells (OUT/NAME/image32.img) - unless the design ships self-built (its
+Makefile's `selfhost32` rule, tools/selfhost-ship.sh; Iteration 725): then the image is not the translator's by design, and
+forth-arm runs the shipped one (tools/rage-designs-check.sh on designs/). Then the check, in a fresh directory holding
 only OUT/NAME: `make forth-arm` (CCARM=CC with --gcc) builds the lab's engine byte for byte (tightened as build() does),
 and it runs ': SQ DUP * ; 7 SQ .' to 49 - under qemu-arm on x86-64, natively on ARM. Exit 1 if any design fails.
 Which designs a run takes: on x86-64 without --gcc the clang ones, with --gcc the GCC ones; on an ARM host the GCC ones.
@@ -98,7 +100,11 @@ for name, i in PAIRS:
             out.append((m.group(1) or '') + 'srcarm/' + os.path.basename(t)); continue
         if '/' in a and os.path.isabs(a.split('=')[-1]): sys.exit('export-arm: %s - an absolute path left in %r' % (i, a))
         out.append(a)
-    if sha(img) != sha(os.path.join(d, 'image32.img')): sys.exit('export-arm: %s - the ARM image is not image32.img' % i)
+    # Iteration 725: a shipped design's image32.img is self-built (tools/selfhost-ship.sh writes its `selfhost32` rule) - not
+    # the translator's image build() makes, by design: its identity is not asked; the engine's bytes still are, and forth-arm
+    # runs the shipped image below (chain D's rage check stopped here on designs/ - results/followup-roles-seed96-jitband.md)
+    selfbuilt = re.search(r'^selfhost32:', open(os.path.join(d, 'Makefile')).read(), re.M) is not None
+    if not selfbuilt and sha(img) != sha(os.path.join(d, 'image32.img')): sys.exit('export-arm: %s - the ARM image is not image32.img' % i)
     mk = open(os.path.join(d, 'Makefile')).read().split('\n')
     mk = [l for l in mk if not l.startswith(('CCARM = ', 'SRCARM = ', 'forth-arm:', '\t$(CCARM)', '# `make forth-arm`'))]
     mk = [l for j, l in enumerate(mk) if not (l == '' and j and mk[j - 1] == '')]   # 652: its blank line once - again idempotent
@@ -115,7 +121,8 @@ for name, i in PAIRS:
     mk = [l.replace('rm -f forth forth32 forth-libc', 'rm -f forth forth32 forth-arm forth-libc') for l in mk]
     open(os.path.join(d, 'Makefile'), 'w').write('\n'.join(mk))
     made.append((name, i, sha(eng), clang)); size = os.path.getsize(eng); shutil.rmtree(b, ignore_errors=True)
-    print('%s (%s, %s): srcarm %d files, the engine %d bytes' % (name, i, 'clang' if clang else 'GCC', len(os.listdir(sd)), size), flush=True)
+    print('%s (%s, %s): srcarm %d files, the engine %d bytes%s' % (name, i, 'clang' if clang else 'GCC', len(os.listdir(sd)), size,
+          ', image32.img self-built (its identity not asked)' if selfbuilt else ''), flush=True)
 if LIST: sys.exit(0)                                    # 653: before the check's directory, none left behind
 T = tempfile.mkdtemp(prefix='export-arm-check-')
 shutil.copy(os.path.join(E.ROOT, 'tools', 'elf_tight.py'), os.path.join(T, 'elf_tight.py'))

@@ -1,0 +1,7 @@
+# Designs whose image.img and image32.img are the converter's (tools/layout.py), not self-built: the
+# self-hosting check (tools/selfhost-check.sh) failed - the cross compiler cannot yet build them - or the gate's
+# speed half found the self-built image slower (TRANSLATOR=, Iteration 721); written by
+# tools/selfhost-ship.sh. NAME, then the check's reason. `make selfhost` and the tests skip these.
+fastest-x86-32 the gate's speed half, chain D (725) - 4-byte self / translator 1.021 median of 5 alternations (0.966-1.051)
+fastest-x86-64 the gate's speed half, chain D (725) - 8-byte self / translator 1.046 median of 5 alternations (0.924-1.080)
+small-jit the gate's speed half, chain D (725) - 4-byte self / translator 1.036 median of 5 alternations (0.970-1.072)

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 724.
+- master: Iteration 725.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -338,6 +338,19 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   seed96.patch; ORDER.md's order now four) - four JIT records with jitdead self-host at both widths
   (results/drafts/jitdead-cross-723.md); the shipped designs' genes need no export for it. The 723 =I?BRANCH gap left
   open (a per-word map needed).
+  **725: chain D processed** (results/followup-roles-seed96-jitband.md; results/drafts/chainD-725.py): **small-jit stays
+  15eda54ebd** - pool-sizes.py built 1,048 JIT records, 1,000 below 35,980 B; none of the 54 smaller JIT designs measured
+  beats it (every one at least 4 % slower on x86-64 on the laptop alone - dream had only the 28 named at the start, so the
+  30 new finds had no pooled class). **The gate: 6 of 9 self-built pass; fastest-x86-32 (4-byte 1.021), fastest-x86-64
+  (8-byte 1.046) and small-jit (4-byte 1.036) ship translator-built** (the owner: the rule as written) - roles-build-718.sh
+  with TRANSLATOR= for the three, designs/TRANSLATOR-BUILT names them; the JIT designs swing ~5 % either way, the
+  instructions the same (721). **The rage check failed on export-arm.py's own check** (a self-built image32.img asked to be
+  the translator's; designs/ self-built since 676) before the GCC designs' bytes - fixed: a `selfhost32` design's image not
+  asked, forth-arm runs the shipped image (the clang three PASS here under qemu-arm, a planted byte still caught on a
+  translator-built export). **dream runs the GCC JIT designs ~3.2 times slower at 4-byte cells** (11 of 11; clang 1.17; the
+  same binaries normal at 8 bytes and on the laptop) - nothing shipped (the JIT roles are clang), cause not found (perf on
+  dream would tell); the roles' pooled x86-32 class carries it. The PMU's counts arrived (countfit.py: ~3 % error, not a
+  2 % screen). **NEXT-RUN: rage-designs.py again, then selfhost-speed.py portable-fastest** (about 40 minutes).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
@@ -350,8 +363,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   designs/README.md's table from chains B and C (results/drafts/designs-table-718.py). small-jit 15eda54ebd provisional
   until chain D. **The owner, beside chain D**: `RAGECHECK_CMD='sh tools/rage-designs-check.sh' sh tools/rage-check.sh`
   - the Tegra's GCC 16 on the GCC designs' forth-arm (a8d35bdccc new; 17 minutes at 654) - since 720 chain D's first step.
-  **After chain D**: small-jit made again if it changes (roles-build-718.sh with that one NAME=ID - a JIT design, no ARM
-  build, so no cross GCC), the package, relf told how to fetch the ten (a new results/handoff-relf-NNN.md). Then the rest
+  **After chain D** (725): small-jit unchanged; the gate's three rebuilt translator-built (done). After the rage check's
+  rerun (NEXT-RUN): the package, relf told how to fetch the ten (a new results/handoff-relf-NNN.md from
+  results/drafts/handoff-relf-draft-721.md - only the Tegra's mark left). Then the rest
   of the plan (the roles were step 6 - results/drafts/new-roles-plan-705.md): designs/ and the
   package made again (`sh results/drafts/freeze-build-645.sh . RECORDS NAME=ID,...`), self-hosting phase 6 on them (the
   gate: a design the cross compiler cannot build ships translator-built, named - since 722 every role self-builds), relf
@@ -461,12 +475,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): chain D (717, 719, 720) - eight (722: portable-fastest has no selfhost-speed reading in chain D). Scored: chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage check's (654) 1 of 1; the final check's (648-649)
-  2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
+- **Predictions due** (results/predictions.md): the rage check again and portable-fastest's gate (725) - three. Scored:
+  chain D's (717-720) 4 of 7, one void; chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage
+  check's (654) 1 of 1; the final check's (648-649) 2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first
   run); remote hosts cleaned after every chain (628: `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
-- **Files a new chat needs**: the newest bundle and chain D's archive (forth-vm-evolution-chain-*_tar.gz). appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle and the next chain's archive (forth-vm-evolution-chain-*_tar.gz). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

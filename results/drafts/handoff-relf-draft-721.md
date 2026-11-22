@@ -1,7 +1,9 @@
 # Forth designs for relf - the new roles (draft, Iteration 721; final after chain D)
 
 **Draft.** Written while chain D runs, so that chain D's processing only fills in what it decides - marked
-**[chain D]**: small-jit (15eda54ebd, or a design of the JIT band that beats it by the rule), the self-hosting gate's
+**[chain D]** (decided at 725 - results/followup-roles-seed96-jitband.md: small-jit stays 15eda54ebd; the gate ships
+fastest-x86-32, fastest-x86-64 and small-jit translator-built, named in designs/TRANSLATOR-BUILT; the Tegra's check to run
+again - its first stopped on export-arm.py's own fault): small-jit (15eda54ebd, or a design of the JIT band that beats it by the rule), the self-hosting gate's
 speed half (lab/evolve/selfhost-speed.py: a role whose self-built image is more than 2 % slower than its translator's ships
 translator-built), the Tegra's check of the GCC designs (rage-designs.py), and the package's name and checksums. The final
 document: results/handoff-relf-NNN.md, generated as 657's was (results/drafts/relf-handoff-657.py adapted to the new roles'
@@ -24,7 +26,10 @@ documents - the genes section from each design's expression).
   design's own engine, writes the design's image from source - designs/forth/ (kernel.4, extend.4, cross-cv8.4 and the
   overlays its genes name) and designs/NAME/genes.4; `make selfhost` in a design rebuilds its image byte for byte. All
   ten ship self-built (722: the cross compiler does the fused =I?BRANCH and DUP?NBRANCH, so portable-fastest, d727605472,
-  no longer ships the converter's images). **[chain D: the speed half's verdict]**
+  no longer ships the converter's images). The gate's speed half (chain D, 725): seven self-built; fastest-x86-32,
+  fastest-x86-64 and small-jit translator-built - their self-built images 2.1-4.6 % slower at one width (median of 5
+  alternations; designs/TRANSLATOR-BUILT gives each), the instructions the same (721): code placement. portable-fastest's
+  timing is the next laptop run's.
 
 ## The designs
 
@@ -33,7 +38,7 @@ documents - the genes section from each design's expression).
 | `fastest-x86-64` | 9b15ba26f7 | fastest on x86-64 | 0.161 | 0.186 | - | 53,503 | 292 KB | yes |
 | `fastest-x86-32` | 11f956db93 | fastest on x86-32 | 0.175 | 0.180 | - | 49,925 | 264 KB | yes |
 | `best-all-round` | df097ba2e2 | best mean of x86-64, x86-32 and ARMv7 | 0.162 | 0.187 | 0.432* | 54,695 | 288 KB | yes |
-| `small-jit` | 15eda54ebd **[chain D]** | smallest of the JIT designs | 0.219 | 0.234 | - | 36,344 | 208 KB | yes |
+| `small-jit` | 15eda54ebd | smallest of the JIT designs | 0.219 | 0.234 | - | 36,344 | 208 KB | yes |
 | `portable-fastest` | d727605472 | fastest without the JIT, by the mean | 0.318 | 0.317 | 0.324 | 35,539 | 148 KB | no |
 | `portable-arm` | a8d35bdccc | fastest on ARMv7 | 0.339 | 0.431 | 0.302 | 45,274 | 140 KB | no |
 | `portable-knee` | 48a012411a | fast without the JIT; small | 0.385 | 0.373 | 0.408 | 26,957 | 144 KB | no |

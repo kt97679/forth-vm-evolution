@@ -1618,3 +1618,21 @@ the value the chain started with (the hold restored) - 85/15 (tested here but fo
 a8d35bdccc's rule written by the cross GCC 13.3 here, the bytes the Tegra measured in chains A-B). (8) selfhost-speed.py:
 all nine self-built roles within 1.02 of their translator's builds at both widths - 50/50 (672: "speed the same"; here
 on the VM at 2 rounds small-jit's 4-byte image 1.07-1.09).
+
+Scored (Iteration 725; results/followup-roles-seed96-jitband.md): (1) right - the laptop 7 loadtest sessions, dream 10 a
+width, every line whole. (2) right - 1,000 below 35,980 B (1,048 built). (3) wrong - none of the 54 smaller JIT designs beats
+15eda54ebd; every one at least 4 % slower on x86-64 (458fe81373 +4.18 %). (4) void - none beat it. (5) right - none died.
+(6) right - "cnt" on all 7 sessions' 58 lines, kernel.perf_event_paranoid 4 at the pack. (7) wrong - FAILED on the check's
+own fault (export-arm.py asked a self-built image32.img to be the translator's), the GCC designs' bytes not reached. (8)
+wrong - 6 of 9; fastest-x86-32 (4-byte 1.021), fastest-x86-64 (8-byte 1.046) and small-jit (4-byte 1.036) over 1.02. 4 of
+7, one void.
+
+## The rage check again, and portable-fastest's gate (about 40 minutes; the laptop and the Tegra) - predicted (Iteration 725)
+
+lab/evolve/NEXT-RUN: rage-designs.py with export-arm.py's fix (725: a self-built image32.img's identity not asked), then
+selfhost-speed.py on portable-fastest alone (722: self-built since; its instructions self / translator 0.9988). (1)
+rage-designs.py: PASS - the Tegra's GCC builds least-memory's, portable-arm's and portable-small's forth-arm the lab's bytes,
+each running its shipped self-built image to 49 - 80/20 (725: the clang three so under qemu-arm here; 654 PASS; the
+Tegra's GCC may have moved since 655's 16.2.1). (2) selfhost-speed.py: portable-fastest within 1.02 at both widths - 80/20
+(chain D: the six designs without the JIT 0.99-1.01; the spread of the JIT designs only). (3) the chain ends with both
+steps' packs and nothing failed - 85/15.

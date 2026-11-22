@@ -7,13 +7,15 @@
 # "run": all the time the evolution leaves (Iteration 429, remote-checks.sh), so the chain never waits on a host.
 #
 # host       how       designs  rounds  minutes  sample options
+#   Iteration 725: none - the rage check again (rage-designs.py uses rage itself; a line beside it would time the Tegra
+#   under a build) and portable-fastest's selfhost-speed on the laptop.
 #   Iteration 717 (chain D - the smallest JIT design's band): dream the 28 of results/followup-seed96-jitband.md (the
 #   static part of the laptop's list: the role's anchors and the 23 the results files gave) at both widths, 10 rounds,
 #   ~900 s a session, 8 a width: 120 + 120 minutes; the Tegra none (JIT designs - x86 only).
 #   Iteration 720: 150 + 150 minutes, 10 sessions a width - the chain's laptop steps grew (rage-designs.py, selfhost-speed.py)
 #   and its loadtest.py repeats stop by this deadline.
-dream.lan    prebuilt32  4       10      150      --cell 4 --rejected 6 --sessions 10 --also @results/followup-seed96-jitband.md
-dream.lan    prebuilt64  4       10      150      --from prebuilt32 --sessions 10
+# dream.lan    prebuilt32  4       10      150      --cell 4 --rejected 6 --sessions 10 --also @results/followup-seed96-jitband.md
+# dream.lan    prebuilt64  4       10      150      --from prebuilt32 --sessions 10
 #   Iteration 716 (chain C processed - results/followup-roles-seed96-roles-c.md): none - the roles next, no chain set. Chain
 #   C's sessions ran short of these lines' (dream 11 a width, the Tegra 2): a session's length barely follows the
 #   list's (dream ~900 s with 66 designs as with 99; the Tegra about 7,100 s plus ~65 s a design).

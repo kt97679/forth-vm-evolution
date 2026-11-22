@@ -32,13 +32,3 @@ clean:
 	rm -f forth forth32 forth-libc forth.tight
 
 .PHONY: all tight run clean
-
-# `make selfhost` (`selfhost32`): the image rebuilt from its source - ../forth/ and genes.4 (genes32.4) - must be
-# image.img (image32.img) byte for byte; written by tools/selfhost-ship.sh.
-selfhost: forth
-	sh ../selfhost.sh forth image.img genes.4 src
-
-selfhost32: forth32
-	sh ../selfhost.sh forth32 image32.img genes32.4 src32
-
-.PHONY: selfhost selfhost32

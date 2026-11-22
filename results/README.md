@@ -329,6 +329,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `relf-designs-636.md` - The relf handoff's ten records after seed 90's follow-up (Iteration 636), the input of pack-designs.py and export-designs.py.
 - `relf-designs-649.md` - the ten by role after 649 (the smallest d180351903): pack-designs.py's and export-designs.py's input.
 - `rage-designs-654.md` - The rage check (Iteration 654): designs/' forth-arm for the GCC three built on the Tegra - PASS, the lab's bytes and running; their ARMv7 engine sizes.
+- `rage-designs-725.md` - The rage check in chain D (Iteration 725): FAILED on export-arm.py's own image check, before the GCC designs' bytes.
 - `drafts/rage-pack-654.py` - The rage check's chain archive checked without unpacking (Iteration 654): the laptop's tree against its commit, the Tegra's choice against the Makefiles, the three results.
 - `candidates-dream32-612.md` - The dream 32-bit experiment (Iteration 612): 9f8811f7f4 and 690981ca5b with one gene reverted at a time, and the control 782f3ad7ff.
 - `chain-seed88/README.md` - Seed 88's chain's readings (Iteration 614): the dream 32-bit experiment's 20 in every session - the laptop 1, dream 30 a width, rage 12.
@@ -385,6 +386,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed96-roles-c.md` - Chain C's pooled pick (716): the 66 on three machines, every session (its set: followup-pick-seed96-roles-c.json).
 - `followup-pick-seed96-roles-c.json` - followup-pick-seed96-roles-c.md's set as JSON (final-pick.py --json, Iteration 716).
 - `followup-roles-seed96-roles-c.md` - Chain C processed (Iteration 716): small-and-fast-on-ARMv7 kept, the smallest JIT design to 15eda54ebd; the smallest's trade and two ties left for the owner.
+- `followup-roles-seed96-jitband.md` - Chain D processed (Iteration 725): small-jit stays 15eda54ebd; three JIT roles translator-built by the gate; the rage check's own fault fixed; GCC JIT designs ~3.2 times slower on dream at 4-byte cells.
+- `followup-pick-seed96-jitband.md` - Chain D's pooled pick over the JIT band (Iteration 725; .json beside it).
+- `chain-followup96-jitband/README.md` - Chain D's readings by session (Iteration 725): the laptop's 7 loadtest tables (with the PMU's counts) and dream's 10 sessions a width.
+- `selfhost-speed-725.md` - The self-hosting gate's speed half on the laptop, chain D (Iteration 725): 6 of 9 within 1.02.
 - `new-roles-718.md` - The new roles chosen (Iteration 718, the owner: the most reasonable way, no good design lost): the chains' rule for the three choices, the ten, and every near one kept on record.
 - `relf-designs-718.md` - The new roles' ten records (Iteration 718), by role - the build-out's input (small-jit provisional until chain D).
 - `followup-seed96-jitband.md` - Chain D's static list (Iteration 717): the smallest JIT design's anchors and the 23 JIT designs 1 % or more below 15eda54ebd that the seed 95 and 96 results files gave, within 10 % of it in-run.

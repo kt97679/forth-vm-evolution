@@ -12081,3 +12081,19 @@ profile. (2) The queued genes no longer applied to master (export-genes.py moved
 with jitdead self-host at both widths (jitimg with and without jitx, and none); an older genes.4 still builds (make
 selfhost 20 of 20). batch-check on the queue: see results/queued-genes/ORDER.md. Files:
 results/drafts/jitdead-cross-723.md, results/drafts/jitdead-cross-723.sh; results/queued-genes/ (rebased, the new patch).
+
+## Iteration 725 - 2026-11-21 - Claude
+
+Chain D processed (the owner: the gate's rule as written). small-jit stays 15eda54ebd: pool-sizes.py built 1,048 JIT
+records (1,000 below 35,980 B); none of the 54 smaller measured beats it - each at least 4 % slower on x86-64 on the laptop
+alone (results/drafts/chainD-725.py --roles: followup-roles.py with the laptop's classes; dream had the 28 only). The gate's
+speed half 6 of 9: fastest-x86-32 (4-byte 1.021), fastest-x86-64 (8-byte 1.046) and small-jit (4-byte 1.036) rebuilt
+translator-built (roles-build-718.sh, TRANSLATOR=; designs/TRANSLATOR-BUILT; make test 17 ok, make selfhost 14 ok, pack 6
+right). The rage check stopped on export-arm.py's own image check (a self-built image32.img) - fixed and tested (tools/
+rage-designs-check.sh on x86-64: the clang three FAIL before, PASS after; a planted byte caught on a translator-built
+export). dream: the GCC JIT designs 3.22 times the laptop at 4-byte cells (clang 1.17), cause open. countfit.py on the
+first PMU counts: ~3 % error. Predictions 4 of 7, one void; NEXT-RUN the rage check again and portable-fastest's gate.
+Files: results/followup-roles-seed96-jitband.md, results/followup-pick-seed96-jitband.md, results/followup-pick-seed96-jitband.json,
+results/chain-followup96-jitband/ (README.md; its sK: dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json,
+dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md), results/selfhost-speed-725.md, results/rage-designs-725.md, results/drafts/chainD-725.py;
+designs/TRANSLATOR-BUILT.
