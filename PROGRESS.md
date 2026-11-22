@@ -12165,7 +12165,10 @@ genes.py writes G-HASHK and names cv8-hashk.4 where HASH is no engine op (ops10.
 test read names and listed it for portable-fastest, whose cross build then refused: "an X8 after its X took its place");
 cross-cv8.4's THASH multiplies by G-HASHK. stages/s6-genes.4 written again, its 714-723 constants with G-HASHK. Checked
 (results/drafts/hashk-cross-731.sh, .txt): smallest, portable-fastest and small-jit with hashk exported and shipped
-STRICT - self-built at 8- and 4-byte cells, A = B, the evolver's gate, make selfhost byte for byte. Next: chainorder.
+STRICT - self-built at 8- and 4-byte cells, A = B, the evolver's gate, make selfhost byte for byte. chainorder's margin over hashk as built (results/drafts/chainorder-
+margin-731.py, .txt): the ten roles' entries visited corpus -6 to -10 %, parse -26 to -41 %, the five programs -18 to
+-34 % - its build next, its plan on the card.
 Files: results/applied-hashk-cross-731/hashk-cross.patch, results/applied-hashk-cross-731/ORDER.md,
-results/drafts/hashk-cross-731.sh, results/drafts/hashk-cross-731.txt; forth/cv8-hashk.4, forth/cross-cv8.4,
+results/drafts/hashk-cross-731.sh, results/drafts/hashk-cross-731.txt, results/drafts/chainorder-margin-731.py,
+results/drafts/chainorder-margin-731.txt; forth/cv8-hashk.4, forth/cross-cv8.4,
 tools/layout.py, lab/evolve/export-genes.py, lab/evolve/GENES.md, stages/s6-genes.4.

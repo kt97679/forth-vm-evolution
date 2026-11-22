@@ -390,6 +390,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   where HASH is no engine op; stages/s6-genes.4 written again (it lagged since 714: G-JITDEAD, G-FACTOR... all 0 for
   s6). smallest, portable-fastest and small-jit with hashk self-built at both widths, A = B and the gate
   (results/drafts/hashk-cross-731.sh, .txt). **Next: chainorder's build** (signed links), then numfirst as a gene.
+  chainorder's margin over hashk as built (results/drafts/chainorder-margin-731.py, .txt - the ten roles, entries
+  visited): corpus -6 to -10 %, parse -26 to -41 %, the five programs -18 to -34 % - worth its build. The plan: zigzag
+  links (2|d| + sign) when on; the readers C's PREVNFA (both forms) and Forth's NEXT-NFA8 (cv8b.4, cv8bt.4), the
+  writers LINK-LEN and LINK, (both), layout.py's linklen/linkbytes and its chain order by a committed use file (the
+  held-out three's lookups by name - deterministic), the cross compiler's LINK-LEN-T, LINK,-T, LINK@-T and order;
+  the Forth words as hashk's were: alternatives in every dump, swapped in with the gene, dropped without; a name's
+  duplicates newest first (the use count is the name's), a run-time definition at its chain's front as now.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
