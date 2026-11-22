@@ -1,5 +1,7 @@
 # Forth designs for relf - the new roles (draft, Iteration 721; final after chain D)
 
+**Final: results/handoff-relf-726.md** (Iteration 726) - this draft stays as written.
+
 **Draft.** Written while chain D runs, so that chain D's processing only fills in what it decides - marked
 **[chain D]** (decided at 725 - results/followup-roles-seed96-jitband.md: small-jit stays 15eda54ebd; the gate ships
 fastest-x86-32, fastest-x86-64 and small-jit translator-built, named in designs/TRANSLATOR-BUILT; the Tegra's check to run

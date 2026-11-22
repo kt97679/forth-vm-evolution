@@ -12097,3 +12097,14 @@ Files: results/followup-roles-seed96-jitband.md, results/followup-pick-seed96-ji
 results/chain-followup96-jitband/ (README.md; its sK: dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json,
 dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md), results/selfhost-speed-725.md, results/rage-designs-725.md, results/drafts/chainD-725.py;
 designs/TRANSLATOR-BUILT.
+
+## Iteration 726 - 2026-11-21 - Claude
+
+The rage check again and portable-fastest's gate processed - both PASS (results/drafts/chain-pack-726.py on the archive;
+the chain at b0801d04e, 586 s, the laptop's tree the commit's): the Tegra's GCC builds least-memory's, portable-small's and
+portable-arm's forth-arm the lab's bytes (11,158, 13,014, 16,782 B), each running its self-built image32.img to 49;
+portable-fastest self / translator 0.9974 and 0.9867 - seven roles self-built. Predictions 3 of 3. The roles shipped:
+relf's handoff from 721's draft (8 of the ten changed since 657, not seven) and the package
+forth-vm-evolution-designs-iter726.tar.gz - 20 of 20 builds 9 of 9 right, its 40 checksums 718's. NEXT-RUN none.
+Files: results/rage-designs-726.md, results/selfhost-speed-726.md, results/handoff-relf-726.md,
+results/drafts/chain-pack-726.py, results/drafts/relf-handoff-726.py.

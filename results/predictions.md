@@ -1636,3 +1636,7 @@ each running its shipped self-built image to 49 - 80/20 (725: the clang three so
 Tegra's GCC may have moved since 655's 16.2.1). (2) selfhost-speed.py: portable-fastest within 1.02 at both widths - 80/20
 (chain D: the six designs without the JIT 0.99-1.01; the spread of the JIT designs only). (3) the chain ends with both
 steps' packs and nothing failed - 85/15.
+
+Scored (Iteration 726; results/rage-designs-726.md, selfhost-speed-726.md): (1) right - PASS, the GCC three the lab's bytes,
+each running its shipped self-built image32.img to 49. (2) right - 0.9974 at 8-byte cells, 0.9867 at 4. (3) right - both
+steps ok, both packs, 586 s. 3 of 3.

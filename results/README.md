@@ -565,3 +565,6 @@ The leftovers of the chats of Iterations 213-265 (drafts/chat-to-iter265/, 3.4 M
 - `drafts/surrogate-offline.md` - A surrogate to screen children - tested offline on seed 40 (Iteration 197).
 
 The drafts also hold scripts and patches - the work behind some of these, kept where it produced a recorded figure.
+- `rage-designs-726.md` - The rage check again (Iteration 726): PASS - the Tegra's GCC builds the GCC three's forth-arm, the lab's bytes, running their self-built images; the chain's 586 s.
+- `selfhost-speed-726.md` - The self-hosting gate's speed half on portable-fastest (Iteration 726): pass (0.9974, 0.9867) - it stays self-built.
+- `handoff-relf-726.md` - The relf handoff for the new roles (Iteration 726): the ten by `make` target, self-built or not, their genes, the package forth-vm-evolution-designs-iter726.tar.gz.
