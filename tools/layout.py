@@ -300,7 +300,7 @@ if CV8_COMPILER:
     _n, _miss, _unmatched = 0, [], []
     for w in order:
         if (len(w['n']) <= len(OVERLAY_SUFFIX)
-                or not w['n'].endswith(OVERLAY_SUFFIX)): continue
+                or not w['n'].endswith(OVERLAY_SUFFIX) or w['n'] == 'HASH8'): continue   # 731: hashk's - its own swap below
         tgt = w['n'][:-len(OVERLAY_SUFFIX)]
         if tgt not in _by:
             _unmatched.append(w['n']); continue
@@ -370,21 +370,21 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED:   # 589: the lean-off switc
     order = [w for w in order if w['s'] not in _out]
     print('drop-x8: %d copies out, %d bytes of the old image' % (len(_gone), sum(w['e'] - w['link'] for w in _gone)))
 
-# ---- hashk (Iteration 729): forth/cv8-hashk.4's HASHK, in every dump ------
+# ---- hashk (Iteration 729): forth/cv8-hashk.4's HASH8 (HASHK until 731), in every dump ------
 # With --hashk its body becomes the newest HASH's (unless HASH is a primitive's stub - the engine's hash then, by
-# -DHASHK); with or without, HASHK leaves the image - nothing may refer to it.
-_hk = [w for w in order if w['n'] == 'HASHK']
+# -DHASHK); with or without, HASH8 leaves the image - nothing may refer to it.
+_hk = [w for w in order if w['n'] == 'HASH8']
 if _hk:
     _h = _hk[-1]
-    assert _h['s'] not in _refs([w for w in order if w['s'] != _h['s']]), 'hashk: a word refers to HASHK'
+    assert _h['s'] not in _refs([w for w in order if w['s'] != _h['s']]), 'hashk: a word refers to HASH8'
     if HASHK_K:
         _d = [w for w in order if w['n'] == 'HASH' and w['s'] < _h['s']]
-        assert _d and kind[_h['s']] == 'code' and info[_h['s']] is not None, 'hashk: no HASH, or HASHK not translatable'
+        assert _d and kind[_h['s']] == 'code' and info[_h['s']] is not None, 'hashk: no HASH, or HASH8 not translatable'
         if stub_ops(_d[-1]) is None:
             kind[_d[-1]['s']], info[_d[-1]['s']] = 'code', list(info[_h['s']]); SRC_OF[_d[-1]['s']] = _h['s']
     order = [w for w in order if w['s'] != _h['s']]
-    print('hashk: %s; HASHK out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
-elif HASHK_K: sys.exit('hashk: --hashk, and no HASHK in the dump (forth/cv8-hashk.4)')
+    print('hashk: %s; HASH8 out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
+elif HASHK_K: sys.exit('hashk: --hashk, and no HASH8 in the dump (forth/cv8-hashk.4)')
 
 # ---- the dump tool and dead shadowed words left out (Iteration 39) ---
 # tools/dict-dump-addr.4 is loaded LAST, to write this very dump: its

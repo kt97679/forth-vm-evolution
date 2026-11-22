@@ -20,6 +20,7 @@ G-LIST: G-OPS10  \ format-10 operations: name opcode
 0 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
 0 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
 32 CONSTANT G-THREADS       \ the dictionary's hash threads
+0 CONSTANT G-HASHK         \ the chain hash's K (hashk; 0: kernel.4's hash)
 0 CONSTANT G-RTFUSE        \ the run-time fuser's tables filled (cv8-fuse.4's SUPER-TABLE, IMM-OPS)
 0 CONSTANT G-ESCAPE         \ escaped primitives: two bytes, ESC and a selector
 G-LIST: G-ESC-PRIMS  \ the escaped primitives
@@ -35,5 +36,12 @@ G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
 G-LIST: G-T2-ESC  \ ...logical operation, escape selector
 0 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
 0 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+0 CONSTANT G-JITDEAD       \ the gene jitdead: the JIT header the code alone, bodies four bytes (723)
+0 CONSTANT G-JITX          \ --jitx: every code word in jit_wends
+0 CONSTANT G-GUARD-ABORT   \ the gene abortif: ABORT" guarded by ?BRANCH (sod16.guard_aborts; 714)
 G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
+0 CONSTANT G-FACTOR        \ the gene factor: repeated cold code in headerless bodies (layout.py --factor; 715)
+0 CONSTANT G-FACTOR-ANY    \ ...every word, the profile aside (--factor-share above 1)
+G-LIST: G-FACTOR-COLD  \ ...the words below --factor-share of the reference dispatches
+G-LIST: G-FACTOR-NOT  \ ...never: what layout.py patches after reading it, the dump tool
 G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet

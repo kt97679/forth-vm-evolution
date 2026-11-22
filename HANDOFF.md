@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 730.
+- master: Iteration 731.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -384,7 +384,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   ten roles' outputs the same at 8-byte cells, three at 4 (results/drafts/hashk-gene-729.py, .txt) - corpus 0.914-0.994
   of the instructions, parse 0.833-1.000, most at 16 chains. Found on the way: the hash had five copies, not three -
   gen-msc.py's and gen-tos.py's too (the JIT designs died until gen-tos.py had CHAIN). **Next: hashk in the cross
-  compiler** (cross-cv8.4's and cross.4's THASH by G-HASHK; G-NOT-YET lists --hashk until then), then chainorder's build.
+  compiler**, then chainorder's build.
+  **731: hashk in the self-hosting compiler** (results/applied-hashk-cross-731/; batch-check PASS): the word HASH8 (the
+  converter's own swap; the cross compiler's X8 rule), G-HASHK in genes.4 and THASH, cv8-hashk.4 among the overlays
+  where HASH is no engine op; stages/s6-genes.4 written again (it lagged since 714: G-JITDEAD, G-FACTOR... all 0 for
+  s6). smallest, portable-fastest and small-jit with hashk self-built at both widths, A = B and the gate
+  (results/drafts/hashk-cross-731.sh, .txt). **Next: chainorder's build** (signed links), then numfirst as a gene.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

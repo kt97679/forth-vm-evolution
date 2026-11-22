@@ -1,0 +1,148 @@
+diff --git a/forth/cross-cv8.4 b/forth/cross-cv8.4
+index 6fc040ea..fee347fa 100644
+--- a/forth/cross-cv8.4
++++ b/forth/cross-cv8.4
+@@ -158,10 +158,12 @@ CREATE TTHREADS #TTHREADS CELLS ALLOT
+ TTHREADS #TTHREADS CELLS 0 FILL
+ 
+ : THASH ( c-addr u --- n )
+-\ Exactly what kernel.4's HASH produces for the same name and count.
++\ Exactly what kernel.4's HASH produces for the same name and count - and,
++\ with G-HASHK (Iteration 731), cv8-hashk.4's HASH8: v times K, its middle bits.
+   #TTHREADS >R
+   OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
+    THEN XOR
++  G-HASHK ?DUP IF * 8 RSHIFT THEN
+   R> 1- AND ;
+ 
+ : PUBLISH-WORDLIST ( t-addr --- )
+diff --git a/forth/cv8-hashk.4 b/forth/cv8-hashk.4
+index bcc38749..543a4c64 100644
+--- a/forth/cv8-hashk.4
++++ b/forth/cv8-hashk.4
+@@ -3,10 +3,12 @@
+ \ length and the first two characters - times one constant, its middle bits: ((v * 18835) >> 8) & (#threads - 1). K was
+ \ searched over every odd value on the held-out programs, for the ten roles and 16-128 chains at once
+ \ (results/drafts/hashk-table-728.py); K = 256 is today's hash. Loaded into every dump, before the dump tool
+-\ (lab/evolve/evolve.py): with --hashk tools/layout.py makes HASHK's body HASH's and threads the image by the same
+-\ expression; with or without, HASHK leaves the image - the images with the gene off are byte for byte the old ones.
++\ (lab/evolve/evolve.py): with --hashk tools/layout.py makes HASH8's body HASH's and threads the image by the same
++\ expression; with or without, HASH8 leaves the image - the images with the gene off are byte for byte the old ones (its
++\ own swap, not the X8 rule's, which would make it always). The self-hosting compiler swaps it by the X8 rule: a hashk
++\ design's genes.4 names this file (lab/evolve/export-genes.py; Iteration 731), and its THASH multiplies by G-HASHK.
+ \ The engine's own hashes (vm-lab.c's L_x_hash and (FIND), tools/gen-msc.py's) by -DHASHK=18835 (CHAIN).
+-: HASHK ( c-addr u #threads --- n )
++: HASH8 ( c-addr u #threads --- n )
+   >R OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
+    THEN XOR
+   18835 * 8 RSHIFT R> 1- AND ;
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index c100e54a..b0cbf7eb 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -80,7 +80,7 @@ as the record of what each does.
+ | the return-stack pointer in a register on the JIT (`jitrp`: 0, 1; Iterations 465, 494; GCC, 64-bit, JIT with jitx; enabled for seed 71 by the owner, 495): a global register variable across the stencils (r15; rbx under regpin 2, r13 under 3); loop -19% of instructions on a GCC JIT design. |
+ | the JIT's header the code alone (`jitdead`: 0, 1; Iteration 710; JIT designs - mechanism 9's V1', results/drafts/triz-706.md): [JIT], not [JIT][four bytes] - the body's end found by the converter's rule (the jitimg words' from jit_wends), the native offset written over the translated word's dead first four bytes and its trigger then JITN (a code of its own, pinned); left bytecode, a NOOP; what native code reads there at run time (S", .", (ABORT")'s resume point) copied first; bodies padded to four bytes (forth/cv8t-jitd.4, layout.py --jit-dead). -693 to -741 bytes of the five programs' code, the image -24 to -80, the engine -592 to +640; the total -0.3 to -2.9 % on ten JIT designs at both widths, instructions the same or fewer on every workload; not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/jitdead-710.md |
+ | the translator's arrays short first (`jitfew`: 0, 1; Iteration 713; JIT designs): engine/jit.c - jit_body's arrays (at, arg, nat, opl, tl) 128 operations long in its frame, and 1,024 (jit_body_big) only for a word with more, translated again from its start; their heads were a page each at every depth of the callees' translation (~24 KB a frame). On eight JIT designs: memory (the selection's workloads but apps) -5 to -16 pages (-11 to -23 %), apps -7 to -27 pages, the engine +224 to +544 bytes, the outputs alike, the time in the noise | results/drafts/early-computers-713.md |
+-| the chain hash with one constant (`hashk`: 0, 1; Iteration 729; every CV8 design - results/drafts/demoscene-ioccc-727.md, after the demoscene's crinkler): a name's chain ((v * 18835) >> 8) & (chains - 1), v kernel.4's HASH (the length and the first two characters) - K searched on the held-out programs for the ten roles and 16-128 chains at once (results/drafts/hashk-table-728.py; K = 256 is today's hash); forth/cv8-hashk.4's HASHK in every dump becomes HASH's body (tools/layout.py --hashk, which threads the image by it too), the engine's L_x_hash and (FIND) by -DHASHK (vm-lab.c's CHAIN; gen-msc.py's); off, HASHK leaves the image - every design's bytes as before. Measured (729, results/drafts/hashk-gene-729.py): the lookup's walk shorter - the smallest's parse -17.5 % of its instructions on the prototype. Not yet in the self-hosting compiler (G-NOT-YET: cross-cv8.4's THASH) | results/drafts/demoscene-ioccc-727.md |
++| the chain hash with one constant (`hashk`: 0, 1; Iteration 729; every CV8 design - results/drafts/demoscene-ioccc-727.md, after the demoscene's crinkler): a name's chain ((v * 18835) >> 8) & (chains - 1), v kernel.4's HASH (the length and the first two characters) - K searched on the held-out programs for the ten roles and 16-128 chains at once (results/drafts/hashk-table-728.py; K = 256 is today's hash); forth/cv8-hashk.4's HASH8 in every dump becomes HASH's body (tools/layout.py --hashk, which threads the image by it too), the engine's L_x_hash and (FIND) by -DHASHK (vm-lab.c's CHAIN; gen-msc.py's); off, HASH8 leaves the image - every design's bytes as before. Measured (729, results/drafts/hashk-gene-729.py): the lookup's walk shorter - the smallest's parse -17.5 % of its instructions on the prototype. In the self-hosting compiler since 731: G-HASHK in THASH, cv8-hashk.4 among a design's overlays where HASH is no op | results/drafts/demoscene-ioccc-727.md |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/export-genes.py b/lab/evolve/export-genes.py
+index 87948ae1..326eed4e 100644
+--- a/lab/evolve/export-genes.py
++++ b/lab/evolve/export-genes.py
+@@ -74,6 +74,8 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+          ': G+ ( c-addr u --- ) DUP G-AT @ +! HERE SWAP DUP ALLOT CMOVE ;',
+          ': G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;']
+     L += ['%d CONSTANT G-CELL          \\ the target\'s cell, bytes' % cell]
++    hk = int(opt(args, '--hashk', 0))                     # Iteration 731: hashk - its HASH8 by the X8 rule where HASH is no op
++    if hk and 'HASH' not in [o[0] if isinstance(o, list) else o for o in o10]: ov = ov + ['cv8-hashk.4']   # ops10.json: [name, op] pairs
+     L += lst('G-OVERLAYS', ov, 'after kernel.4, in this order')
+     L += lst('G-FOLDS', folds, 'the fold set: FOLD-BASE + place')
+     L += ['%d CONSTANT G-SPEC          \\ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc' % bits]
+@@ -86,6 +88,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+          '%d CONSTANT G-BSS           \\ TIB, POCKET, INCLUDE-BUFFER past the image\'s end' % (-1 if '--bss' in args else 0),
+          '%d CONSTANT G-THIN-HEADER   \\ one empty thread head in the file' % (-1 if '--thin-header' in args else 0),
+          '%d CONSTANT G-THREADS       \\ the dictionary\'s hash threads' % int(opt(args, '--threads', 32)),
++         '%d CONSTANT G-HASHK         \\ the chain hash\'s K (hashk; 0: kernel.4\'s hash)' % int(opt(args, '--hashk', 0)),
+          '%d CONSTANT G-RTFUSE        \\ the run-time fuser\'s tables filled (cv8-fuse.4\'s SUPER-TABLE, IMM-OPS)' % (-1 if '--rtfuse' in args else 0),
+           ]
+     # --escape: the rarely used primitives behind ESC (0x7D) and a selector, the others closing up
+@@ -136,7 +139,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
+     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
+     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
+-    ny = [k for k in ('--opcall-file', '--hashk') if k in args]   # 729: --hashk not yet (cross-cv8.4's THASH)       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
++    ny = [k for k in ('--opcall-file',) if k in args]   # 731: --hashk done (G-HASHK)       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
+     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
+diff --git a/stages/s6-genes.4 b/stages/s6-genes.4
+index 8618262a..d5119d8a 100644
+--- a/stages/s6-genes.4
++++ b/stages/s6-genes.4
+@@ -20,6 +20,7 @@ G-LIST: G-OPS10  \ format-10 operations: name opcode
+ 0 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
+ 0 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
+ 32 CONSTANT G-THREADS       \ the dictionary's hash threads
++0 CONSTANT G-HASHK         \ the chain hash's K (hashk; 0: kernel.4's hash)
+ 0 CONSTANT G-RTFUSE        \ the run-time fuser's tables filled (cv8-fuse.4's SUPER-TABLE, IMM-OPS)
+ 0 CONSTANT G-ESCAPE         \ escaped primitives: two bytes, ESC and a selector
+ G-LIST: G-ESC-PRIMS  \ the escaped primitives
+@@ -35,5 +36,12 @@ G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
+ G-LIST: G-T2-ESC  \ ...logical operation, escape selector
+ 0 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
+ 0 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
++0 CONSTANT G-JITDEAD       \ the gene jitdead: the JIT header the code alone, bodies four bytes (723)
++0 CONSTANT G-JITX          \ --jitx: every code word in jit_wends
++0 CONSTANT G-GUARD-ABORT   \ the gene abortif: ABORT" guarded by ?BRANCH (sod16.guard_aborts; 714)
+ G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
++0 CONSTANT G-FACTOR        \ the gene factor: repeated cold code in headerless bodies (layout.py --factor; 715)
++0 CONSTANT G-FACTOR-ANY    \ ...every word, the profile aside (--factor-share above 1)
++G-LIST: G-FACTOR-COLD  \ ...the words below --factor-share of the reference dispatches
++G-LIST: G-FACTOR-NOT  \ ...never: what layout.py patches after reading it, the dump tool
+ G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet
+diff --git a/tools/layout.py b/tools/layout.py
+index fa7149e3..3eba388f 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -300,7 +300,7 @@ if CV8_COMPILER:
+     _n, _miss, _unmatched = 0, [], []
+     for w in order:
+         if (len(w['n']) <= len(OVERLAY_SUFFIX)
+-                or not w['n'].endswith(OVERLAY_SUFFIX)): continue
++                or not w['n'].endswith(OVERLAY_SUFFIX) or w['n'] == 'HASH8'): continue   # 731: hashk's - its own swap below
+         tgt = w['n'][:-len(OVERLAY_SUFFIX)]
+         if tgt not in _by:
+             _unmatched.append(w['n']); continue
+@@ -370,21 +370,21 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED:   # 589: the lean-off switc
+     order = [w for w in order if w['s'] not in _out]
+     print('drop-x8: %d copies out, %d bytes of the old image' % (len(_gone), sum(w['e'] - w['link'] for w in _gone)))
+ 
+-# ---- hashk (Iteration 729): forth/cv8-hashk.4's HASHK, in every dump ------
++# ---- hashk (Iteration 729): forth/cv8-hashk.4's HASH8 (HASHK until 731), in every dump ------
+ # With --hashk its body becomes the newest HASH's (unless HASH is a primitive's stub - the engine's hash then, by
+-# -DHASHK); with or without, HASHK leaves the image - nothing may refer to it.
+-_hk = [w for w in order if w['n'] == 'HASHK']
++# -DHASHK); with or without, HASH8 leaves the image - nothing may refer to it.
++_hk = [w for w in order if w['n'] == 'HASH8']
+ if _hk:
+     _h = _hk[-1]
+-    assert _h['s'] not in _refs([w for w in order if w['s'] != _h['s']]), 'hashk: a word refers to HASHK'
++    assert _h['s'] not in _refs([w for w in order if w['s'] != _h['s']]), 'hashk: a word refers to HASH8'
+     if HASHK_K:
+         _d = [w for w in order if w['n'] == 'HASH' and w['s'] < _h['s']]
+-        assert _d and kind[_h['s']] == 'code' and info[_h['s']] is not None, 'hashk: no HASH, or HASHK not translatable'
++        assert _d and kind[_h['s']] == 'code' and info[_h['s']] is not None, 'hashk: no HASH, or HASH8 not translatable'
+         if stub_ops(_d[-1]) is None:
+             kind[_d[-1]['s']], info[_d[-1]['s']] = 'code', list(info[_h['s']]); SRC_OF[_d[-1]['s']] = _h['s']
+     order = [w for w in order if w['s'] != _h['s']]
+-    print('hashk: %s; HASHK out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
+-elif HASHK_K: sys.exit('hashk: --hashk, and no HASHK in the dump (forth/cv8-hashk.4)')
++    print('hashk: %s; HASH8 out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
++elif HASHK_K: sys.exit('hashk: --hashk, and no HASH8 in the dump (forth/cv8-hashk.4)')
+ 
+ # ---- the dump tool and dead shadowed words left out (Iteration 39) ---
+ # tools/dict-dump-addr.4 is loaded LAST, to write this very dump: its

@@ -1,0 +1,15 @@
+records: smallest=23ef816f67,portable-fastest=0356c1a1a0,small-jit=f74e317950
+export-designs=0   portable-fastest forth-libc: runs (7 SQ . -> 49)
+selfhost-ship=0 selfhost-ship: 3 design(s) shipped self-built in /tmp/hxd/designs
+selfhost: smallest image.img ok - rebuilt from source byte for byte, 8752 bytes
+selfhost: smallest image32.img ok - rebuilt from source byte for byte, 8248 bytes
+selfhost: portable-fastest image.img ok - rebuilt from source byte for byte, 9977 bytes
+selfhost: portable-fastest image32.img ok - rebuilt from source byte for byte, 9337 bytes
+selfhost: small-jit image.img ok - rebuilt from source byte for byte, 8090 bytes; its JIT layout src/vm-jit-ops.h's (2 lines)
+selfhost: small-jit image32.img ok - rebuilt from source byte for byte, 7606 bytes; its JIT layout src32/vm-jit-ops.h's (2 lines)
+smallest genes.4: S" cv8.4 cv8b.4 cv8b-kfast.4 cv8-fuse-loopall.4 file-sysc.4 file-sysc2.4 file-sysc3.4 cv8-hashk.4 " G+ 18835 CONSTANT G-HASHK         \ the chain hash's K (hash
+
+portable-fastest genes.4: 18835 CONSTANT G-HASHK         \ the chain hash's K (hashk; 0: kernel.4's hash) 
+
+small-jit genes.4: 18835 CONSTANT G-HASHK         \ the chain hash's K (hashk; 0: kernel.4's hash) 
+

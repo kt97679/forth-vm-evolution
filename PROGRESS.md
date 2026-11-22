@@ -12156,3 +12156,16 @@ Next: hashk in the cross compiler (THASH by G-HASHK), then chainorder's build.
 Files: forth/cv8-hashk.4, results/applied-hashk-730/hashk.patch, results/applied-hashk-730/ORDER.md,
 results/drafts/hashk-gene-729.py, results/drafts/hashk-gene-729.txt; engine/vm-lab.c, tools/layout.py, tools/gen-msc.py,
 tools/gen-tos.py, lab/evolve/evolve.py, lab/evolve/export-genes.py, lab/evolve/GENES.md.
+
+## Iteration 731 - 2026-11-22 - Claude
+
+hashk in the self-hosting compiler (results/applied-hashk-cross-731/; batch-check PASS): forth/cv8-hashk.4's word renamed
+HASH8 - layout.py's X8 rule skips it (its own swap, with --hashk only), the cross compiler's X8 rule swaps it; export-
+genes.py writes G-HASHK and names cv8-hashk.4 where HASH is no engine op (ops10.json holds [name, op] pairs - my first
+test read names and listed it for portable-fastest, whose cross build then refused: "an X8 after its X took its place");
+cross-cv8.4's THASH multiplies by G-HASHK. stages/s6-genes.4 written again, its 714-723 constants with G-HASHK. Checked
+(results/drafts/hashk-cross-731.sh, .txt): smallest, portable-fastest and small-jit with hashk exported and shipped
+STRICT - self-built at 8- and 4-byte cells, A = B, the evolver's gate, make selfhost byte for byte. Next: chainorder.
+Files: results/applied-hashk-cross-731/hashk-cross.patch, results/applied-hashk-cross-731/ORDER.md,
+results/drafts/hashk-cross-731.sh, results/drafts/hashk-cross-731.txt; forth/cv8-hashk.4, forth/cross-cv8.4,
+tools/layout.py, lab/evolve/export-genes.py, lab/evolve/GENES.md, stages/s6-genes.4.

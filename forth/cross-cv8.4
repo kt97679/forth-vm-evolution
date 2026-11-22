@@ -158,10 +158,12 @@ CREATE TTHREADS #TTHREADS CELLS ALLOT
 TTHREADS #TTHREADS CELLS 0 FILL
 
 : THASH ( c-addr u --- n )
-\ Exactly what kernel.4's HASH produces for the same name and count.
+\ Exactly what kernel.4's HASH produces for the same name and count - and,
+\ with G-HASHK (Iteration 731), cv8-hashk.4's HASH8: v times K, its middle bits.
   #TTHREADS >R
   OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
    THEN XOR
+  G-HASHK ?DUP IF * 8 RSHIFT THEN
   R> 1- AND ;
 
 : PUBLISH-WORDLIST ( t-addr --- )

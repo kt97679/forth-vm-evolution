@@ -74,6 +74,8 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
          ': G+ ( c-addr u --- ) DUP G-AT @ +! HERE SWAP DUP ALLOT CMOVE ;',
          ': G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;']
     L += ['%d CONSTANT G-CELL          \\ the target\'s cell, bytes' % cell]
+    hk = int(opt(args, '--hashk', 0))                     # Iteration 731: hashk - its HASH8 by the X8 rule where HASH is no op
+    if hk and 'HASH' not in [o[0] if isinstance(o, list) else o for o in o10]: ov = ov + ['cv8-hashk.4']   # ops10.json: [name, op] pairs
     L += lst('G-OVERLAYS', ov, 'after kernel.4, in this order')
     L += lst('G-FOLDS', folds, 'the fold set: FOLD-BASE + place')
     L += ['%d CONSTANT G-SPEC          \\ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc' % bits]
@@ -86,6 +88,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
          '%d CONSTANT G-BSS           \\ TIB, POCKET, INCLUDE-BUFFER past the image\'s end' % (-1 if '--bss' in args else 0),
          '%d CONSTANT G-THIN-HEADER   \\ one empty thread head in the file' % (-1 if '--thin-header' in args else 0),
          '%d CONSTANT G-THREADS       \\ the dictionary\'s hash threads' % int(opt(args, '--threads', 32)),
+         '%d CONSTANT G-HASHK         \\ the chain hash\'s K (hashk; 0: kernel.4\'s hash)' % int(opt(args, '--hashk', 0)),
          '%d CONSTANT G-RTFUSE        \\ the run-time fuser\'s tables filled (cv8-fuse.4\'s SUPER-TABLE, IMM-OPS)' % (-1 if '--rtfuse' in args else 0),
           ]
     # --escape: the rarely used primitives behind ESC (0x7D) and a selector, the others closing up
@@ -136,7 +139,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
-    ny = [k for k in ('--opcall-file', '--hashk') if k in args]   # 729: --hashk not yet (cross-cv8.4's THASH)       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+    ny = [k for k in ('--opcall-file',) if k in args]   # 731: --hashk done (G-HASHK)       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
