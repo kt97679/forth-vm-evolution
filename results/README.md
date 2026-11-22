@@ -570,9 +570,11 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `selfhost-speed-726.md` - The self-hosting gate's speed half on portable-fastest (Iteration 726): pass (0.9974, 0.9867) - it stays self-built.
 - `handoff-relf-726.md` - The relf handoff for the new roles (Iteration 726): the ten by `make` target, self-built or not, their genes, the package forth-vm-evolution-designs-iter726.tar.gz; held, not sent (the owner, 727: after the reopened search).
 - `drafts/demoscene-ioccc-727.md` - The demoscene's and the IOCCC's techniques against the register (Iteration 727): all covered or not for us but one - the hash seed searched per image (hashk), priced: with chainorder up to three fifths of the lookup's walk.
+- `drafts/process-rehearsal-736.md` - Seed 97's processing rehearsed on a stand-in made by the laptop's own path (Iteration 736): every step and check PASS, the stopping rule reading the new series; one guard added.
 - `applied-hashk-730/ORDER.md` - The gene hashk (Iteration 730): the chain hash with one constant, after the demoscene's crinkler - the patch, how it was checked, applied.
 - `applied-hashk-cross-731/ORDER.md` - hashk in the self-hosting compiler (Iteration 731): HASH8, G-HASHK and THASH - three hashk designs self-built at both widths.
 - `applied-chainorder-732/ORDER.md` - The gene chainorder (Iteration 732): each chain's most looked-up names first, forward links their own form - converter-only, measured, applied.
 - `applied-numfirst-733/ORDER.md` - The gene numfirst (Iteration 733): a token of digits converted without its lookup while no name has that form - two forms (the engine's (FIND), INTERPRET8), measured, applied.
 - `applied-data-layout-734/ORDER.md` - The fixed data layout, step 1 (Iteration 734): the engine's small variables on one page by an augmenting linker script (engine/data-layout.ld), the big buffers after - measured, applied.
 - `applied-plain-dump-735/ORDER.md` - The plain design's dump with hashk, chainorder or numfirst (Iteration 735): a dump of its own with their files - found by the rehearsal, fixed, applied.
+- `applied-selfhost-736/ORDER.md` - numfirst and chainorder in the self-hosting compiler, and review-checks.py's curse guarded (Iteration 736) - checked by shipping five designs self-built, applied.

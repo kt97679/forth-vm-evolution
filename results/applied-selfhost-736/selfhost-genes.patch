@@ -1,0 +1,267 @@
+diff --git a/forth/cross-cv8.4 b/forth/cross-cv8.4
+index fee347fa..e57b1f61 100644
+--- a/forth/cross-cv8.4
++++ b/forth/cross-cv8.4
+@@ -204,18 +204,6 @@ VARIABLE HLEN-T
+   DROP DUP 255 AND C,-T DUP 8 RSHIFT 255 AND C,-T DUP 16 RSHIFT 255 AND C,-T
+   24 RSHIFT 224 OR C,-T ;
+ 
+-: NAME,-T ( c-addr u --- )
+-\ The header for a name, linked as HEADER8 links one at run time: the
+-\ link sized for the farthest its count byte can land, THERE + 3.
+-  DUP 31 > ABORT" cross: name too long"
+-  2DUP THASH THIS-THREAD !
+-  THIS-THREAD @ CELLS TTHREADS + @ HEAD-T !
+-  HEAD-T @ IF THERE G-TAG2 IF 4 ELSE 3 THEN + HEAD-T @ - LINK-LEN-T ELSE 1 THEN HLEN-T !
+-  HEAD-T @ IF THERE HLEN-T @ + HEAD-T @ - ELSE 0 THEN HLEN-T @ LINK,-T
+-  THERE TLINK !
+-  THERE THIS-THREAD @ CELLS TTHREADS + !
+-  DUP C,-T THERE CHARS IMAGE + SWAP DUP ALLOT-T CMOVE ;
+-
+ \ Lists of names, each followed by one space, searched by place; the
+ \ genes are such lists.
+ VARIABLE LA  VARIABLE LU  VARIABLE LI
+@@ -239,6 +227,94 @@ VARIABLE LA  VARIABLE LU  VARIABLE LI
+   DUP 1 AND IF DROP R> R> 2DROP -1 EXIT THEN
+   1+ R> R> LIST-TOKEN TOKEN>N ;
+ 
++\ chainorder (Iteration 736; tools/layout.py --chainorder, forth/cv8-chainorder.4): each chain starts with its most
++\ looked-up names (G-CO-HOT: name and count - lab/evolve/chainorder-use.txt's, at least --chainorder-min), most first,
++\ the rest newest first as before. Every pass logs its headers; the second pass's give the walk (CO-WALK!), and the
++\ third lays each link to the next header of its chain's walk - back sized as NAME,-T sizes one, forward three bytes in
++\ their own form (the tag F0-FF; under the two-bit tag E0-FF), patched when the headers are all down (CO-FINISH).
++4096 CONSTANT #HDR-MAX
++CREATE HDR-TH   #HDR-MAX CELLS ALLOT   \ each header's chain
++CREATE HDR-RANK #HDR-MAX CELLS ALLOT   \ its name's count in G-CO-HOT, 0 not hot
++CREATE HDR-NFA  #HDR-MAX CELLS ALLOT   \ its count byte's place
++CREATE HDR-SUM  #HDR-MAX CELLS ALLOT   \ its name, summed: the passes must lay the same headers
++CREATE HDR-PSUM #HDR-MAX CELLS ALLOT   \ ...the pass before's
++CREATE HDR-NEXT #HDR-MAX CELLS ALLOT   \ the walk's next header, -1 none (from the pass before)
++CREATE CO-HEAD #TTHREADS CELLS ALLOT   \ each chain's first header in the walk, -1 none
++CREATE CO-FWD #HDR-MAX 2 * CELLS ALLOT \ forward links to patch: the site, the header it reaches
++CREATE PICKED #HDR-MAX ALLOT
++VARIABLE #HDR  VARIABLE #HDR-PREV  VARIABLE #CO-FWD  VARIABLE CO-WALK  VARIABLE CO-TH  VARIABLE CO-PREV
++0 #HDR !  0 #HDR-PREV !  0 #CO-FWD !  0 CO-WALK !
++: NAME-SUM ( c-addr u --- n ) 0 ROT ROT OVER + SWAP ?DO 31 * I C@ + LOOP ;
++: CO-LOG ( c-addr u --- )
++\ The header just laid, THERE its count byte's place.
++  #HDR @ #HDR-MAX < 0= ABORT" cross: chainorder - too many headers"
++  2DUP NAME-SUM #HDR @ CELLS HDR-SUM + !
++  G-CO-HOT LIST-VALUE 0 MAX #HDR @ CELLS HDR-RANK + !
++  THIS-THREAD @ #HDR @ CELLS HDR-TH + !
++  THERE #HDR @ CELLS HDR-NFA + !  1 #HDR +! ;
++: CO-LINK, ( c-addr u --- )
++\ The link of this pass's header #HDR: to the next of its chain's walk.
++  #HDR @ #HDR-PREV @ < 0= ABORT" cross: chainorder - more headers than the pass before"
++  NAME-SUM #HDR @ CELLS HDR-PSUM + @ <> ABORT" cross: chainorder - the headers moved between passes"
++  #HDR @ CELLS HDR-NEXT + @
++  DUP 0< IF DROP 0 1 LINK,-T EXIT THEN
++  DUP #HDR @ < IF                                     \ back: laid already, sized as NAME,-T sizes it
++    CELLS HDR-NFA + @ >R
++    THERE G-TAG2 IF 4 ELSE 3 THEN + R@ - LINK-LEN-T
++    THERE OVER + R> - SWAP LINK,-T EXIT
++  THEN
++  THERE #CO-FWD @ 2 * CELLS CO-FWD + !  #CO-FWD @ 2 * 1+ CELLS CO-FWD + !  1 #CO-FWD +!
++  0 C,-T 0 C,-T 0 C,-T ;                              \ forward: patched by CO-FINISH
++: CO-BETTER? ( k best --- f )
++\ k before best in the walk: a higher count, or as high and newer (k later - the log is in order).
++  DUP 0< IF 2DROP -1 EXIT THEN
++  CELLS HDR-RANK + @ SWAP CELLS HDR-RANK + @ SWAP < 0= ;
++: CO-PICK ( --- k | -1 )
++  -1 #HDR @ 0 ?DO
++    I CELLS HDR-TH + @ CO-TH @ = I PICKED + C@ 0= AND IF I OVER CO-BETTER? IF DROP I THEN THEN
++  LOOP ;
++: CO-WALK! ( --- )
++\ Each chain's walk from this pass's log, for the next pass.
++  #HDR @ 0 ?DO -1 I CELLS HDR-NEXT + ! LOOP
++  PICKED #HDR-MAX 0 FILL
++  #TTHREADS 0 DO
++    I CO-TH !  -1 I CELLS CO-HEAD + !  -1 CO-PREV !
++    BEGIN CO-PICK DUP 0< 0= WHILE
++      1 OVER PICKED + C!
++      CO-PREV @ 0< IF DUP CO-TH @ CELLS CO-HEAD + ! ELSE DUP CO-PREV @ CELLS HDR-NEXT + ! THEN
++      CO-PREV !
++    REPEAT DROP
++  LOOP
++  HDR-SUM HDR-PSUM #HDR @ CELLS CMOVE  #HDR @ #HDR-PREV ! ;
++: CO-FINISH ( --- )
++\ The walk's pass, its headers down: the forward links patched, each chain's head its walk's first.
++  #HDR @ #HDR-PREV @ <> ABORT" cross: chainorder - fewer headers than the pass before"
++  #CO-FWD @ 0 ?DO
++    I 2 * CELLS CO-FWD + @  I 2 * 1+ CELLS CO-FWD + @ CELLS HDR-NFA + @   ( site target )
++    OVER 3 + -                                        ( site e )  \ from this header's count byte, site + 3
++    DUP G-TAG2 IF 2097152 ELSE 1048576 THEN U< 0= ABORT" cross: a forward link out of reach"
++    2DUP 255 AND SWAP C!-T  2DUP 8 RSHIFT 255 AND SWAP 1+ C!-T
++    16 RSHIFT G-TAG2 IF 224 ELSE 240 THEN OR SWAP 2 + C!-T
++  LOOP
++  #TTHREADS 0 DO I CELLS CO-HEAD + @ DUP 0< IF DROP 0 ELSE CELLS HDR-NFA + @ THEN I CELLS TTHREADS + ! LOOP ;
++
++: NAME,-T ( c-addr u --- )
++\ The header for a name, linked as HEADER8 links one at run time: the
++\ link sized for the farthest its count byte can land, THERE + 3. With
++\ chainorder's walk (the third pass), to the next header of its walk.
++  DUP 31 > ABORT" cross: name too long"
++  2DUP THASH THIS-THREAD !
++  G-CHAINORDER CO-WALK @ AND IF 2DUP CO-LINK, ELSE
++  THIS-THREAD @ CELLS TTHREADS + @ HEAD-T !
++  HEAD-T @ IF THERE G-TAG2 IF 4 ELSE 3 THEN + HEAD-T @ - LINK-LEN-T ELSE 1 THEN HLEN-T !
++  HEAD-T @ IF THERE HLEN-T @ + HEAD-T @ - ELSE 0 THEN HLEN-T @ LINK,-T
++  THEN
++  G-CHAINORDER IF 2DUP CO-LOG THEN
++  THERE TLINK !
++  THERE THIS-THREAD @ CELLS TTHREADS + !
++  DUP C,-T THERE CHARS IMAGE + SWAP DUP ALLOT-T CMOVE ;
++
++
+ \ Every target word has a shadow in TARGET. Its fields: [t-xt][kind]
+ \ [value: a primitive's opcode, a constant's value, or the opcode a call
+ \ to a colon word becomes][t-nfa][host action][immediate][test-branch
+@@ -1571,12 +1647,23 @@ CREATE OPB-COUNTS 64 ALLOT  OPB-COUNTS 64 0 FILL
+     OPB-LIST LIST-COUNT 1-
+   ELSE >R 2DROP R> THEN
+   OPB-COUNTS + DUP C@ 1+ SWAP C! ;
++\ Iteration 736: G-TRIM8 - an overlay's NAME8 that is NAME (chainorder's LINK-LEN8, NEXT-NFA88: the translator gives
++\ their bodies to NAME), the name in the source shortened as read; G-ONCE - a name only its first definition makes,
++\ a later one skipped (cv8b.4's LINK-LEN and NEXT-NFA8 after chainorder's, loaded before cv8b.4).
++CREATE ONCE-SEEN 32 ALLOT  CREATE ONCE-SCAN 32 ALLOT  ONCE-SCAN 32 0 FILL
++: ONCE? ( c-addr u seen --- f )
++  >R G-ONCE LIST-INDEX DUP 0< IF DROP R> DROP 0 EXIT THEN
++  R> + DUP C@ IF DROP -1 EXIT THEN 1 SWAP C! 0 ;
++: SRC-TOKEN-END ( u --- c-addr ) SOURCE DROP >IN @ + BEGIN DUP C@ BL = WHILE 1+ REPEAT + 1- ;
+ : SCAN-LINE ( u --- )
+ \ A line that starts ": X8 " adds X; one that defines an op-body word
+-\ counts it.
++\ counts it. A word of G-SKIP is not there (Iteration 736).
+   DUP 3 < IF DROP EXIT THEN
+   LINEBUF 2 S" : " COMPARE IF DROP EXIT THEN
+   LINEBUF 2 + SWAP 2 - FIRST-TOKEN               ( c-addr len )
++  2DUP G-SKIP LIST-INDEX 0< 0= IF 2DROP EXIT THEN
++  2DUP G-TRIM8 LIST-INDEX 0< 0= IF 1- THEN          \ 736: chainorder's NAME8 takes NAME's place
++  2DUP ONCE-SCAN ONCE? IF 2DROP EXIT THEN
+   2DUP OPB-NOTE
+   2DUP X8-NAME? IF 1- SWAP-ADD ELSE 2DROP THEN ;
+ : SCAN-FILE ( c-addr u --- )
+@@ -1783,6 +1870,9 @@ ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
+ \ here at all, made among the primitives. Any other: its operations, to ;.
+   >IN @ >R BL WORD COUNT R> >IN !                      ( c-addr u )
+   2DUP INLINED? IF 2DROP BL WORD DROP SKIP-DEF EXIT THEN
++  2DUP G-SKIP LIST-INDEX 0< 0= IF 2DROP BL WORD DROP SKIP-DEF EXIT THEN   \ 736: G-SKIP - the translator drops it
++  2DUP G-TRIM8 LIST-INDEX 0< 0= IF DUP SRC-TOKEN-END BL SWAP C! 1- THEN   \ 736: G-TRIM8, G-ONCE
++  2DUP ONCE-SEEN ONCE? IF 2DROP BL WORD DROP SKIP-DEF EXIT THEN
+   2DUP HS-FNAME PLACE  -1 HS-FINAL !
+   2DUP COLON-VALUE COLON-OP !
+   IN-KERNEL @ IF 2DUP SWAP-SET LIST-INDEX ELSE -1 THEN SWAP-K !
+@@ -2252,7 +2342,9 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
+ : ITEM-START ( shadow --- t-addr )
+ \ A word's first byte: its link's - the link's length, less one, in the
+ \ top two bits of the byte before the count - or, with no header, its body's.
+-  DUP 3 CELLS + @ ?DUP IF SWAP DROP DUP 1- C@-T 6 RSHIFT 1+ - ELSE @ THEN ;
++  DUP 3 CELLS + @ ?DUP IF SWAP DROP DUP 1- C@-T DUP 224 U< G-CHAINORDER 0= OR IF 6 RSHIFT 1+ ELSE DROP 3 THEN - ELSE @ THEN ;
++\ 736: chainorder's forward link, the tag E0-FF, three bytes (it read four: the word before it a byte short, and
++\ the JIT translated it so - small-jit's self-built image crashed in cross's own run).
+ : JW-ROW? ( shadow --- shadow f )
+ \ 723: with jitdead and not --jitx, the JIT-headed words' rows alone (layout.py's rows_).
+   X-JITDEAD X-JITX 0= AND IF DUP @ JD-INDEX 0< 0= ELSE -1 THEN ;
+@@ -2331,13 +2423,15 @@ CREATE NM-AQ 8 C, 40 C, 65 C, 66 C, 79 C, 82 C, 84 C, 34 C, 41 C,   \ (ABORT")
+   0 #INLS !  0 #BSS !  0 ALLOT-HOOK !  0 #SHADOWS !  0 LAST-SHADOW !
+   REFD #ORD-MAX 0 FILL  FREE# #ORD-MAX CELLS 0 FILL  ALL# #ORD-MAX CELLS 0 FILL
+   0 #OPS !  0 HEADERLESS !  0 IN-KERNEL !  0 DEAD-NOW !
+-  0 #FWDP !  0 HS-ON !  0 HS-STORE !  0 HS-FINAL !  FAC-RESET  0 #JD ! ;
++  0 #FWDP !  0 HS-ON !  0 HS-STORE !  0 HS-FINAL !  FAC-RESET  0 #JD !
++  ONCE-SEEN 32 0 FILL  0 #HDR !  0 #CO-FWD ! ;   \ 736
+ 
+ : BUILD ( --- )
+   RESET
+   -1 IN-KERNEL ! S" kernel.4" INCLUDED 0 IN-KERNEL !
+   XINCLUDE-OVERLAYS
+   LAY-BODIES CHECK-PLACED FWDP-PATCH RESOLVE-FORWARDS RESOLVE-REBINDS
++  G-CHAINORDER CO-WALK @ AND IF CO-FINISH THEN       \ 736: chainorder's forward links and heads
+   S" FORTH-WORDLIST" TXT >BODY-T PUBLISH-WORDLIST
+   DP-END S" DP" TXT >BODY-T !-T
+ \ The dictionary's room from START: the CV8 engines keep the stacks apart, in
+@@ -2420,6 +2514,7 @@ CREATE NEWHOTS 32 CELLS ALLOT  VARIABLE #NEWHOTS
+   SCAN-SOURCES
+   1 PASS ! BUILD FIND-DEAD THERE 16384 < NEAR ! REPORT
+   2 PASS ! -1 COUNTING ! BUILD FIND-DEAD FIND-HOT REPORT
++  G-CHAINORDER IF CO-WALK! -1 CO-WALK ! THEN          \ 736: the third pass lays the walk
+   FAC-SEARCH
+   3 PASS ! BUILD FIND-DEAD FIND-HOT REPORT ;
+ 
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 95682892..999ab21c 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -81,8 +81,8 @@ as the record of what each does.
+ | the JIT's header the code alone (`jitdead`: 0, 1; Iteration 710; JIT designs - mechanism 9's V1', results/drafts/triz-706.md): [JIT], not [JIT][four bytes] - the body's end found by the converter's rule (the jitimg words' from jit_wends), the native offset written over the translated word's dead first four bytes and its trigger then JITN (a code of its own, pinned); left bytecode, a NOOP; what native code reads there at run time (S", .", (ABORT")'s resume point) copied first; bodies padded to four bytes (forth/cv8t-jitd.4, layout.py --jit-dead). -693 to -741 bytes of the five programs' code, the image -24 to -80, the engine -592 to +640; the total -0.3 to -2.9 % on ten JIT designs at both widths, instructions the same or fewer on every workload; not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/jitdead-710.md |
+ | the translator's arrays short first (`jitfew`: 0, 1; Iteration 713; JIT designs): engine/jit.c - jit_body's arrays (at, arg, nat, opl, tl) 128 operations long in its frame, and 1,024 (jit_body_big) only for a word with more, translated again from its start; their heads were a page each at every depth of the callees' translation (~24 KB a frame). On eight JIT designs: memory (the selection's workloads but apps) -5 to -16 pages (-11 to -23 %), apps -7 to -27 pages, the engine +224 to +544 bytes, the outputs alike, the time in the noise | results/drafts/early-computers-713.md |
+ | the chain hash with one constant (`hashk`: 0, 1; Iteration 729; every CV8 design - results/drafts/demoscene-ioccc-727.md, after the demoscene's crinkler): a name's chain ((v * 18835) >> 8) & (chains - 1), v kernel.4's HASH (the length and the first two characters) - K searched on the held-out programs for the ten roles and 16-128 chains at once (results/drafts/hashk-table-728.py; K = 256 is today's hash); forth/cv8-hashk.4's HASH8 in every dump becomes HASH's body (tools/layout.py --hashk, which threads the image by it too), the engine's L_x_hash and (FIND) by -DHASHK (vm-lab.c's CHAIN; gen-msc.py's); off, HASH8 leaves the image - every design's bytes as before. Measured (729, results/drafts/hashk-gene-729.py): the lookup's walk shorter - the smallest's parse -17.5 % of its instructions on the prototype. In the self-hosting compiler since 731: G-HASHK in THASH, cv8-hashk.4 among a design's overlays where HASH is no op | results/drafts/demoscene-ioccc-727.md |
+-| each chain's most looked-up names first (`chainorder`: 0, 1; Iteration 732; every CV8 design - results/drafts/demoscene-ioccc-727.md, chainorder-margin-731.txt): the names looked up at least 64 times in the held-out programs (lab/evolve/chainorder-use.txt, results/drafts/chainorder-use-732.py) at the front of their chains, most first, the rest newest first as before; a link to a word laid later is its own form, three bytes (tag F0-FF; tag 2's E0-FF), carved from the four-byte one (28 and 29 bits back now); backward links as before. forth/cv8-chainorder.4 and cv8t-chainorder.4 in every dump - LINK-LEN8 (the narrower reach) and NEXT-NFA88 (the forward form) swapped in by tools/layout.py --chainorder, dropped off; the engine's PREVNFA and bfind's bf_prev by -DCHAINORDER. Measured (results/drafts/chainorder-732.txt, the ten roles): the images +56-120 B; the corpus's instructions 0.987-1.031 of off (the smallest, its walk Forth, 0.987; five C walks a little better, five a little worse); parse (held out) 0.79-0.99; with hashk the smallest's corpus 0.903. Not yet in the self-hosting compiler (G-NOT-YET; its forward links fixed at three bytes, so patched at the end - built if a role takes the gene) | results/drafts/chainorder-732.txt |
+-| a token of digits converted without its lookup (`numfirst`: 0, 1; Iteration 733; every byte-header CV8 design - results/drafts/esolangs-717.md, numfirst-722.md): while no name of the form -?[0-9]+ is defined, a token of that form goes to NUMBER? without FIND's walk; the flag NF-FLAG is the prologue's last padding byte (START + 2 cells - 1, never run), so SAVE-SYSTEM keeps it, and HEADER8 sets it when it lays such a name. Two forms: with klookup the engine's (FIND) answers c-addr 0 at once (-DNUMFIRST, NF_SKIP - vm-lab.c, gen-msc.py and gen-tos.py's copies); without it, forth/cv8-numfirst.4's INTERPRET8 skips FIND for [0-9]+. forth/cv8-numfirst.4 and cv8t-numfirst.4 in every dump with cv8b.4 or cv8bt.4 - tools/layout.py --numfirst c|forth keeps HEADER8 (and INTERPRET8 in the Forth form; DIGITS? and NF-FLAG headerless), drops the file's words off, before the hot-inline pass. Measured (results/drafts/numfirst-733.txt, the ten roles): the images +55-106 B, the engines +0-384 B; the corpus's instructions 0.756-0.999 of off (the smallest, the Forth form, 0.756; with hashk 0.725), parse (held out) 0.683-0.994 (with hashk 0.587). Not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/numfirst-733.txt |
++| each chain's most looked-up names first (`chainorder`: 0, 1; Iteration 732; every CV8 design - results/drafts/demoscene-ioccc-727.md, chainorder-margin-731.txt): the names looked up at least 64 times in the held-out programs (lab/evolve/chainorder-use.txt, results/drafts/chainorder-use-732.py) at the front of their chains, most first, the rest newest first as before; a link to a word laid later is its own form, three bytes (tag F0-FF; tag 2's E0-FF), carved from the four-byte one (28 and 29 bits back now); backward links as before. forth/cv8-chainorder.4 and cv8t-chainorder.4 in every dump - LINK-LEN8 (the narrower reach) and NEXT-NFA88 (the forward form) swapped in by tools/layout.py --chainorder, dropped off; the engine's PREVNFA and bfind's bf_prev by -DCHAINORDER. Measured (results/drafts/chainorder-732.txt, the ten roles): the images +56-120 B; the corpus's instructions 0.987-1.031 of off (the smallest, its walk Forth, 0.987; five C walks a little better, five a little worse); parse (held out) 0.79-0.99; with hashk the smallest's corpus 0.903. In the self-hosting compiler since Iteration 736 (results/drafts/chainorder-cross-736.txt): each pass logs its headers, the second's give the walk, the third lays each link to its walk's next - forward three bytes, patched when the headers are down; the link words before cv8b.4 by G-TRIM8 and G-ONCE; self-built parse 0.789 (smallest) and 0.943 of the instructions without | results/drafts/chainorder-732.txt |
++| a token of digits converted without its lookup (`numfirst`: 0, 1; Iteration 733; every byte-header CV8 design - results/drafts/esolangs-717.md, numfirst-722.md): while no name of the form -?[0-9]+ is defined, a token of that form goes to NUMBER? without FIND's walk; the flag NF-FLAG is the prologue's last padding byte (START + 2 cells - 1, never run), so SAVE-SYSTEM keeps it, and HEADER8 sets it when it lays such a name. Two forms: with klookup the engine's (FIND) answers c-addr 0 at once (-DNUMFIRST, NF_SKIP - vm-lab.c, gen-msc.py and gen-tos.py's copies); without it, forth/cv8-numfirst.4's INTERPRET8 skips FIND for [0-9]+. forth/cv8-numfirst.4 and cv8t-numfirst.4 in every dump with cv8b.4 or cv8bt.4 - tools/layout.py --numfirst c|forth keeps HEADER8 (and INTERPRET8 in the Forth form; DIGITS? and NF-FLAG headerless), drops the file's words off, before the hot-inline pass. Measured (results/drafts/numfirst-733.txt, the ten roles): the images +55-106 B, the engines +0-384 B; the corpus's instructions 0.756-0.999 of off (the smallest, the Forth form, 0.756; with hashk 0.725), parse (held out) 0.683-0.994 (with hashk 0.587). In the self-hosting compiler since Iteration 736 (results/drafts/numfirst-cross-736.txt): the file last in G-OVERLAYS, DIGITS? and NF-FLAG headerless, G-SKIP the marker (and INTERPRET8 in the C form); self-built corpus 0.83 (smallest) of the instructions without | results/drafts/numfirst-733.txt |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/export-genes.py b/lab/evolve/export-genes.py
+index 7e50937d..de21c3fe 100644
+--- a/lab/evolve/export-genes.py
++++ b/lab/evolve/export-genes.py
+@@ -76,6 +76,12 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+     L += ['%d CONSTANT G-CELL          \\ the target\'s cell, bytes' % cell]
+     hk = int(opt(args, '--hashk', 0))                     # Iteration 731: hashk - its HASH8 by the X8 rule where HASH is no op
+     if hk and 'HASH' not in [o[0] if isinstance(o, list) else o for o in o10]: ov = ov + ['cv8-hashk.4']   # ops10.json: [name, op] pairs
++    nf = opt(args, '--numfirst')                          # Iteration 736: numfirst - its file last (as evolve.py's dumps load it),
++    if nf: ov = ov + ['cv8t-numfirst.4' if 'cv8bt.4' in ov else 'cv8-numfirst.4']   # the translator's --numfirst c|forth
++    co = '--chainorder' in args                           # Iteration 736: chainorder - its link words before cv8b.4 (cv8bt.4),
++    if co:                                                # their bodies LINK-LEN's and NEXT-NFA8's (G-TRIM8, G-ONCE), as the
++        hb = 'cv8bt.4' if 'cv8bt.4' in ov else 'cv8b.4'   # translator's swap gives them; the walk from G-CO-HOT
++        ov = ov[:ov.index(hb)] + ['cv8t-chainorder.4' if hb == 'cv8bt.4' else 'cv8-chainorder.4'] + ov[ov.index(hb):]
+     L += lst('G-OVERLAYS', ov, 'after kernel.4, in this order')
+     L += lst('G-FOLDS', folds, 'the fold set: FOLD-BASE + place')
+     L += ['%d CONSTANT G-SPEC          \\ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc' % bits]
+@@ -100,7 +106,19 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+     L += lst('G-ESC-PRIMS', esc if '--escape' in args else [], 'the escaped primitives')
+     L += ['%d CONSTANT G-VARSLOT        \\ slot operands 2 or 3 bytes, high byte first; else 2, low first' % (-1 if eflags.get('VARSLOT', 1) else 0)]
+     L += lst('G-REBIND', [t for t in (opt(args, '--rebind') or '').split(',') if t], "the kernel's uses rebound to the overlays' words")
+-    L += lst('G-HEADERLESS', [t for t in (opt(args, '--headerless') or '').split(',') if t], 'no headers')
++    L += lst('G-HEADERLESS', [t for t in (opt(args, '--headerless') or '').split(',') if t] + (['DIGITS?', 'NF-FLAG'] if nf else []), 'no headers')
++    # 736: what the translator drops from an overlay - numfirst's marker, and in its C form (the engine's (FIND)) INTERPRET8
++    L += lst('G-SKIP', (['NUMFIRST-MARK'] + (['INTERPRET8'] if nf == 'c' else [])) if nf else [], 'definitions the translator drops')
++    hot = []
++    if co:
++        for l_ in open(opt(args, '--chainorder'), encoding='latin-1'):
++            if l_.strip() and not l_.startswith('#'):
++                k_, n_ = l_.rstrip('\n').split(' ', 1)
++                if int(k_) >= int(opt(args, '--chainorder-min', 1)): hot += [n_, k_]
++    L += ['%d CONSTANT G-CHAINORDER    \\ each chain its most looked-up names first (layout.py --chainorder; 732, 736)' % (-1 if co else 0)]
++    L += lst('G-CO-HOT', hot, '...those names, and how often the held-out programs look each up')
++    L += lst('G-TRIM8', ['LINK-LEN8', 'NEXT-NFA88'] if co else [], "an overlay's NAME8 that is NAME")
++    L += lst('G-ONCE', ['LINK-LEN', 'NEXT-NFA8'] if co else [], 'names only their first definition makes')
+     L += ['%d CONSTANT G-ENGINE-SPEC   \\ the engine\'s flags: SPEC (the locals block in the header)' % (1 if espec else 0),
+          '%d CONSTANT G-FEATURES      \\ the image\'s feature bits (engine/vm-lab.c\'s IMAGE_MAGIC)' % feat,
+          '%d CONSTANT G-MAGIC5' % (76 if espec else 0)]
+@@ -139,7 +157,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
+     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
+     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
+-    ny = [k for k in ('--opcall-file', '--chainorder', '--numfirst') if k in args]   # 731: --hashk done (G-HASHK); 732: --chainorder not yet; 733: --numfirst not yet       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
++    ny = [k for k in ('--opcall-file',) if k in args]   # 731: --hashk done (G-HASHK); 736: --numfirst (G-SKIP) and --chainorder (G-CO-HOT) done       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
+     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
+diff --git a/stages/s6-genes.4 b/stages/s6-genes.4
+index d5119d8a..f5d2e9d8 100644
+--- a/stages/s6-genes.4
++++ b/stages/s6-genes.4
+@@ -27,6 +27,11 @@ G-LIST: G-ESC-PRIMS  \ the escaped primitives
+ -1 CONSTANT G-VARSLOT        \ slot operands 2 or 3 bytes, high byte first; else 2, low first
+ G-LIST: G-REBIND  \ the kernel's uses rebound to the overlays' words
+ G-LIST: G-HEADERLESS  \ no headers
++G-LIST: G-SKIP  \ definitions the translator drops
++0 CONSTANT G-CHAINORDER    \ each chain its most looked-up names first (layout.py --chainorder; 732, 736)
++G-LIST: G-CO-HOT  \ ...those names, and how often the held-out programs look each up
++G-LIST: G-TRIM8  \ an overlay's NAME8 that is NAME
++G-LIST: G-ONCE  \ names only their first definition makes
+ 1 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
+ 31 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
+ 76 CONSTANT G-MAGIC5

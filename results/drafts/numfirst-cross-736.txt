@@ -1,0 +1,25 @@
+records: smallest=7d06aba806,portable-fastest=8a38e9b3b6,small-jit=ba35926be8
+export-designs=0   portable-fastest forth-libc: runs (7 SQ . -> 49)
+selfhost-ship=0 selfhost-ship: 3 design(s) shipped self-built in /tmp/nfx/designs
+selfhost: smallest image.img ok - rebuilt from source byte for byte, 8808 bytes
+selfhost: smallest image32.img ok - rebuilt from source byte for byte, 8328 bytes
+selfhost: portable-fastest image.img ok - rebuilt from source byte for byte, 10035 bytes
+selfhost: portable-fastest image32.img ok - rebuilt from source byte for byte, 9399 bytes
+selfhost: small-jit image.img ok - rebuilt from source byte for byte, 8156 bytes; its JIT layout src/vm-jit-ops.h's (2 lines)
+selfhost: small-jit image32.img ok - rebuilt from source byte for byte, 7664 bytes; its JIT layout src32/vm-jit-ops.h's (2 lines)
+smallest genes.4: S" cv8.4 cv8b.4 cv8b-kfast.4 cv8-fuse-loopall.4 file-sysc.4 file-sysc2.4 file-sysc3.4 cv8-numfirst.4 " G+ S" FS-SEEKS? FS-BACK FS-UPTO-EDIT FS-ANY FS-LF FS-CR FS-SK FS-BIT FS-FORGET DIGITS? NF-FLAG " 
+
+  smallest: self-built 8808 B (the translator's 9143 B); the probe same
+  smallest (32-bit): self-built 8328 B (the translator's 8407 B); the probe same
+portable-fastest genes.4: S" cv8t-numfirst.4 " G+ S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SAVED DIGITS? NF-FLAG " G+ G-LIST: G-SKIP  \ definitions the translator drops S" NUMFIRST-MARK INT
+
+  portable-fastest: self-built 10035 B (the translator's 10311 B); the probe same
+  portable-fastest (32-bit): self-built 9399 B (the translator's 9663 B); the probe same
+small-jit genes.4: S" file-sysc2.4 cv8t-numfirst.4 " G+ S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SAVED DIGITS? NF-FLAG " G+ G-LIST: G-SKIP  \ definitions the translator drops S" NUMF
+
+  small-jit: self-built 8156 B (the translator's 8384 B); the probe same
+  small-jit (32-bit): self-built 7664 B (the translator's 7868 B); the probe same
+
+The fast path in the self-built images (cachegrind, the corpus): smallest 95,667,727 instructions self-built with numfirst, 95,908,027
+the translator's image with it (0.997), 115,934,776 the shipped self-built image without it; portable-fastest 11,359,830,
+11,476,740 (0.990), 11,812,970 - the outputs the same.

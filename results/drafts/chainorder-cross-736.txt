@@ -1,0 +1,44 @@
+records: smallest-chainorder=308067991e,portable-fastest-chainorder=c91f7d0e02,small-jit-chainorder=7aa11e9975,smallest-chainorder-numfirst-hashk=4a9636a599,small-jit-chainorder-numfirst-hashk=f164dd64b5
+export-designs=0   smallest-chainorder-numfirst-hashk forth-libc: runs (7 SQ . -> 49)
+selfhost-ship=0 selfhost-ship: 5 design(s) shipped self-built in /tmp/cox/designs
+selfhost: smallest-chainorder image.img ok - rebuilt from source byte for byte, 8797 bytes
+selfhost: smallest-chainorder image32.img ok - rebuilt from source byte for byte, 8309 bytes
+selfhost: portable-fastest-chainorder image.img ok - rebuilt from source byte for byte, 10065 bytes
+selfhost: portable-fastest-chainorder image32.img ok - rebuilt from source byte for byte, 9429 bytes
+selfhost: small-jit-chainorder image.img ok - rebuilt from source byte for byte, 8201 bytes; its JIT layout src/vm-jit-ops.h's (2 lines)
+selfhost: small-jit-chainorder image32.img ok - rebuilt from source byte for byte, 7713 bytes; its JIT layout src32/vm-jit-ops.h's (2 lines)
+selfhost: smallest-chainorder-numfirst-hashk image.img ok - rebuilt from source byte for byte, 8907 bytes
+selfhost: smallest-chainorder-numfirst-hashk image32.img ok - rebuilt from source byte for byte, 8403 bytes
+selfhost: small-jit-chainorder-numfirst-hashk image.img ok - rebuilt from source byte for byte, 8245 bytes; its JIT layout src/vm-jit-ops.h's (2 lines
+selfhost: small-jit-chainorder-numfirst-hashk image32.img ok - rebuilt from source byte for byte, 7765 bytes; its JIT layout src32/vm-jit-ops.h's (2 l
+smallest-chainorder genes.4: S" cv8.4 cv8-chainorder.4 cv8b.4 cv8b-kfast.4 cv8-fuse-loopall.4 file-sysc.4 file-sysc2.4 file-sysc3.4 " G+ -1 CONSTANT G-CHAINORDER    \ each chain its most lo
+
+  smallest-chainorder: self-built 8797 B (the translator's 9109 B); the probes same
+  smallest-chainorder (32-bit): self-built 8309 B (the translator's 8369 B); the probes same
+portable-fastest-chainorder genes.4: S" cv8t.4 cv8t-chainorder.4 cv8bt.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8b-knumber.4 " G+ -1 CONSTANT G-CHAINORDER    \ each chain its most looked-up na
+
+  portable-fastest-chainorder: self-built 10065 B (the translator's 10360 B); the probes same
+  portable-fastest-chainorder (32-bit): self-built 9429 B (the translator's 9696 B); the probes same
+small-jit-chainorder genes.4: S" cv8t.4 cv8t-chainorder.4 cv8bt.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8-fuse-loopall.4 " G+ -1 CONSTANT G-CHAINORDER    \ each chain its most looked-u
+
+  small-jit-chainorder: self-built 8201 B (the translator's 8441 B); the probes same
+  small-jit-chainorder (32-bit): self-built 7713 B (the translator's 7917 B); the probes same
+smallest-chainorder-numfirst-hashk genes.4: S" cv8.4 cv8-chainorder.4 cv8b.4 cv8b-kfast.4 cv8-fuse-loopall.4 file-sysc.4 file-sysc2.4 file-sysc3.4 " G+ -1 CONSTANT G-CHAINORDER    \ each chain its most lo
+
+  smallest-chainorder-numfirst-hashk: self-built 8907 B (the translator's 9191 B); the probes same
+  smallest-chainorder-numfirst-hashk (32-bit): self-built 8403 B (the translator's 8467 B); the probes same
+small-jit-chainorder-numfirst-hashk genes.4: S" cv8t.4 cv8t-chainorder.4 cv8bt.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8-fuse-loopall.4 " G+ -1 CONSTANT G-CHAINORDER    \ each chain its most looked-u
+
+  small-jit-chainorder-numfirst-hashk: self-built 8245 B (the translator's 8513 B); the probes same
+  small-jit-chainorder-numfirst-hashk (32-bit): self-built 7765 B (the translator's 7977 B); the probes same
+  smallest-chainorder: parse instructions - self-built 519246832, the translator's 521440944 (0.996); outputs same
+  portable-fastest-chainorder: parse instructions - self-built 41347669, the translator's 41639417 (0.993); outputs same
+  small-jit-chainorder: parse instructions - self-built 70329749, the translator's 71081516 (0.989); outputs same
+  smallest-chainorder-numfirst-hashk: parse instructions - self-built 305939042, the translator's 303256438 (1.009); outputs same
+  small-jit-chainorder-numfirst-hashk: parse instructions - self-built 62893554, the translator's 63557189 (0.990); outputs same
+
+Against the shipped self-built designs without the genes (designs/NAME, 718's): smallest's parse 519,246,832 instructions
+self-built with chainorder, 658,454,540 without - 0.789; portable-fastest 41,347,669 and 43,867,048 - 0.943 (the translator's, 732:
+0.786 and 0.947). The first run: small-jit's self-built image crashed in cross's own run (selfhost-check: A wrote no
+image) - ITEM-START read a forward link's tag E0-FF as a four-byte link, the word before it a byte short in the JIT's
+layout (jit_wends), the JIT's code running off its end; fixed, the run above.

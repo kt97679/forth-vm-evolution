@@ -27,6 +27,11 @@ G-LIST: G-ESC-PRIMS  \ the escaped primitives
 -1 CONSTANT G-VARSLOT        \ slot operands 2 or 3 bytes, high byte first; else 2, low first
 G-LIST: G-REBIND  \ the kernel's uses rebound to the overlays' words
 G-LIST: G-HEADERLESS  \ no headers
+G-LIST: G-SKIP  \ definitions the translator drops
+0 CONSTANT G-CHAINORDER    \ each chain its most looked-up names first (layout.py --chainorder; 732, 736)
+G-LIST: G-CO-HOT  \ ...those names, and how often the held-out programs look each up
+G-LIST: G-TRIM8  \ an overlay's NAME8 that is NAME
+G-LIST: G-ONCE  \ names only their first definition makes
 1 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
 31 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
 76 CONSTANT G-MAGIC5

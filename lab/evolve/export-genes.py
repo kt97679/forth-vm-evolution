@@ -76,6 +76,12 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     L += ['%d CONSTANT G-CELL          \\ the target\'s cell, bytes' % cell]
     hk = int(opt(args, '--hashk', 0))                     # Iteration 731: hashk - its HASH8 by the X8 rule where HASH is no op
     if hk and 'HASH' not in [o[0] if isinstance(o, list) else o for o in o10]: ov = ov + ['cv8-hashk.4']   # ops10.json: [name, op] pairs
+    nf = opt(args, '--numfirst')                          # Iteration 736: numfirst - its file last (as evolve.py's dumps load it),
+    if nf: ov = ov + ['cv8t-numfirst.4' if 'cv8bt.4' in ov else 'cv8-numfirst.4']   # the translator's --numfirst c|forth
+    co = '--chainorder' in args                           # Iteration 736: chainorder - its link words before cv8b.4 (cv8bt.4),
+    if co:                                                # their bodies LINK-LEN's and NEXT-NFA8's (G-TRIM8, G-ONCE), as the
+        hb = 'cv8bt.4' if 'cv8bt.4' in ov else 'cv8b.4'   # translator's swap gives them; the walk from G-CO-HOT
+        ov = ov[:ov.index(hb)] + ['cv8t-chainorder.4' if hb == 'cv8bt.4' else 'cv8-chainorder.4'] + ov[ov.index(hb):]
     L += lst('G-OVERLAYS', ov, 'after kernel.4, in this order')
     L += lst('G-FOLDS', folds, 'the fold set: FOLD-BASE + place')
     L += ['%d CONSTANT G-SPEC          \\ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc' % bits]
@@ -100,7 +106,19 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     L += lst('G-ESC-PRIMS', esc if '--escape' in args else [], 'the escaped primitives')
     L += ['%d CONSTANT G-VARSLOT        \\ slot operands 2 or 3 bytes, high byte first; else 2, low first' % (-1 if eflags.get('VARSLOT', 1) else 0)]
     L += lst('G-REBIND', [t for t in (opt(args, '--rebind') or '').split(',') if t], "the kernel's uses rebound to the overlays' words")
-    L += lst('G-HEADERLESS', [t for t in (opt(args, '--headerless') or '').split(',') if t], 'no headers')
+    L += lst('G-HEADERLESS', [t for t in (opt(args, '--headerless') or '').split(',') if t] + (['DIGITS?', 'NF-FLAG'] if nf else []), 'no headers')
+    # 736: what the translator drops from an overlay - numfirst's marker, and in its C form (the engine's (FIND)) INTERPRET8
+    L += lst('G-SKIP', (['NUMFIRST-MARK'] + (['INTERPRET8'] if nf == 'c' else [])) if nf else [], 'definitions the translator drops')
+    hot = []
+    if co:
+        for l_ in open(opt(args, '--chainorder'), encoding='latin-1'):
+            if l_.strip() and not l_.startswith('#'):
+                k_, n_ = l_.rstrip('\n').split(' ', 1)
+                if int(k_) >= int(opt(args, '--chainorder-min', 1)): hot += [n_, k_]
+    L += ['%d CONSTANT G-CHAINORDER    \\ each chain its most looked-up names first (layout.py --chainorder; 732, 736)' % (-1 if co else 0)]
+    L += lst('G-CO-HOT', hot, '...those names, and how often the held-out programs look each up')
+    L += lst('G-TRIM8', ['LINK-LEN8', 'NEXT-NFA88'] if co else [], "an overlay's NAME8 that is NAME")
+    L += lst('G-ONCE', ['LINK-LEN', 'NEXT-NFA8'] if co else [], 'names only their first definition makes')
     L += ['%d CONSTANT G-ENGINE-SPEC   \\ the engine\'s flags: SPEC (the locals block in the header)' % (1 if espec else 0),
          '%d CONSTANT G-FEATURES      \\ the image\'s feature bits (engine/vm-lab.c\'s IMAGE_MAGIC)' % feat,
          '%d CONSTANT G-MAGIC5' % (76 if espec else 0)]
@@ -139,7 +157,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
-    ny = [k for k in ('--opcall-file', '--chainorder', '--numfirst') if k in args]   # 731: --hashk done (G-HASHK); 732: --chainorder not yet; 733: --numfirst not yet       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+    ny = [k for k in ('--opcall-file',) if k in args]   # 731: --hashk done (G-HASHK); 736: --numfirst (G-SKIP) and --chainorder (G-CO-HOT) done       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'

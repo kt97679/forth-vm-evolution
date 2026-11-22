@@ -1,0 +1,16 @@
+diff --git a/lab/evolve/review-checks.py b/lab/evolve/review-checks.py
+index 1b8ae34f..b603de5f 100644
+--- a/lab/evolve/review-checks.py
++++ b/lab/evolve/review-checks.py
+@@ -120,9 +120,11 @@ elif check == 'curse':
+     print('re-measured / in-run speed (above 1: the in-run number was lucky), by in-run rank:')
+     for name, part in (('fastest tenth', rows[:n // 10]),) + thirds(rows):
+         r = sorted(x['rem'] / x['sp'] for x in part)
++        if not r: print('  %-14s   0 designs' % name); continue      # 736: a front under ten (the processing rehearsal's stand-in)
+         print('  %-14s %3d designs: median %.3f, range %.3f-%.3f' % (name, len(part), r[len(r) // 2], r[0], r[-1]))
+     print('held out (sieve), Spearman with the selection speed:')
+     for name, part in (('whole front', rows), ('fastest third', rows[:n // 3]), ('fastest tenth', rows[:n // 10])):
++        if len(part) < 2: print('  %-14s %3d designs' % (name, len(part))); continue   # 736: as above
+         print('  %-14s %3d designs: %.3f' % (name, len(part), spearman([r['sp'] for r in part], [r['sieve'] for r in part])))
+ elif check == 'cpus':
+     S = open(sys.argv[2]).read()

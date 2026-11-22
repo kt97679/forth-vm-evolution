@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 735.
+- master: Iteration 736.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -432,6 +432,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/stopping-series.md: the genes, the environment, the layout); predictions 5. **Next: process seed 97** - its
   results file, the stopping rule's first line of the series, then the next seed or the roles' follow-up chains, and
   relf's handoff once at the end (results/handoff-relf-726.md and the iter726 package held, not sent).
+  **736 (seed 97 running; the owner: "start with 1 and 2")**: seed 97's processing rehearsed on a stand-in made by
+  the laptop's path (results/drafts/process-rehearsal-736.md: every step and check PASS, the stopping rule reading the
+  new series; review-checks.py curse guarded for a front under ten), and **numfirst and chainorder self-hosted**
+  (results/applied-selfhost-736/): cross-cv8.4's G-SKIP, G-TRIM8, G-ONCE and chainorder's walk across the passes;
+  export-genes.py refuses neither. Five designs shipped self-built at both widths with them; small-jit's first try found
+  ITEM-START misreading a forward link (fixed). Nothing here changes what the search builds or measures - seed 98 on the
+  same method. NEXT-RUN none in this bundle (seed 97 runs from iter735's). **Next: process seed 97**
+  (process-rehearsal-736.sh shows the steps).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

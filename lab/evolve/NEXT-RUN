@@ -13,7 +13,9 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
-# Iteration 735 (the owner: "let's do next run 16 hours"): 16 - the reopened search's new series opens (results/
+# Iteration 736: none - seed 97 is running (started 2026-11-22 13:44 from iter735's bundle, `seed 97 16h widths` below in
+#   its history); this bundle changes nothing it builds or measures. Its archive's processing next, then the next line.
+# Iteration 735 (the owner: "let's do next run 16 hours"): seed 97 16h widths - the reopened search's new series opens (results/
 #   stopping-series.md's method line from seed 97). The genes since the last run - jitdead (710), jitfew (713), hashk
 #   (729), chainorder (732), numfirst (733) - rehearsed together (results/rehearsal-735.md, the plain design's dump fixed
 #   there), on the measuring environment fixed (727) and the fixed data layout (734: every design's memory 8-36 KB lower).
@@ -415,4 +417,4 @@
 # (ran from 720's bundle at be190a273 - chain D, processed at 725: results/followup-roles-seed96-jitband.md) experiment rage-designs.py then experiment pool-sizes.py --list results/followup-seed96-jitband.md --free 0 --jit 39100 --below-jit 35980 --jit-speed 0.2116 --jit-speed32 0.2354 --minutes 40 --write build/evolve/jitband-list.md --anchors all --cap 30 then experiment measure-ids.py --ids build/evolve/jitband-list.md --rounds 3 then experiment selfhost-speed.py --rounds 10 --pairs 5 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10
 # Iteration 714's line, chain C: experiment measure-ids.py --ids results/followup-seed96-roles-c.md --rounds 3 then experiment pool-sizes.py --list results/followup-seed96-roles-c.md  ... (loadtest.py 10 times)
 
-seed 97 16h widths
+none

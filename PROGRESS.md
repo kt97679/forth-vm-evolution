@@ -12246,3 +12246,27 @@ Files: results/rehearsal-735.md, results/applied-plain-dump-735/plain-dump.patch
 results/drafts/rehearsal-735.py, results/drafts/rehearsal-instr-735.py, results/drafts/plain-genes-735.py,
 results/drafts/plain-genes-735.json; lab/evolve/evolve.py, lab/evolve/NEXT-RUN, results/stopping-series.md,
 results/predictions.md.
+
+## Iteration 736 - 2026-11-22 - Claude
+
+While seed 97 runs on the laptop (the owner: "start with 1 and 2"): its processing rehearsed, and the self-hosting parts
+numfirst and chainorder lacked built (results/applied-selfhost-736/; batch-check PASS). The rehearsal (results/drafts/
+process-rehearsal-736.md): a stand-in made by the laptop's own path - the iter735 bundle cloned, `next-run.sh seed 97
+widths` at population 8, 3 generations - then process-seed.sh, draft-results.py, process-checks.sh (every check PASS) and
+process-records.sh in a fresh clone; the stopping rule read the new series ("seed 97 opens the series"); one fault,
+review-checks.py curse indexing a slice of no designs on a front under ten - guarded. numfirst in cross-cv8.4: its file
+last in the overlays, DIGITS? and NF-FLAG headerless, G-SKIP (the marker; INTERPRET8 in the C form) skipped by the scan
+and `:`. chainorder: every pass logs its headers, the second's give each chain's walk (layout.py's: the hot names by
+count, the rest newest first), the third links each header to its walk's next - forward three bytes, patched when the
+headers are down; the link words loaded before cv8b.4, G-TRIM8 reading LINK-LEN8 and NEXT-NFA88 as their names less the
+8, G-ONCE skipping cv8b.4's later definitions. Found: ITEM-START read a forward link's tag (E0-FF) as a four-byte link -
+small-jit's self-built image's JIT layout a byte short before each, its native code running into zeros (cross crashed
+on it); fixed. Checked (numfirst-cross-736.txt, chainorder-cross-736.txt): smallest, portable-fastest and small-jit with
+each gene, and two with chainorder, numfirst and hashk together, shipped self-built at both widths (the fixed point, the
+gate, byte for byte from source); the probes the translator's; the self-built images' instructions what the genes give
+(numfirst's corpus 0.83, chainorder's parse 0.789 and 0.943). export-genes.py refuses neither now; s6's bytes as before.
+Files: results/applied-selfhost-736/selfhost-genes.patch, results/applied-selfhost-736/curse-guard.patch,
+results/applied-selfhost-736/ORDER.md, results/drafts/numfirst-cross-736.sh, results/drafts/numfirst-cross-736.txt,
+results/drafts/chainorder-cross-736.sh, results/drafts/chainorder-cross-736.txt, results/drafts/process-rehearsal-736.sh,
+results/drafts/process-rehearsal-736.md; forth/cross-cv8.4, lab/evolve/export-genes.py, lab/evolve/review-checks.py,
+stages/s6-genes.4, lab/evolve/GENES.md.
