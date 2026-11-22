@@ -1,0 +1,1540 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index cf0786d1..4bd6561f 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -186,6 +186,17 @@ static char **g_argv;
+ /*  A byte-header link, read backwards from the name: the byte before it
+  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
+  *  bits), 10 three (22), 11 four (30) - the bytes below it high to low.  */
++#ifdef CHAINORDER   /* Iteration 732: the gene chainorder - E0-FF a forward link, three bytes (forth/cv8t-chainorder.4) */
++#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
++    switch (t__ >> 6) {                                                                   \
++    case 0: d__ = t__; break;                                                             \
++    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2); break;                        \
++    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; \
++    default: if (t__ & 32) { d__ = 0; a__ += ((UNS64)(t__ & 31) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; } \
++             d__ = ((UNS64)(t__ & 31) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
++                   | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
++    (t__ >= 224) ? a__ : d__ ? a__ - d__ : 0; })
++#else
+ #define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
+     switch (t__ >> 6) {                                                                   \
+     case 0: d__ = t__; break;                                                             \
+@@ -194,10 +205,20 @@ static char **g_argv;
+     default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
+                    | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
+     d__ ? a__ - d__ : 0; })
++#endif
+ #else
+ /*  A byte-header link in CV8 (cv8b.4's NEXT-NFA8): its last byte, the one
+  *  before the name - below 0x80 seven bits (0 ends the thread), below 0xC0
+  *  fourteen, else twenty-two.  */
++#ifdef CHAINORDER   /* Iteration 732: the gene chainorder - F0-FF a forward link, three bytes (forth/cv8-chainorder.4) */
++#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
++    t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
++    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
++    : t__ < 224 ? a__ - (((UNS64)(t__ & 31) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)) \
++    : t__ < 240 ? a__ - (((UNS64)(t__ & 15) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                 \
++             | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4))                                 \
++    : a__ + (((UNS64)(t__ & 15) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })   /* 732: F0-FF forward */
++#else
+ #define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
+     t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
+     : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
+@@ -205,6 +226,7 @@ static char **g_argv;
+     : a__ - (((UNS64)(t__ & 31) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                     \
+              | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4)); })   /* 416: a fourth form, 29 bits */
+ #endif
++#endif
+ /*  The call form is variable: 10xxxxxx takes one more byte (14-bit payload), 11xxxxxx takes two
+  *  (22-bit), decoded once on the shared call path (do_call). The fixed 15-bit form (VARCALL=0) and the
+  *  per-handler call path (SHAREDCALL=0) were retired with s4, frozen (Iteration 592).  */
+@@ -361,12 +383,18 @@ static inline uint32_t bf_ld32(UNS64 a) { uint32_t x; memcpy(&x, (const void *)(
+ #if TAG2
+ static inline UNS64 bf_prev(UNS64 a) {          /* tag t: t+1 bytes, the top one's 6 bits */
+     uint32_t w = bf_ld32(a - 4); UNS64 d = (UNS64)((w & 0x3FFFFFFFu) >> (8 * (3 - (w >> 30))));
++#ifdef CHAINORDER
++    if ((w >> 29) == 7) return a + ((w >> 8) & 0x1FFFFFu);   /* Iteration 732: E0-FF a forward link, three bytes */
++#endif
+     return d ? a - d : 0;
+ }
+ #else
+ static inline UNS64 bf_prev(UNS64 a) {          /* below 0x80 one byte, 7 bits; below 0xC0 two, 14; below 0xE0 three, 21; else four, 29 (416) */
+     static const uint32_t bf_mask[5] = { 0, 0x7F, 0x3FFF, 0x1FFFFF, 0x1FFFFFFF };
+     uint32_t w = bf_ld32(a - 4); unsigned t = w >> 24, l = 1 + (t >= 128) + (t >= 192) + (t >= 224);
++#ifdef CHAINORDER
++    if (t >= 240) return a + ((w >> 8) & 0xFFFFFu);          /* Iteration 732: F0-FF a forward link, three bytes */
++#endif
+     UNS64 d = (UNS64)(w >> (8 * (4 - l))) & bf_mask[l];
+     return (d || l > 1) ? a - d : 0;
+ }
+diff --git a/forth/cv8-chainorder.4 b/forth/cv8-chainorder.4
+new file mode 100644
+index 00000000..2b37182f
+--- /dev/null
++++ b/forth/cv8-chainorder.4
+@@ -0,0 +1,21 @@
++\ forth/cv8-chainorder.4 - the gene chainorder's link words for cv8b.4's byte headers (Iteration 732; results/drafts/
++\ demoscene-ioccc-727.md, chainorder-margin-731.txt). With the gene each chain starts with its most looked-up names
++\ (tools/layout.py --chainorder lab/evolve/chainorder-use.txt: those looked up at least --chainorder-min times in the
++\ held-out programs, most first), the rest newest first as before - so a link may point forward. A backward link is as
++\ before; a forward one is its own form, three bytes with the tag F0-FF (20 bits up), carved from the four-byte form,
++\ which keeps E0-EF (28 bits back). Loaded into every dump with cv8b.4, before the dump tool (lab/evolve/evolve.py):
++\ with --chainorder the converter makes each X8's body its X's (LINK, is unchanged: a run-time header links back to its
++\ chain's head), without it drops them - the images with the gene off are byte for byte the old ones. The engine's
++\ PREVNFA by -DCHAINORDER.
++: LINK-LEN8 ( d --- n )
++  DUP 128 U< IF DROP 1 EXIT THEN
++  DUP 268435456 U< 0= IF -1 ABORT" link out of reach" THEN
++  DUP 16384 U< IF DROP 2 EXIT THEN  2097152 U< IF 3 ELSE 4 THEN ;
++
++: NEXT-NFA88 ( nfa --- nfa' )
++  DUP 1- C@                                    ( nfa tag )
++  DUP 128 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
++  DUP 192 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
++  DUP 224 U< IF 31 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - EXIT THEN
++  DUP 240 U< IF 15 AND 24 LSHIFT OVER 2 - C@ 16 LSHIFT OR OVER 3 - C@ 8 LSHIFT OR OVER 4 - C@ OR - EXIT THEN
++  15 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR + ;   \ forward
+diff --git a/forth/cv8t-chainorder.4 b/forth/cv8t-chainorder.4
+new file mode 100644
+index 00000000..cbcfca1b
+--- /dev/null
++++ b/forth/cv8t-chainorder.4
+@@ -0,0 +1,16 @@
++\ forth/cv8t-chainorder.4 - the gene chainorder's link words for cv8bt.4's tag-2 byte headers (Iteration 732): as
++\ forth/cv8-chainorder.4 - a forward link its own form, three bytes with the tag E0-FF (21 bits up), carved from the
++\ four-byte form, which keeps C0-DF (29 bits back). Loaded into every dump with cv8bt.4; swapped in by
++\ tools/layout.py --chainorder, dropped without.
++: LINK-LEN8 ( d --- n )
++  DUP 64 U< IF DROP 1 EXIT THEN
++  DUP 536870912 U< 0= IF -1 ABORT" link out of reach" THEN
++  DUP 16384 U< IF DROP 2 EXIT THEN
++  4194304 U< IF 3 ELSE 4 THEN ;
++
++: NEXT-NFA88 ( nfa --- nfa' )
++  DUP 1- C@ 224 U< IF
++    DUP 1- DUP C@ DUP 63 AND SWAP 6 RSHIFT                 ( nfa a d k )
++    BEGIN DUP WHILE >R 8 LSHIFT SWAP 1- SWAP OVER C@ OR R> 1- REPEAT DROP SWAP DROP
++    ?DUP IF - ELSE DROP 0 THEN EXIT THEN
++  DUP 1- C@ 31 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR + ;   \ forward
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index b0cbf7eb..5f48ad3d 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -81,6 +81,7 @@ as the record of what each does.
+ | the JIT's header the code alone (`jitdead`: 0, 1; Iteration 710; JIT designs - mechanism 9's V1', results/drafts/triz-706.md): [JIT], not [JIT][four bytes] - the body's end found by the converter's rule (the jitimg words' from jit_wends), the native offset written over the translated word's dead first four bytes and its trigger then JITN (a code of its own, pinned); left bytecode, a NOOP; what native code reads there at run time (S", .", (ABORT")'s resume point) copied first; bodies padded to four bytes (forth/cv8t-jitd.4, layout.py --jit-dead). -693 to -741 bytes of the five programs' code, the image -24 to -80, the engine -592 to +640; the total -0.3 to -2.9 % on ten JIT designs at both widths, instructions the same or fewer on every workload; not yet in the self-hosting compiler (G-NOT-YET) | results/drafts/jitdead-710.md |
+ | the translator's arrays short first (`jitfew`: 0, 1; Iteration 713; JIT designs): engine/jit.c - jit_body's arrays (at, arg, nat, opl, tl) 128 operations long in its frame, and 1,024 (jit_body_big) only for a word with more, translated again from its start; their heads were a page each at every depth of the callees' translation (~24 KB a frame). On eight JIT designs: memory (the selection's workloads but apps) -5 to -16 pages (-11 to -23 %), apps -7 to -27 pages, the engine +224 to +544 bytes, the outputs alike, the time in the noise | results/drafts/early-computers-713.md |
+ | the chain hash with one constant (`hashk`: 0, 1; Iteration 729; every CV8 design - results/drafts/demoscene-ioccc-727.md, after the demoscene's crinkler): a name's chain ((v * 18835) >> 8) & (chains - 1), v kernel.4's HASH (the length and the first two characters) - K searched on the held-out programs for the ten roles and 16-128 chains at once (results/drafts/hashk-table-728.py; K = 256 is today's hash); forth/cv8-hashk.4's HASH8 in every dump becomes HASH's body (tools/layout.py --hashk, which threads the image by it too), the engine's L_x_hash and (FIND) by -DHASHK (vm-lab.c's CHAIN; gen-msc.py's); off, HASH8 leaves the image - every design's bytes as before. Measured (729, results/drafts/hashk-gene-729.py): the lookup's walk shorter - the smallest's parse -17.5 % of its instructions on the prototype. In the self-hosting compiler since 731: G-HASHK in THASH, cv8-hashk.4 among a design's overlays where HASH is no op | results/drafts/demoscene-ioccc-727.md |
++| each chain's most looked-up names first (`chainorder`: 0, 1; Iteration 732; every CV8 design - results/drafts/demoscene-ioccc-727.md, chainorder-margin-731.txt): the names looked up at least 64 times in the held-out programs (lab/evolve/chainorder-use.txt, results/drafts/chainorder-use-732.py) at the front of their chains, most first, the rest newest first as before; a link to a word laid later is its own form, three bytes (tag F0-FF; tag 2's E0-FF), carved from the four-byte one (28 and 29 bits back now); backward links as before. forth/cv8-chainorder.4 and cv8t-chainorder.4 in every dump - LINK-LEN8 (the narrower reach) and NEXT-NFA88 (the forward form) swapped in by tools/layout.py --chainorder, dropped off; the engine's PREVNFA and bfind's bf_prev by -DCHAINORDER. Measured (results/drafts/chainorder-732.txt, the ten roles): the images +56-120 B; the corpus's instructions 0.987-1.031 of off (the smallest, its walk Forth, 0.987; five C walks a little better, five a little worse); parse (held out) 0.79-0.99; with hashk the smallest's corpus 0.903. Not yet in the self-hosting compiler (G-NOT-YET; its forward links fixed at three bytes, so patched at the end - built if a role takes the gene) | results/drafts/chainorder-732.txt |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/chainorder-use.txt b/lab/evolve/chainorder-use.txt
+new file mode 100644
+index 00000000..c197d446
+--- /dev/null
++++ b/lab/evolve/chainorder-use.txt
+@@ -0,0 +1,1183 @@
++# lab/evolve/chainorder-use.txt - the gene chainorder's use counts (results/drafts/chainorder-use-732.py):
++# a name's lookups in the held-out programs wordfreq, minif and brainless. COUNT NAME, most first.
++723 :
++722 ;
++374 IF
++374 THEN
++309 DUP
++281 ,
++252 +
++239 TO
++208 @
++201 ADD
++183 SWAP
++157 AND
++148 OVER
++137 =
++137 ELSE
++133 PAWN
++131 I
++127 DROP
++121 EXIT
++114 '
++110 B
++110 OR
++101 W
++97 0=
++90 VALUE
++89 CELLS
++85 BOARD
++84 CONSTANT
++83 !
++73 2DROP
++70 R>
++66 ."
++66 CR
++63 LOOP
++61 >R
++60 -
++60 POSTPONE
++56 *
++55 #MOVES
++55 [']
++55 [CHAR]
++52 1+
++43 MOVE-GEN-FROM
++41 2DUP
++39 NIP
++38 KING
++38 ROOK
++38 S"
++37 ?DO
++35 FORGET-MOVES
++34 CREATE
++34 DO
++33 R@
++33 ROT
++32 <
++32 ?DIRECTION
++32 ALLOT
++32 BEGIN
++32 STRAIGHT-TARGET-MOVE
++31 IS
++31 WHITE?
++30 ABORT"
++30 GENERATE-MOVE-TO
++29 ALPHA
++29 IMMEDIATE
++28 ?SINGLE-MOVE
++28 EMPTY?
++28 HASH
++28 THINK-DEPTH
++28 TRUE
++26 ?DUP
++26 PIECE-MASK
++26 WRITE-CHAR
++25 ENDOF
++25 FALSE
++25 OF
++24 .
++24 >
++24 BISHOP
++24 HASH@
++24 LOAD-PART
++24 PUT-PIECE
++24 QUEEN
++24 [THEN]
++23 1-
++23 KNIGHT
++23 [IF]
++20 EVAL-MOVES
++20 F-WHITE
++20 GET-MOVE
++20 NEGATE
++19 <>
++19 C@
++19 CUTOFF?
++19 LITERAL
++19 THREATENING-SQUARE
++18 (GENERATE-MOVE-TO)
++18 -ROT
++18 2>R
++18 BETA
++18 EVAL-THREAT
++18 VARIABLE
++17 <STAT
++17 FAR-MOVED-PAWN
++17 KILLER!
++17 KILLER@
++17 MOVE-LIST
++17 MY-PIECE
++17 NEW-MOVES
++17 OTHER-PARTY
++17 STAT>
++16 +!
++16 2@
++16 2R>
++16 CURR-CHECK?
++16 FULL-PIECE-MASK
++16 KNIGHT-TARGET-MOVE
++16 REPEAT
++15 A1
++15 BL
++15 MPOP
++15 WHILE
++15 WITHIN
++14 #MOVE-STRIKE
++14 -INFINITY
++14 GENERATE-MOVES
++14 THROW
++13 CHECK?
++13 DOES>
++13 EVAL-PIECE
++13 EVAL-SQUARE
++13 F-UNMOVED
++13 GENERATE-MOVES-FROM
++13 MAX
++13 MOVES
++13 RANDOM
++13 SET-PARTY
++13 UNDEFINED
++13 UNMOVED
++13 UNTIL
++13 [-DEF?]
++12 #MOVE-NORMAL
++12 2!
++12 ?PAWN-EVAL
++12 A8
++12 ADD-NAME
++12 CM
++12 EXECUTE
++12 FAST-KILLER
++12 GET-ORIG
++12 MAX-THINK-LIMIT
++12 MPUSH
++12 OPPONENT
++12 REMOVE-PIECE
++11 CLEAR
++11 CURR-ABS-EVAL
++11 ERASE
++11 FLY-EVAL-PIECE
++11 GET-PIECE-MASKED
++11 MOVE-GEN-TO
++11 MOVE-WEIGHT
++11 OPPONENT?
++11 TTENTRY-UP
++10 #EVALS
++10 >XY
++10 COLOR-PIECE-MASK
++10 EVAL-STRAIGHT-THREATS
++10 F-PIECE
++10 FLY-EVAL
++10 FORGET-MOVE-WEIGHTS
++10 HASH-SQUARE
++10 KDUP
++10 MOVE-GEN-PIECE
++10 NOOP
++10 POSITION-KING
++10 ROOT-BETA
++10 SPOS
++10 TAKE-PIECE
++10 TUCK
++10 UNDO-INFO
++10 VECTOR-TABLE:
++10 WEIGHT-MOVES
++9 /KILLER
++9 0<
++9 >CURR-CHAR
++9 >SQUARE
++9 ABORTING?
++9 BEST-MOVE-EVAL
++9 BLACK-PIECE
++9 C1
++9 DEFER
++9 DELETE-FAST-KILLER
++9 DO-MOVE-UNDO-INFO
++9 E1
++9 EPD-FILEID
++9 EVAL-MOVE
++9 F6
++9 FLY-EVAL-SQUARE
++9 G8
++9 GET-TARGET
++9 H1
++9 H7
++9 MOVE-EXISTS?
++9 OFFSET
++9 ON-PRINCIPAL-VARIATION?
++9 PLACE-B&W
++9 SPACES
++9 STATE
++9 THIS-PAWN-DIR
++9 UNLOOP
++9 WHITE-PIECE
++9 XOR
++9 [
++9 ]
++8 #NODES
++8 +INFINITY
++8 0<>
++8 A2
++8 B2
++8 C2
++8 CHECK
++8 CURR-EVAL
++8 CURR-THINK-LIMIT
++8 D1
++8 D6
++8 D=
++8 EPD-UNMOVED
++8 F2
++8 F7
++8 FIELD-WIDTH
++8 G7
++8 H8
++8 HASH!
++8 HERE
++8 K-PRIM
++8 KDROP
++8 KING-MOVE
++8 KING-PEACEFUL-MOVE
++8 KING-SQUARE
++8 KING-STRIKE-MOVE
++8 LIST-NEXT
++8 NORMAL-MOVE
++8 OPPONENT-KNIGHT?
++8 OPPONENT-MOVE-TARGET
++8 SIMPLE-KILLER
++8 STRAIGHT-MOVES
++8 STRAIGHT-PEACEFUL-MOVES
++8 STRAIGHT-STRIKE-MOVES
++8 STRIKE-MOVE
++8 STRIKE?-MOVE
++8 THINK-LIMIT
++8 UNDO-MOVE
++7 #MOVE-PAWN-FAR
++7 (GENERATE-MOVES)
++7 +LOOP
++7 .R
++7 /HASH
++7 /PV-MOVE
++7 2OVER
++7 >DELTA-XY
++7 A6
++7 ARRAY
++7 B4
++7 BLACK-MOVE-ORIG
++7 BLACK-MOVE-TARGET
++7 C/EPD-FILE-BUFFER
++7 C7
++7 CREATE-ARRAY
++7 D3
++7 D5
++7 D7
++7 DELTA-XY>DIRECTION
++7 EMIT
++7 EVAL-MOVE-RECURSIVE
++7 EVAL-PUT
++7 F1
++7 F3
++7 F8
++7 GENERATE-SINGLE-MOVE-X
++7 GET-EVAL
++7 H3
++7 LINE
++7 MOVED
++7 MOVES-EVALUATED?
++7 PRINCIPAL-MOVE
++7 READ-CHAR
++7 RECURSE
++7 ROOT-ALPHA
++7 TARGET-PIECE
++7 TSIZE
++7 WHITE-MOVE-ORIG
++7 WHITE-MOVE-TARGET
++6 #CHARACTERS
++6 #TTENTRIES
++6 (DO-NORMAL-MOVE)
++6 (GENERATE-MOVES-FROM)
++6 ,T
++6 ABORT-TIME
++6 ABS
++6 CASE
++6 CASTLED
++6 CHAINED-PAWN-WEIGHT
++6 CHECK-DEPTH
++6 CHERE
++6 CODE
++6 COLOR-TERMINAL?
++6 COUNT
++6 D4
++6 DEF-COUNT
++6 DEF-MS
++6 DVAL
++6 ENDCASE
++6 EPD-FILE-BUFFER
++6 EVAL-REMOVE
++6 FIELD-HEIGHT
++6 G2
++6 GENERATE-MOVE-FROM
++6 GET-MOVE-NOEVAL
++6 GRCOLOR
++6 HASH=
++6 LSHIFT
++6 M
++6 MAX-THINK-DEPTH
++6 MY-PIECE?
++6 NEXT-ITEM
++6 NHERE
++6 PAWN-TRANS?
++6 SPACE
++6 STATE?
++6 TTENTRY
++6 WRITE-SQUARE
++6 [ELSE]
++5 #KILLERS
++5 A7
++5 ADD-BOARD-HOOK
++5 ADJUST-ALPHA
++5 B1
++5 BENCHMARK-EVAL
++5 BENCHMARK-MOVEGEN
++5 BORDER
++5 C6
++5 CURR-STRING#
++5 D8
++5 ENVIRONMENT?
++5 FIELD
++5 FIELD-ATTR
++5 G3
++5 GET-MOVE-CLASS
++5 GET-MOVE-SQUARES
++5 HASH-FAR-MOVED-PAWN
++5 HASH-PIECE
++5 IS-CUTOFF?
++5 IS-STRING
++5 J
++5 MIGHT-CAUSE-CHECK?
++5 MIN
++5 MOVE-WEIGHTS
++5 MSP
++5 MY-PAWN
++5 NDEF
++5 POSITION-HASHS
++5 PREVIOUS-STRING
++5 PRINCIPAL-VARIATION
++5 TOTAL-EVAL
++5 TTENTRY-DISTANCE
++5 TTENTRY-HASH
++5 TYPE
++5 UNDO-NORMAL-MOVE
++5 UPDATE-BOARD
++5 WORD
++5 WRITE-STRING
++5 {
++5 }
++4 #BOARD-HOOKS
++4 #HASHED-POSITIONS
++4 #MOVE-TRANS-KNIGHT
++4 #MOVE-TRANS-QUEEN
++4 (DO-STRIKE-MOVE)
++4 (DO-STRIKE-MOVE-FAST)
++4 /TTENTRY
++4 2*
++4 2/
++4 ?CHECK/STALE-MATE
++4 A3
++4 AGAIN
++4 ALIAS
++4 ASSOCIATED-CAPTURE
++4 BISHOP-THREATS-DELTA-EVAL
++4 BISHOP-XY?
++4 BLACK
++4 BLACK-KING-SQUARE
++4 CELL%
++4 CHARS
++4 CHECK-LIMIT
++4 CHECK-MATE
++4 CMOVE
++4 CPUTIME
++4 CURR-STRING
++4 D2
++4 DEF-LIST
++4 DEF-NAME
++4 DKIND
++4 E3
++4 E4
++4 E8
++4 EMPTY-SQUARE
++4 EPD-SKIP-BLANK
++4 FIND-MOVE-X
++4 G1
++4 H2
++4 HASH-CODES
++4 HASH-R>
++4 HASH>R
++4 HORIZON-DISTANCE
++4 IFORTH?
++4 INIT-BOARD
++4 INITIAL-BOARD
++4 ITEM
++4 ITEM-PTR
++4 K-IMM
++4 KING-SIDE-GUARD-WEIGHT
++4 LEAVE
++4 MOVE
++4 MOVE-FROM
++4 MOVES-EXIST?
++4 NAMES
++4 NDIST
++4 NO-ATTR
++4 NOBODY-THREATENS?
++4 OPEN-FILE
++4 OPPONENT-BISHOP?
++4 OPPONENT-ROOK?
++4 PAD
++4 PAWN-HASH-CODES
++4 PAWN-STRIKE-MOVE
++4 PAWN-TARGET-MOVE
++4 PIECE-WEIGHTS
++4 PIECE>CHAR
++4 ROOK-THREATS-DELTA-EVAL
++4 ROOK-XY?
++4 SELECT-MOVING-PIECE
++4 SELF-CHECKING-MOVE?
++4 SINGLE-MOVE-TO
++4 SRC
++4 STRIKE-EP-MOVE
++4 TCNT
++4 THREATENED-FROM-DIRECTION?
++4 TKEY
++4 TT-MASK
++4 TTENTRY-LOW
++4 UNDO-CASTLE
++4 UNDO-STRIKE-MOVE
++4 UNDO-TRANS-MOVE
++4 WHITE
++4 WHITE-FIELD?
++4 WHITE-KING-SQUARE
++4 WLEN
++3 #MOVE-CASTLE-FAR
++3 #MOVE-CASTLE-NEAR
++3 #MOVE-KING-STRIKE
++3 #MOVE-STRIKE-EP
++3 #PAD
++3 (DO-MOVE-FAST)
++3 (EVAL-POSITION-RECURSIVE)
++3 (FLY-EVAL-MOVE)
++3 (GENERATE-STRIKE-MOVES-FROM)
++3 (PIECE-MOVES)
++3 (PIECE-THREATENS?)
++3 */
++3 +CHECK
++3 +DEPTH
++3 +FLY-EVAL
++3 -CHECK
++3 -DEPTH
++3 .MOVE
++3 /MOD
++3 /MOVE
++3 3DROP
++3 <A
++3 >B
++3 >F
++3 ?ADD-MOVE
++3 ?KING-EVAL
++3 A>
++3 ADD-MOVE
++3 ANSI-TERMINAL?
++3 APPEND
++3 ATTR!
++3 BLUE
++3 BOARD-HOOKS
++3 BOLD
++3 C!
++3 C/CURR-STRING
++3 C3
++3 C4
++3 CAPTURE-KILLER-MOVE-EVAL
++3 CAPTURE-MOVE?
++3 CASTLE-FAR
++3 CASTLE-NEAR
++3 CHOOSE
++3 CLEAR-PRINCIPAL-VARIATION
++3 CONTINUE-CHECK?
++3 COUNT-BITS
++3 CURR-DEF
++3 D0=
++3 DEF-XT
++3 DOUBLE-PAWN-WEIGHT
++3 E2
++3 E7
++3 EPD-CLOSE-FILE
++3 EPD>POSITION
++3 ERRS
++3 EVAL-POSITION-RECURSIVE
++3 EVAL-REPLACE
++3 F5
++3 FIELD-SPACES
++3 FIND-MOVE
++3 FINISHED?
++3 FLY-EVAL-NORMAL-MOVE
++3 FOLD
++3 FORBIDDEN-MOVE-TARGET
++3 GENERATE-CHEAPEST-MOVE-TO
++3 GENERATE-HASH
++3 GFORTH?
++3 HASH-ARRAY
++3 HASH-PIECE-MASK
++3 HISTORY-ENTRY
++3 INCLUDED
++3 K-COLON
++3 KILLER-CAPTURES?
++3 KING-GUARD-DIR
++3 KING-GUARD?
++3 KNIGHT-THREAT-TABLE
++3 LEGAL-MOVE-TARGET?
++3 MDUP
++3 MOD
++3 MOST-RECENT-MATCH
++3 MOVE-CLASS
++3 MOVE-EVAL
++3 MOVE-TO
++3 MY-EVAL
++3 MY-KNIGHT
++3 NEIGHBOR-PAWN-WEIGHT
++3 NWORDS
++3 OPPONENT-KING-SQUARE
++3 OPPONENT-PIECES
++3 OPPONENT-QUEEN
++3 OPTION
++3 PAWN-DIRECTION
++3 PAWN-SINGLE-TARGET-MOVE
++3 PAWN-TRANS-MOVE
++3 PAWN-WEIGHT
++3 PERFORM
++3 PHERE
++3 POSITION-HASH-MASK
++3 POSITION-HASH-PROBE
++3 POSITION-HASH-SIZE
++3 POSITION1
++3 POSITION2
++3 POSITION3
++3 POSITION4
++3 POSITION5
++3 QUEENLIKE-THREATENS-THROUGH?
++3 R/O
++3 READ-LINE
++3 RED
++3 ROOT-PRINCIPAL-MOVE
++3 ROOT-SEARCH
++3 RSHIFT
++3 SAME-PIECE&TARGET?
++3 SECS
++3 SEED
++3 SET-EVAL
++3 SINGLE-MOVE-EVAL
++3 SLEN
++3 SQUARE-WEIGHTS
++3 STALE-MATE
++3 STRING-VARIABLE
++3 SWAP-MOVES
++3 THIS-PAWN
++3 THREATENED-BY-OPPONENT?
++3 THREATENED-BY-PAWN?
++3 THREATENS?
++3 TT-RETRIEVE
++3 TTENTRY-BESTMOVE
++3 UPDATE-HASH
++3 WHITE-PIECE?
++3 WRITE-SQUARE-FILE
++3 ZERO-HASH?
++2 "
++2 #MOVE-KING
++2 #NULL
++2 (DO-MOVE)
++2 (EVAL-MOVE)
++2 (EVAL-MOVES)
++2 (GENERATE-MOVE-NOT-TO)
++2 (GENERATE-SINGLE-CLASS-MOVE)
++2 (PIECE-DELTA-EVAL)
++2 (PIECE-EVAL)
++2 (PIECE-PEACEFUL-MOVES)
++2 (PIECE-STRIKE-MOVES)
++2 .EMOVES
++2 .HBORDER
++2 .SQUARE
++2 .VBORDER-SLICE
++2 /
++2 /ASSOCIATED-KILLERS
++2 /KILLER-HISTORY
++2 /PRINCIPAL-VARIATION
++2 /SIMPLE-KILLERS
++2 2ROT
++2 ;\
++2 >BODY
++2 ?SQUARE
++2 ?STALE-MATE
++2 A4
++2 A5
++2 ABORT-SEARCH?
++2 APPEND-MOVE>ARITH
++2 APPEND-MOVE>SAN
++2 ARRAY-ACCESS
++2 ASSOCIATED-CAPTURES
++2 AX
++2 B3
++2 B5
++2 B7
++2 B8
++2 BEST-MOVE
++2 BIGFORTH?
++2 BISHOP-EVAL
++2 BISHOP-MOVES
++2 BISHOP-PEACEFUL-MOVES
++2 BISHOP-SINGLE-TARGET-MOVE
++2 BISHOP-STRIKE-MOVES
++2 BISHOP-THREATENS?
++2 BISHOP-WEIGHT
++2 BITS/UD
++2 BLACK-NULL-MOVES?
++2 C5
++2 C8
++2 CELLS/HASH
++2 CHECK-MATE-EVAL
++2 CLEAR-ASSOCIATED-KILLERS
++2 CLEAR-KILLER-HISTORY
++2 CLOSE-FILE
++2 CONTINUATION
++2 CREATE-OPTION
++2 CURR-CHAR
++2 DECIDE-NULL-MOVES?
++2 DECIMAL
++2 DEF%
++2 DELETE-MOVE
++2 DELTA-EVAL
++2 DEPTH
++2 DISPLAY-MOVE
++2 DNAME
++2 DO-KING-MOVE
++2 DO-MOVE
++2 DO-NORMAL-MOVE
++2 DO-NULL-MOVE
++2 DO-PAWN-FAR-MOVE
++2 E5
++2 E6
++2 EMPTY-BOARD
++2 END-RECORD
++2 END-STRUCT
++2 EPD-FORWARD-SQUARES
++2 EPD-WRITE-TO-FILE
++2 EVAL"
++2 EVAL-BISHOP-THREATS
++2 EVAL-KNIGHT-THREATS
++2 EVAL-PAWN-THREATS
++2 EVAL-ROOK-THREATS
++2 EVAL>TT
++2 F-CASTLED
++2 F4
++2 FILL
++2 FIND
++2 FIND-MOVE-CLASS
++2 FLY-EVAL-STRIKE-MOVE
++2 H4
++2 H5
++2 HASH-NO-FAR-MOVED-PAWN
++2 IN-STRING?
++2 INIT-KILLERS
++2 INVERT
++2 IS-KILLER
++2 IS-PRINCIPAL-MOVE
++2 IS-PRINCIPAL-MOVE?
++2 KILLER-HISTORY
++2 KILLER=
++2 KING-EVAL
++2 KING-FRONT-GUARD-WEIGHT
++2 KING-GUARD-PAWN
++2 KING-TARGET-MOVE
++2 KING-THREATENS?
++2 KING-WEIGHT
++2 KNIGHT-EVAL
++2 KNIGHT-SINGLE-TARGET-MOVE
++2 KNIGHT-THREATENS?
++2 KNIGHT-WEIGHT
++2 LIST
++2 LIST%
++2 MACRO
++2 MIGHT-BLOCK-CHECK?
++2 MILLISECS
++2 MOVE!
++2 MOVE-SQUARES
++2 MSTK
++2 MY-BISHOP
++2 MY-QUEEN
++2 MY-ROOK
++2 N:
++2 NEXT
++2 NEXT-CHAR
++2 NEXT-WORD
++2 NO-KILLER
++2 OPPONENT-BISHOP
++2 OPPONENT-KING
++2 OPPONENT-KNIGHT
++2 OPPONENT-MOVE-ORIG
++2 OPPONENT-PAWN
++2 OPPONENT-PAWN?
++2 OPPONENT-ROOK
++2 OPTION-EXISTS?
++2 OTHER-CHECK?
++2 PAWN-FAR-MOVE
++2 PAWN-NORMAL-MOVE
++2 PAWN-ROW-EVAL
++2 PAWN-ROW-WEIGHTS
++2 PICK
++2 PIECE-ATTR
++2 PIECE-MOVE-WEIGHTS
++2 PIECE-THREATENING-THROUGH
++2 PIECE-WOULD-THREATEN?
++2 PIECE?
++2 PLACE
++2 PREVIOUS-CHAR
++2 PRINT-PRINCIPAL-VARIATION
++2 QUEEN-EVAL
++2 QUEEN-THREATENS?
++2 QUEEN-WEIGHT
++2 QUIESCENCE-CAPTURE-EVAL
++2 QUIESCENCE-EVAL-POSITION
++2 R/W
++2 RANDOM-HASH
++2 RANDOM-SEED
++2 RECORD
++2 REMEMBER-BESTMOVE
++2 ROOK-EVAL
++2 ROOK-MOVES
++2 ROOK-PEACEFUL-MOVES
++2 ROOK-STRIKE-MOVES
++2 ROOK-THREATENS?
++2 ROOK-WEIGHT
++2 SAME?
++2 SAVED-BEST-MOVE
++2 SET-MOVE-EVAL
++2 SET-MOVE-HASH
++2 SET-OPTION
++2 SETTERM
++2 SETUP-THINK-LIMIT
++2 SIMPLE-KILLERS
++2 SINGLE-MOVE-CLASS
++2 SINGLE-NONPAWN-NORMAL-MOVE
++2 SINGLE-NONPAWN-STRIKE-MOVE
++2 SINGLE-TRANS-MOVE
++2 START-TIME
++2 STORE-EVALUATION
++2 SWAP-SIMPLE-KILLERS
++2 T-BRZ
++2 T-EXIT
++2 T-LIT
++2 TEXTBGCOLOR
++2 TEXTFGCOLOR
++2 THINK-EXTEND
++2 THIS-KING
++2 THREATENED-BY-BISHOP?
++2 THREATENED-BY-KNIGHT?
++2 TIME&DATE
++2 TO-MOVE-SQUARES
++2 TO-NULL-MOVES?
++2 TOP
++2 TT-CLEAR-ENTRY
++2 TT-ENTRY-EXPIRED
++2 TT-SET-HASH
++2 TT>EVAL
++2 TTABLE
++2 UNDO-KING-STRIKE-MOVE
++2 UNDO-STRIKE-EP-MOVE
++2 UNMOVED?
++2 USE-ARITH-NOTATION?
++2 USEFUL-CAPTURE?
++2 WBUF
++2 WHITE-NULL-MOVES?
++2 WRITE-CHECK-STATE
++2 WRITE-PAWN-TRANS
++2 WRITE-SQUARE-RANK
++2 X-DIRECTION-TABLE
++2 XT
++2 Y-DIRECTION-TABLE
++1 #MOVE-NULL
++1 %ALLOT
++1 (ABORT-SEARCH?)
++1 (EVAL-MOVE-RECURSIVE)
++1 (GENERATE-MOVE-TO-CHECK)
++1 (GENERATE-MOVE-TO-NOCHECK)
++1 (GENERATE-PEACEFUL-MOVES-FROM)
++1 (GENERATE-QUIESC-CAPTURE-TO)
++1 (GENERATE-QUIESCENCE-MOVE-TO)
++1 (GENERATE-SINGLE-MOVE)
++1 (GENERATE-SINGLE-MOVE-X)
++1 (MOVE-TO-EXISTS?)
++1 (MOVE-TO-EXISTS?-CHECK)
++1 (MOVE-TO-EXISTS?-NOCHECK)
++1 (QUIESCENCE-EVAL-CHECK)
++1 (QUIESCENCE-EVAL-NOCHECK)
++1 (QUIESCENCE-EVAL-POSITION)
++1 *4
++1 -FLY-EVAL
++1 .BOARD-LINE
++1 .FIELD-SLICE
++1 .PIECE
++1 /FAST-KILLERS
++1 2ARRAY
++1 2LITERAL
++1 2ND-SIMPLE-KILLER
++1 2R@
++1 2VARIABLE
++1 3DUP
++1 :NONAME
++1 ;P
++1 >BG
++1 >FG
++1 ?ABORT-SEARCH
++1 ?CHECK-EXTENSION
++1 ?EMPTY
++1 ?EPD-SQUARE
++1 ?EVAL-MOVES
++1 ?FIND-MOVE
++1 ?GAME-ENDED
++1 ?IN-STRING
++1 ?NOT-EMPTY
++1 ?ON-PRINCIPAL-VARIATION
++1 ?SET-MOVE-EVAL
++1 ?USE-NULL-MOVES
++1 ?VALID-MOVE
++1 ABORT
++1 ADJUST-KILLER-HISTORY
++1 ALIGN
++1 ALLOCATE
++1 ALSO
++1 ANSI.FS
++1 APPEND-MOVE>STRING
++1 APPEND-MOVES
++1 APPEND-MOVES-NOT-TO
++1 APPEND-MOVES-TO
++1 APPEND-PEACEFUL-MOVES
++1 APPEND-PRINCIPAL-VARIATION
++1 APPEND-PV>STRING
++1 APPEND-QUIESCENCE-CAPTURES
++1 APPEND-QUIESCENCE-MOVES
++1 APPEND-STRIKE-MOVES
++1 APPEND-STRIKE-MOVES-NOT-TO
++1 B6
++1 B>
++1 BARE
++1 BENCHMARK1
++1 BG>
++1 BISHOP-TARGET-MOVES
++1 BISHOP-THREATENS-THROUGH?
++1 BITS/U
++1 BLACK-FIELD-ATTR
++1 BLACK-PAWN-THREATENS?
++1 BLACK-PIECE-ATTR
++1 BORDER?
++1 CALCULATE-MOVE
++1 CASTLE-MOVE?
++1 CATCH
++1 CHAR>PIECE
++1 CHECK-CHECK
++1 CHECK-CHECK-LIMIT
++1 CHECK-FLY-EVAL
++1 CHECK-HASH
++1 CHECKING-MOVE?
++1 CLEAR-POSITION-HASHS
++1 CLEAR-SIMPLE-KILLERS
++1 COMPILATION-FINISHED?
++1 COUNT-MY-NON-PAWN-PIECES
++1 COUNT-WORD
++1 CREATE-FILE
++1 CREATE-MOVE-WEIGHTS
++1 D+
++1 D-
++1 D-COUNT-BITS
++1 D.R
++1 D>
++1 DEFINE
++1 DO-CASTLE-FAR
++1 DO-CASTLE-FAR-FAST
++1 DO-CASTLE-NEAR
++1 DO-CASTLE-NEAR-FAST
++1 DO-KING-STRIKE-MOVE
++1 DO-KING-STRIKE-MOVE-FAST
++1 DO-STRIKE-EP-MOVE
++1 DO-STRIKE-EP-MOVE-FAST
++1 DO-STRIKE-MOVE
++1 DO-STRIKE-MOVE-FAST
++1 DO-TRANS-KNIGHT-MOVE
++1 DO-TRANS-KNIGHT-MOVE-FAST
++1 DO-TRANS-QUEEN-MOVE
++1 DO-TRANS-QUEEN-MOVE-FAST
++1 DO-WORD
++1 DOES>PROFILE
++1 DOS
++1 DOUBLE%
++1 DRAWING
++1 END-CODE
++1 ENVIRON
++1 EPD
++1 EPD-APPEND-TO-FILE
++1 EPD-CREATE-FILE
++1 EPD-FORWARD-LINES
++1 EPD-GUESS-UNMOVED-FLAGS
++1 EPD-READ-BOARD
++1 EPD-READ-CASTLE
++1 EPD-READ-EP
++1 EPD-READ-FILE
++1 EPD-READ-PARTY
++1 EPD-WRITE-BOARD
++1 EPD-WRITE-BOARD-LINE
++1 EPD-WRITE-CASTLE
++1 EPD-WRITE-EP
++1 EPD-WRITE-PARTY
++1 EVAL
++1 EVAL-POSITION-WITH-MEMORY
++1 EVAL-QUEEN-THREATS
++1 F>
++1 FAST-KILLERS
++1 FG>
++1 FILE-EXISTS?
++1 FILE-PREFIX
++1 FILE-SUFFIX
++1 FIRST-MOVE
++1 FLY-EVAL-CASTLE-FAR
++1 FLY-EVAL-CASTLE-NEAR
++1 FLY-EVAL-CHECK-LIMIT
++1 FLY-EVAL-MOVE
++1 FLY-EVAL-MOVES
++1 FLY-EVAL-STRIKE-EP-MOVE
++1 FLY-EVAL-TRANS-KNIGHT
++1 FLY-EVAL-TRANS-QUEEN
++1 FLYEVAL
++1 FORGET-POSITION
++1 FULL-QUIESCENCE-MOVE-EVAL
++1 G4
++1 G5
++1 G6
++1 GENERATE-FAST-KILLER
++1 GENERATE-FAST-STRIKE-KILLER
++1 GENERATE-MOVES-NOT-TO
++1 GENERATE-MOVES-TO
++1 GENERATE-PEACEFUL-MOVES
++1 GENERATE-PROMOTIONS
++1 GENERATE-QUIESCENCE-CAPTURES
++1 GENERATE-QUIESCENCE-MOVES
++1 GENERATE-SINGLE-MOVE
++1 GENERATE-STRIKE-MOVES
++1 GENERATE-STRIKE-MOVES-NOT-TO
++1 GENWORD
++1 GET-KILL-COUNT
++1 GET-NULL-MOVE
++1 GET-REL-KILL-COUNT
++1 GET-SAVED-BEST-MOVE
++1 GREEN
++1 H6
++1 HASH-CHECK-LIMIT
++1 HASH-XOR
++1 I#)
++1 INCLUDE
++1 INIT-HASH-CODES
++1 INIT-KINGS
++1 INIT-KNIGHT-THREAT-TABLE
++1 INITIAL-SQUARE?
++1 INTERPRET-LINE
++1 INVERS
++1 IS-ASSOCIATED-KILLER
++1 IS-FAST-KILLER
++1 IS-SIMPLE-KILLER
++1 KEEP
++1 KEY?
++1 KILLER
++1 KILLER-MOVE-EVAL
++1 KING-AT-BOTTOM-WEIGHT
++1 KING-AT-BOTTOM?
++1 KING-CASTLED-WEIGHT
++1 KING-MOVES
++1 KING-PEACEFUL-MOVES
++1 KING-STRIKE-MOVES
++1 KING-UNMOVED-WEIGHT
++1 KNIGHT-MOVES
++1 KNIGHT-PEACEFUL-MOVES
++1 KNIGHT-STRIKE-MOVES
++1 KNIGHT-TARGET-MOVES
++1 LEA
++1 LINK
++1 LOOK
++1 LOOKUP
++1 MAX-STRINGS
++1 MDROP
++1 MIGHT-CAUSE-OPPONENT-CHECK?
++1 MOVE,
++1 MOVE>ARITH
++1 MOVE>SAN
++1 MOVE>STRING
++1 MOVE@
++1 MOVECONV
++1 MOVEGEN
++1 MY-KING
++1 MY-PIECES
++1 NEW-DEF
++1 NEW-STRING
++1 NEXT-BEST-MOVE
++1 NEXTNAME
++1 NOT-TARGET-MOVE-EVAL
++1 NULL
++1 NULL-MOVE-EVAL
++1 NULL-MOVE-THRESHOLD
++1 NULL-MOVE?
++1 NUMBER?
++1 ONLY-AGGRESSION-HOPEFUL?
++1 OPTIONS
++1 OUT
++1 P*
++1 P+
++1 P-
++1 P.
++1 P;
++1 PACK-SQUARES
++1 PASS
++1 PAWN-DELTA-EVAL
++1 PAWN-EVAL
++1 PAWN-MOVES
++1 PAWN-PEACEFUL-MOVES
++1 PAWN-STRIKE-MOVES
++1 PAWN-TARGET-MOVES
++1 PAWN-TRANS-TARGET-MOVE
++1 PAWN?
++1 PDROP
++1 PDUP
++1 PERFORM-CHECK-TEST
++1 PERFORM-FLY-EVAL-TEST
++1 PERFORM-HASH-TEST
++1 PERFORM-TESTS
++1 PIECE-DELTA-EVAL
++1 PIECE-EVAL
++1 PIF
++1 PLACE-BLACK
++1 PLACE-WHITE
++1 POOL
++1 POSITION10
++1 POSITION11
++1 POSITION6
++1 POSITION7
++1 POSITION8
++1 POSITION9
++1 POSITION>EPD
++1 PRINCIPAL-VARIATION>STRING
++1 PROGRAM
++1 PROT
++1 PSIZE
++1 PSWAP
++1 PTHEN
++1 QUEEN-MOVES
++1 QUEEN-PEACEFUL-MOVES
++1 QUEEN-SINGLE-TARGET-MOVE
++1 QUEEN-STRIKE-MOVES
++1 QUEEN-TARGET-MOVES
++1 QUEEN-UNMOVED-WEIGHT
++1 QUIESCENCE
++1 QUIESCENCE-PROMOTION-EVAL
++1 READ-SQUARE
++1 RECURSE?
++1 REFILL
++1 REMEMBER-POSITION
++1 REMEMBERING-POSITION?
++1 RESTORE-INPUT
++1 ROOK-SINGLE-TARGET-MOVE
++1 ROOK-TARGET-MOVES
++1 ROOK-THREATENS-THROUGH?
++1 RUN-LIST
++1 SAME-FILE?
++1 SAME-RANK?
++1 SAVE-BEST-MOVE
++1 SAVE-INPUT
++1 SEARCH
++1 SEARCHDEFS
++1 SET-CURR-ABS-EVAL
++1 SET-KING-GUARD-PAWN
++1 SET-MOVE-VARS
++1 SET-NORMAL-MOVE-HASH
++1 SET-STRIKE-MOVE-HASH
++1 SET-THIS-PAWN
++1 SET-THIS-PAWN&KING
++1 SETUP
++1 SIMULATE-CAPTURE
++1 SINGLE-CASTLE-FAR
++1 SINGLE-CASTLE-NEAR
++1 SINGLE-KING-MOVE
++1 SINGLE-KING-STRIKE-MOVE
++1 SINGLE-NORMAL-MOVE
++1 SINGLE-PAWN-FAR-MOVE
++1 SINGLE-PAWN-NORMAL-MOVE
++1 SINGLE-PAWN-STRIKE-MOVE
++1 SINGLE-STRIKE-EP-MOVE
++1 SINGLE-STRIKE-MOVE
++1 SLOT
++1 SMALL-BOARD
++1 SORT-BY-MS
++1 SORT-LIST
++1 SORT-MOVES
++1 SORT-MOVES-BY-WEIGHT
++1 SORTING
++1 SQUARE-WHITE?
++1 SQUARES:
++1 STRING
++1 STRING,
++1 STRUCT
++1 SWAP-MOVES&WEIGHTS
++1 SWITCH-ALPHA-BETA
++1 SWORD
++1 SYL
++1 SYSCALL
++1 TARGET-MOVE-EVAL
++1 TERMINATE-PRINCIPAL-VARIATION
++1 THREATENED-BY-KING?
++1 THREATENED-BY-OPPONENT-PAWN?
++1 THREATENED-BY-PIECE?
++1 THREATENED-BY-ROOK?
++1 THREATENED-BY-WEAK-PIECE?
++1 THREATS
++1 THREATS-DELTA-EVAL
++1 TMOVEGEN
++1 TT-CLEAR
++1 TT-FREE-ENTRY
++1 TT-GET-BESTMOVE
++1 TT-LOOKUP
++1 TT-RETRIEVE-MOVE
++1 TT-SET-BESTMOVE
++1 TT-STORE
++1 TTABLE-ADJUST-WEIGHT
++1 TUI
++1 UM/MOD
++1 UNDO-KING-MOVE
++1 UNDO-NULL-MOVE
++1 UNDO-PAWN-FAR-MOVE
++1 UNDO-SIMULATED-CAPTURE
++1 UNIQUE-FILE?
++1 UNIQUE-RANK?
++1 UNIQUE-TARGET?
++1 UNPACK-SQUARES
++1 UPDATE-CURR-CHECK?
++1 USE-NULL-MOVES?
++1 UTILS
++1 WHITE-FIELD-ATTR
++1 WHITE-PAWN-THREATENS?
++1 WHITE-PIECE-ATTR
++1 WRITE-CASTLE-MOVE-SAN
++1 WRITE-LINE
++1 WRITE-MOVING-PIECE
++1 WRITE-PAWN-MOVE-SAN
++1 WRITE-PIECE-MOVE-SAN
++1 WRITE-PRINCIPAL-VARIATION
++1 WRITE-SQUARE-SEPARATOR
++1 WRITE-UNIQUE-ORIG
++1 XY-BOARD!
++1 XY-BOARD@
++1 YELLOW
++1 [DEF?]
++1 []CELL
++1 []DOUBLE
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 69fa9171..8a935d8b 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -217,6 +217,8 @@ gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+ gene('jitfew', values=range(2), needs=lambda g, e: jit_on(g))    # Iteration 713: the translator's arrays 128 operations long first, 1,024 only for a longer word - their pages (results/drafts/early-computers-713.md)
+ HASHK_K = 18835   # Iteration 729: the gene hashk's one constant - forth/cv8-hashk.4's literal, engine/vm-lab.c's CHAIN by -DHASHK
++gene('chainorder', values=range(2), needs=lambda g, e: g['enc'] == 'cv8' and g['bytehdr'])   # Iteration 732: each chain's most looked-up names first (lab/evolve/chainorder-use.txt), forward links their own form - forth/cv8-chainorder.4
++CO_MIN = 64   # Iteration 732: chainorder's hot names - looked up at least this often in the held-out programs (results/drafts/chainorder-732.txt: 4, 16, 64 measured; 64 the fewest bytes)
+ gene('hashk', values=range(2))   # Iteration 729: the chain hash ((v * K) >> 8) & (chains - 1) (results/drafts/demoscene-ioccc-727.md; the demoscene's crinkler)
+ gene('jitdead', values=range(2), needs=lambda g, e: jit_on(g))   # Iteration 710: mechanism 9's V1' - the JIT's header the code alone, the offset in the dead body (results/drafts/triz-706.md)
+ gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
+@@ -311,6 +313,11 @@ def source_names(path):
+             k += 1
+         _DEFS[path] = out
+     return _DEFS[path]
++def co_file(files):
++    """Iteration 732: chainorder's link words for the dump's header family - cv8b.4's or cv8bt.4's."""
++    return ['cv8t-chainorder.4'] if 'cv8bt.4' in files else ['cv8-chainorder.4'] if 'cv8b.4' in files else []
++
++
+ def boot_files(name):
+     """The files a dump's boot loads, from its name (k64-b-fuse-imm-var.txt), in their order (694: setup()'s loop's;
+     export-genes.py's too)."""
+@@ -344,7 +351,7 @@ def dump_file(name):
+         DUMPS[cellw()] = os.path.join(O, 'dumps-' + h.hexdigest()[:12]); os.makedirs(DUMPS[cellw()], exist_ok=True)
+     p = os.path.join(DUMPS[cellw()], name)
+     if not os.path.exists(p):
+-        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['cv8-hashk.4', 'dict-dump-addr.4']) + 'BYE\n'   # 729: HASHK in every dump
++        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['cv8-hashk.4'] + co_file(boot_files(name)) + ['dict-dump-addr.4']) + 'BYE\n'   # 729: HASHK in every dump
+         out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
+         try: dump_guard(name, boot, out)                     # Iteration 212: every file loaded, whole
+         except SystemExit as e: raise RuntimeError(str(e))   # 697: an error, not an exit - in a pool's worker an exit left
+@@ -387,7 +394,7 @@ def dump_guard(name, boot, out):
+     missing, want = {}, collections.Counter()
+     for f in re.findall(r'S" (\S+)" INCLUDED', boot):
+         src = os.path.join(ROOT, 'forth', f)
+-        if os.path.exists(src) and f not in ('dict-dump-addr.4', 'cv8-hashk.4'):   # the base dump has those too (729: HASHK)
++        if os.path.exists(src) and f not in ('dict-dump-addr.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4'):   # the base dump has those too (729: HASHK)
+             lost = [n for n in source_names(src) if n not in have]
+             if lost: missing[f] = lost
+             want.update(source_names(src))
+@@ -1118,7 +1125,8 @@ def _build(g, d):
+     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+     if jit_on(g) and express(g).get('jitfew'): flags.append('-DJITFEW=1')   # Iteration 713: the translator's arrays short first (engine/jit.c)
+-    if express(g).get('hashk'): flags.append('-DHASHK=%d' % HASHK_K)   # Iteration 729: the engine's chain hash (vm-lab.c's CHAIN)
++    if express(g).get('hashk'): flags.append('-DHASHK=%d' % HASHK_K)
++    if express(g).get('chainorder'): flags.append('-DCHAINORDER=1')   # Iteration 732: the engine's PREVNFA reads the forward form   # Iteration 729: the engine's chain hash (vm-lab.c's CHAIN)
+     if jitdead_on(g): flags.append('-DJITDEAD=1')               # Iteration 710: the header the code alone (engine/jit.c)
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
+@@ -1210,7 +1218,8 @@ def _build(g, d):
+         opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) >= 3 else ()))]
+     if hl: opts += ['--headerless', ','.join(hl)]
+     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
+-    if express(g).get('hashk'): opts += ['--hashk', str(HASHK_K)]   # Iteration 729: the image threaded by the chain hash with K
++    if express(g).get('hashk'): opts += ['--hashk', str(HASHK_K)]
++    if express(g).get('chainorder'): opts += ['--chainorder', os.path.join(ROOT, 'lab', 'evolve', 'chainorder-use.txt'), '--chainorder-min', str(CO_MIN)]   # Iteration 732   # Iteration 729: the image threaded by the chain hash with K
+     opts += CONVERT_EXTRA
+     img = os.path.join(d, 'image.img')
+     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
+@@ -2157,7 +2166,7 @@ def setup():
+     import shutil
+     W = os.path.join(O, 'work')
+     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-inline.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'cv8-hashk.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
++               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-jitd.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'cv8-hashk.4', 'cv8-chainorder.4', 'cv8t-chainorder.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+     base = subprocess.run([S0(), KIMG()], input=b'S" cv8-hashk.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+diff --git a/lab/evolve/export-genes.py b/lab/evolve/export-genes.py
+index 326eed4e..c7412f5d 100644
+--- a/lab/evolve/export-genes.py
++++ b/lab/evolve/export-genes.py
+@@ -139,7 +139,7 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
+           '%d CONSTANT G-FACTOR-ANY    \\ ...every word, the profile aside (--factor-share above 1)' % (-1 if fac and share > 1.0 else 0)]
+     L += lst('G-FACTOR-COLD', sorted(n for n, s in hotw.items() if s < share) if fac else [], "...the words below --factor-share of the reference dispatches")
+     L += lst('G-FACTOR-NOT', never if fac else [], "...never: what layout.py patches after reading it, the dump tool")
+-    ny = [k for k in ('--opcall-file',) if k in args]   # 731: --hashk done (G-HASHK)       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
++    ny = [k for k in ('--opcall-file', '--chainorder') if k in args]   # 731: --hashk done (G-HASHK); 732: --chainorder not yet       # 714: --guard-abort done; 715: --factor (G-FACTOR 0 where layout.py ignores it); 723: --jit-dead done
+     # 722: =I?BRANCH(8) and DUP?NBRANCH(8) done (cross-cv8.4's EQI-PASS and KEEP-PASS)
+     L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+     assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
+diff --git a/lab/evolve/test-resume.py b/lab/evolve/test-resume.py
+index 07c9304a..ba05d224 100644
+--- a/lab/evolve/test-resume.py
++++ b/lab/evolve/test-resume.py
+@@ -8,9 +8,11 @@ measurement (a speed from the id and a noise term - nothing built or run), its d
+ would leave it, and the run started again on it: generations 1-6 (each generation's line, the operators, the attic) as
+ the first attempt's - and, the control, not so with the replay off (EVOLVE_REPLAY=0), or the test proves nothing.
+ tools/run-tests.sh runs it, a few seconds; exit 1 on a failure.
++Iteration 732: the noise 1.0, not 0.6 - the gene chainorder moved the draws, and at 0.6 the control no longer forked (at
++1.0 it forks with the gene and without; the replay passes at both).
+ """
+ import contextlib, io, json, os, shutil, subprocess, sys, tempfile
+-AMP, FG, CUT, GENS = float(os.environ.get('RT_AMP', 0.6)), os.environ.get('RT_FG', '2'), int(os.environ.get('RT_CUT', 6)), int(os.environ.get('RT_GENS_ALL', 9))
++AMP, FG, CUT, GENS = float(os.environ.get('RT_AMP', 1.0)), os.environ.get('RT_FG', '2'), int(os.environ.get('RT_CUT', 6)), int(os.environ.get('RT_GENS_ALL', 9))
+ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ if len(sys.argv) > 1 and sys.argv[1] == 'child':
+     sys.argv = ['x']; sys.path.insert(0, ROOT + '/lab/evolve'); import evolve as E
+diff --git a/tools/layout.py b/tools/layout.py
+index 3eba388f..db29aa28 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -146,13 +146,20 @@ G['T2WIDE'] = T2WIDE_ON
+ # align(body + 5) (DOVAR's and DODOES's TAG2 branches), as CREATE8 reserves and >BODY8 computes.
+ 
+ 
++CO_ON = '--chainorder' in ARGV   # Iteration 732: chainorder - forward links their own three-byte form, carved from the four-byte one
++
+ def linklen(d):
+-    if TAG2_ON: return 1 if d < 64 else 2 if d < (1 << 14) else 3 if d < (1 << 22) else 4
+-    assert d < (1 << 29), 'link %d out of reach' % d                                  # Iteration 416: four forms
++    if TAG2_ON:
++        assert not CO_ON or d < (1 << 29), 'link %d out of reach (chainorder: four bytes back keep 29 bits)' % d
++        return 1 if d < 64 else 2 if d < (1 << 14) else 3 if d < (1 << 22) else 4
++    assert d < (1 << (28 if CO_ON else 29)), 'link %d out of reach' % d                    # Iteration 416: four forms (732: 28 bits with chainorder)
+     return 1 if d < 128 else 2 if d < 16384 else 3 if d < (1 << 21) else 4
+ 
+ 
+ def linkbytes(d, n):
++    if d < 0:                                    # Iteration 732: chainorder's forward link - three bytes, its own tag
++        e = -d; assert CO_ON and n == 3 and e < (1 << (21 if TAG2_ON else 20)), 'forward link %d out of reach' % e
++        return bytes([e & 0xFF, (e >> 8) & 0xFF, (0xE0 if TAG2_ON else 0xF0) | (e >> 16)])
+     if TAG2_ON:
+         # tag 2: low byte first, the tag in the top two bits of the LAST byte -
+         # the one before the name, read first (vm-lab.c PREVNFA)
+@@ -300,7 +307,7 @@ if CV8_COMPILER:
+     _n, _miss, _unmatched = 0, [], []
+     for w in order:
+         if (len(w['n']) <= len(OVERLAY_SUFFIX)
+-                or not w['n'].endswith(OVERLAY_SUFFIX) or w['n'] == 'HASH8'): continue   # 731: hashk's - its own swap below
++                or not w['n'].endswith(OVERLAY_SUFFIX) or w['n'] in ('HASH8', 'LINK-LEN8', 'NEXT-NFA88')): continue   # 731-732: hashk's, chainorder's - their own swaps below
+         tgt = w['n'][:-len(OVERLAY_SUFFIX)]
+         if tgt not in _by:
+             _unmatched.append(w['n']); continue
+@@ -386,6 +393,25 @@ if _hk:
+     print('hashk: %s; HASH8 out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
+ elif HASHK_K: sys.exit('hashk: --hashk, and no HASH8 in the dump (forth/cv8-hashk.4)')
+ 
++# ---- chainorder (Iteration 732): forth/cv8-chainorder.4's (cv8t-chainorder.4's) link words, in every dump ----
++# With --chainorder each X8's body becomes its X's (unless that X is a primitive's stub - the engine's PREVNFA then,
++# by -DCHAINORDER); with or without, they leave the image - nothing may refer to them.
++_CO8 = {'LINK-LEN8': 'LINK-LEN', 'NEXT-NFA88': 'NEXT-NFA8'}
++_c8 = {w['n']: w for w in order if w['n'] in _CO8}
++if _c8:
++    _c8s = {w['s'] for w in _c8.values()}
++    assert not (_c8s & set(_refs([w for w in order if w['s'] not in _c8s]))), 'chainorder: a word refers to its link words'
++    if '--chainorder' in ARGV:
++        assert len(_c8) == 2, 'chainorder: not both link words in the dump'
++        for _x8, _w8 in _c8.items():
++            _d = [w for w in order if w['n'] == _CO8[_x8] and w['s'] < _w8['s']]
++            assert _d and kind[_w8['s']] == 'code' and info[_w8['s']] is not None, 'chainorder: no %s' % _CO8[_x8]
++            if stub_ops(_d[-1]) is None:
++                kind[_d[-1]['s']], info[_d[-1]['s']] = 'code', list(info[_w8['s']]); SRC_OF[_d[-1]['s']] = _w8['s']
++    order = [w for w in order if w['s'] not in _c8s]
++    print('chainorder: %s; its link words out' % ('on, forward links their own form' if '--chainorder' in ARGV else 'off'))
++elif '--chainorder' in ARGV: sys.exit('chainorder: --chainorder, and no cv8-chainorder.4 in the dump')
++
+ # ---- the dump tool and dead shadowed words left out (Iteration 39) ---
+ # tools/dict-dump-addr.4 is loaded LAST, to write this very dump: its
+ # words (NFA ... DUMP) came into every image, 490-688 bytes of seed 6's
+@@ -831,6 +857,26 @@ for w in order:
+     _prev_in_thread[w['s']] = _last.get(h)
+     _last[h] = w['s']
+ 
++# Iteration 732: chainorder - each chain starts with its most looked-up names (--chainorder FILE, COUNT NAME lines -
++# lab/evolve/chainorder-use.txt; those counted at least --chainorder-min times, most first), the rest newest first as
++# before; a name's duplicates keep newest first (one count each). A link names the next word of its chain - forward
++# links (to a word laid later) three bytes in their own form (linkbytes), backward ones sized as before.
++CO_USE, CO_WALK = None, {}
++if CO_ON:
++    assert BYTEHDR, 'chainorder: byte headers only'
++    CO_MIN = int(_opt('--chainorder-min') or 1); CO_USE = {}
++    for _l in open(_opt('--chainorder'), encoding='latin-1'):
++        if _l.strip() and not _l.startswith('#'):
++            _k, _n = _l.rstrip('\n').split(' ', 1)
++            if int(_k) >= CO_MIN: CO_USE[_n] = int(_k)
++    _nm = {w['s']: w['n'] for w in order}; _th = _co.defaultdict(list)
++    for w in order:
++        if w['s'] not in HL: _th[_wl_hash(w['n'])].append(w['s'])
++    for _h, _L in _th.items():
++        _L = _L[::-1]; _L.sort(key=lambda s: -CO_USE.get(_nm[s], 0))      # stable: newest first among equals
++        CO_WALK[_h] = _L
++        for _i, _s in enumerate(_L): _prev_in_thread[_s] = _L[_i + 1] if _i + 1 < len(_L) else None
++
+ new_off, off = {}, PROLOGUE
+ LINKLEN = {}
+ # Iteration 204, the gene threads (results/loop-audit.md): --threads N - the
+@@ -862,7 +908,7 @@ for w in order:
+         pv = _prev_in_thread[w['s']]
+         # Bound from above: the nfa lands at most 3 bytes past `off`, so
+         # a link sized for that distance always fits the real one.
+-        ll = 1 if pv is None else linklen(off + 3 - new_off[pv]['nfa'])
++        ll = 1 if pv is None else 3 if pv not in new_off else linklen(off + 3 - new_off[pv]['nfa'])   # 732: forward, three
+         LINKLEN[w['s']] = ll
+         new_off[w['s']] = {'link': off}; off += ll
+         new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
+@@ -922,7 +968,18 @@ for w in order:
+     if w['s'] not in HL: threads[wl_hash(w['n'])].append(w)
+ 
+ linkval = {}
+-for t in threads:
++if CO_USE is not None:                               # Iteration 732: chainorder - the next name of the chain, back or forward
++    _bys = {w['s']: w for w in order}
++    for w in order:
++        if w['s'] in HL: continue
++        assert _wl_hash(w['n']) == wl_hash(w['n']), 'chainorder: the two hashes disagree at %s' % w['n']
++        pv = _prev_in_thread[w['s']]; d = 0 if pv is None else new_off[w['s']]['nfa'] - new_off[pv]['nfa']
++        linkval[w['s']] = d
++        assert d >= 0 or LINKLEN[w['s']] == 3, 'chainorder: a forward link not three bytes at %s' % w['n']
++        assert d < ((1 << (8 * LINKLEN[w['s']] - 2)) if TAG2_ON else
++                    (1 << LINKLEN[w['s']] * 7 + (1 if LINKLEN[w['s']] > 1 else 0))), 'link does not fit at %s' % w['n']
++    threads = [[_bys[s] for s in CO_WALK.get(_h, [])[::-1]] for _h in range(NTHREADS)]   # each chain's head last, as below
++for t in (threads if CO_USE is None else []):
+     for i, w in enumerate(t):
+         if i == 0:
+             linkval[w['s']] = 0                          # end of chain

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 731.
+- master: Iteration 732.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -397,6 +397,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   held-out three's lookups by name - deterministic), the cross compiler's LINK-LEN-T, LINK,-T, LINK@-T and order;
   the Forth words as hashk's were: alternatives in every dump, swapped in with the gene, dropped without; a name's
   duplicates newest first (the use count is the name's), a run-time definition at its chain's front as now.
+  **732: chainorder built as a converter-only gene and applied** (results/applied-chainorder-732/; batch-check PASS) -
+  the owner chose "full, with self-hosting", then, shown the measurements, "gene now, self-host later": the
+  self-hosting part is built only if a final role takes the gene (export-genes refuses it until then - G-NOT-YET).
+  The zigzag encoding first (every link signed) lost: each step of a walk paid the decode, the smallest's corpus +13 %.
+  As applied, backward links as before and a forward link its own three-byte form (tag F0-FF; tag 2's E0-FF); the
+  names looked up 64 times or more in the held-out programs first. The ten roles (results/drafts/chainorder-732.txt):
+  outputs the same; the corpus's instructions 0.987-1.031 of off, parse 0.79-0.99, the images +56-120 B; with hashk
+  the smallest's corpus 0.903. Found on the way: bfind's bf_prev, a sixth link reader (the JIT roles crashed until it
+  read the forward form); lab/evolve/test-resume.py's noise 1.0 (the gene moved its draws - the control stopped
+  forking at 0.6; at 1.0 it forks with and without). The self-hosting part, when needed: forward links laid as three-
+  byte placeholders and patched at the end - one pass. **Next: numfirst as a gene.**
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

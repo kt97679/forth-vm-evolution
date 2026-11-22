@@ -186,6 +186,17 @@ static char **g_argv;
 /*  A byte-header link, read backwards from the name: the byte before it
  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
  *  bits), 10 three (22), 11 four (30) - the bytes below it high to low.  */
+#ifdef CHAINORDER   /* Iteration 732: the gene chainorder - E0-FF a forward link, three bytes (forth/cv8t-chainorder.4) */
+#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
+    switch (t__ >> 6) {                                                                   \
+    case 0: d__ = t__; break;                                                             \
+    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2); break;                        \
+    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; \
+    default: if (t__ & 32) { d__ = 0; a__ += ((UNS64)(t__ & 31) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; } \
+             d__ = ((UNS64)(t__ & 31) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
+                   | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
+    (t__ >= 224) ? a__ : d__ ? a__ - d__ : 0; })
+#else
 #define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
     switch (t__ >> 6) {                                                                   \
     case 0: d__ = t__; break;                                                             \
@@ -194,16 +205,27 @@ static char **g_argv;
     default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
                    | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
     d__ ? a__ - d__ : 0; })
+#endif
 #else
 /*  A byte-header link in CV8 (cv8b.4's NEXT-NFA8): its last byte, the one
  *  before the name - below 0x80 seven bits (0 ends the thread), below 0xC0
  *  fourteen, else twenty-two.  */
+#ifdef CHAINORDER   /* Iteration 732: the gene chainorder - F0-FF a forward link, three bytes (forth/cv8-chainorder.4) */
+#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
+    t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
+    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
+    : t__ < 224 ? a__ - (((UNS64)(t__ & 31) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)) \
+    : t__ < 240 ? a__ - (((UNS64)(t__ & 15) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                 \
+             | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4))                                 \
+    : a__ + (((UNS64)(t__ & 15) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })   /* 732: F0-FF forward */
+#else
 #define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
     t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
     : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
     : t__ < 224 ? a__ - (((UNS64)(t__ & 31) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)) \
     : a__ - (((UNS64)(t__ & 31) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                     \
              | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4)); })   /* 416: a fourth form, 29 bits */
+#endif
 #endif
 /*  The call form is variable: 10xxxxxx takes one more byte (14-bit payload), 11xxxxxx takes two
  *  (22-bit), decoded once on the shared call path (do_call). The fixed 15-bit form (VARCALL=0) and the
@@ -361,12 +383,18 @@ static inline uint32_t bf_ld32(UNS64 a) { uint32_t x; memcpy(&x, (const void *)(
 #if TAG2
 static inline UNS64 bf_prev(UNS64 a) {          /* tag t: t+1 bytes, the top one's 6 bits */
     uint32_t w = bf_ld32(a - 4); UNS64 d = (UNS64)((w & 0x3FFFFFFFu) >> (8 * (3 - (w >> 30))));
+#ifdef CHAINORDER
+    if ((w >> 29) == 7) return a + ((w >> 8) & 0x1FFFFFu);   /* Iteration 732: E0-FF a forward link, three bytes */
+#endif
     return d ? a - d : 0;
 }
 #else
 static inline UNS64 bf_prev(UNS64 a) {          /* below 0x80 one byte, 7 bits; below 0xC0 two, 14; below 0xE0 three, 21; else four, 29 (416) */
     static const uint32_t bf_mask[5] = { 0, 0x7F, 0x3FFF, 0x1FFFFF, 0x1FFFFFFF };
     uint32_t w = bf_ld32(a - 4); unsigned t = w >> 24, l = 1 + (t >= 128) + (t >= 192) + (t >= 224);
+#ifdef CHAINORDER
+    if (t >= 240) return a + ((w >> 8) & 0xFFFFFu);          /* Iteration 732: F0-FF a forward link, three bytes */
+#endif
     UNS64 d = (UNS64)(w >> (8 * (4 - l))) & bf_mask[l];
     return (d || l > 1) ? a - d : 0;
 }

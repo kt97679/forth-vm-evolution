@@ -1,0 +1,21 @@
+\ forth/cv8-chainorder.4 - the gene chainorder's link words for cv8b.4's byte headers (Iteration 732; results/drafts/
+\ demoscene-ioccc-727.md, chainorder-margin-731.txt). With the gene each chain starts with its most looked-up names
+\ (tools/layout.py --chainorder lab/evolve/chainorder-use.txt: those looked up at least --chainorder-min times in the
+\ held-out programs, most first), the rest newest first as before - so a link may point forward. A backward link is as
+\ before; a forward one is its own form, three bytes with the tag F0-FF (20 bits up), carved from the four-byte form,
+\ which keeps E0-EF (28 bits back). Loaded into every dump with cv8b.4, before the dump tool (lab/evolve/evolve.py):
+\ with --chainorder the converter makes each X8's body its X's (LINK, is unchanged: a run-time header links back to its
+\ chain's head), without it drops them - the images with the gene off are byte for byte the old ones. The engine's
+\ PREVNFA by -DCHAINORDER.
+: LINK-LEN8 ( d --- n )
+  DUP 128 U< IF DROP 1 EXIT THEN
+  DUP 268435456 U< 0= IF -1 ABORT" link out of reach" THEN
+  DUP 16384 U< IF DROP 2 EXIT THEN  2097152 U< IF 3 ELSE 4 THEN ;
+
+: NEXT-NFA88 ( nfa --- nfa' )
+  DUP 1- C@                                    ( nfa tag )
+  DUP 128 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
+  DUP 192 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
+  DUP 224 U< IF 31 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - EXIT THEN
+  DUP 240 U< IF 15 AND 24 LSHIFT OVER 2 - C@ 16 LSHIFT OR OVER 3 - C@ 8 LSHIFT OR OVER 4 - C@ OR - EXIT THEN
+  15 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR + ;   \ forward

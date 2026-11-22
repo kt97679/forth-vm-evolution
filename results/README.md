@@ -571,3 +571,4 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `drafts/demoscene-ioccc-727.md` - The demoscene's and the IOCCC's techniques against the register (Iteration 727): all covered or not for us but one - the hash seed searched per image (hashk), priced: with chainorder up to three fifths of the lookup's walk.
 - `applied-hashk-730/ORDER.md` - The gene hashk (Iteration 730): the chain hash with one constant, after the demoscene's crinkler - the patch, how it was checked, applied.
 - `applied-hashk-cross-731/ORDER.md` - hashk in the self-hosting compiler (Iteration 731): HASH8, G-HASHK and THASH - three hashk designs self-built at both widths.
+- `applied-chainorder-732/ORDER.md` - The gene chainorder (Iteration 732): each chain's most looked-up names first, forward links their own form - converter-only, measured, applied.

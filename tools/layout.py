@@ -146,13 +146,20 @@ G['T2WIDE'] = T2WIDE_ON
 # align(body + 5) (DOVAR's and DODOES's TAG2 branches), as CREATE8 reserves and >BODY8 computes.
 
 
+CO_ON = '--chainorder' in ARGV   # Iteration 732: chainorder - forward links their own three-byte form, carved from the four-byte one
+
 def linklen(d):
-    if TAG2_ON: return 1 if d < 64 else 2 if d < (1 << 14) else 3 if d < (1 << 22) else 4
-    assert d < (1 << 29), 'link %d out of reach' % d                                  # Iteration 416: four forms
+    if TAG2_ON:
+        assert not CO_ON or d < (1 << 29), 'link %d out of reach (chainorder: four bytes back keep 29 bits)' % d
+        return 1 if d < 64 else 2 if d < (1 << 14) else 3 if d < (1 << 22) else 4
+    assert d < (1 << (28 if CO_ON else 29)), 'link %d out of reach' % d                    # Iteration 416: four forms (732: 28 bits with chainorder)
     return 1 if d < 128 else 2 if d < 16384 else 3 if d < (1 << 21) else 4
 
 
 def linkbytes(d, n):
+    if d < 0:                                    # Iteration 732: chainorder's forward link - three bytes, its own tag
+        e = -d; assert CO_ON and n == 3 and e < (1 << (21 if TAG2_ON else 20)), 'forward link %d out of reach' % e
+        return bytes([e & 0xFF, (e >> 8) & 0xFF, (0xE0 if TAG2_ON else 0xF0) | (e >> 16)])
     if TAG2_ON:
         # tag 2: low byte first, the tag in the top two bits of the LAST byte -
         # the one before the name, read first (vm-lab.c PREVNFA)
@@ -300,7 +307,7 @@ if CV8_COMPILER:
     _n, _miss, _unmatched = 0, [], []
     for w in order:
         if (len(w['n']) <= len(OVERLAY_SUFFIX)
-                or not w['n'].endswith(OVERLAY_SUFFIX) or w['n'] == 'HASH8'): continue   # 731: hashk's - its own swap below
+                or not w['n'].endswith(OVERLAY_SUFFIX) or w['n'] in ('HASH8', 'LINK-LEN8', 'NEXT-NFA88')): continue   # 731-732: hashk's, chainorder's - their own swaps below
         tgt = w['n'][:-len(OVERLAY_SUFFIX)]
         if tgt not in _by:
             _unmatched.append(w['n']); continue
@@ -385,6 +392,25 @@ if _hk:
     order = [w for w in order if w['s'] != _h['s']]
     print('hashk: %s; HASH8 out' % ('K %d, HASH its body' % HASHK_K if HASHK_K else 'off'))
 elif HASHK_K: sys.exit('hashk: --hashk, and no HASH8 in the dump (forth/cv8-hashk.4)')
+
+# ---- chainorder (Iteration 732): forth/cv8-chainorder.4's (cv8t-chainorder.4's) link words, in every dump ----
+# With --chainorder each X8's body becomes its X's (unless that X is a primitive's stub - the engine's PREVNFA then,
+# by -DCHAINORDER); with or without, they leave the image - nothing may refer to them.
+_CO8 = {'LINK-LEN8': 'LINK-LEN', 'NEXT-NFA88': 'NEXT-NFA8'}
+_c8 = {w['n']: w for w in order if w['n'] in _CO8}
+if _c8:
+    _c8s = {w['s'] for w in _c8.values()}
+    assert not (_c8s & set(_refs([w for w in order if w['s'] not in _c8s]))), 'chainorder: a word refers to its link words'
+    if '--chainorder' in ARGV:
+        assert len(_c8) == 2, 'chainorder: not both link words in the dump'
+        for _x8, _w8 in _c8.items():
+            _d = [w for w in order if w['n'] == _CO8[_x8] and w['s'] < _w8['s']]
+            assert _d and kind[_w8['s']] == 'code' and info[_w8['s']] is not None, 'chainorder: no %s' % _CO8[_x8]
+            if stub_ops(_d[-1]) is None:
+                kind[_d[-1]['s']], info[_d[-1]['s']] = 'code', list(info[_w8['s']]); SRC_OF[_d[-1]['s']] = _w8['s']
+    order = [w for w in order if w['s'] not in _c8s]
+    print('chainorder: %s; its link words out' % ('on, forward links their own form' if '--chainorder' in ARGV else 'off'))
+elif '--chainorder' in ARGV: sys.exit('chainorder: --chainorder, and no cv8-chainorder.4 in the dump')
 
 # ---- the dump tool and dead shadowed words left out (Iteration 39) ---
 # tools/dict-dump-addr.4 is loaded LAST, to write this very dump: its
@@ -831,6 +857,26 @@ for w in order:
     _prev_in_thread[w['s']] = _last.get(h)
     _last[h] = w['s']
 
+# Iteration 732: chainorder - each chain starts with its most looked-up names (--chainorder FILE, COUNT NAME lines -
+# lab/evolve/chainorder-use.txt; those counted at least --chainorder-min times, most first), the rest newest first as
+# before; a name's duplicates keep newest first (one count each). A link names the next word of its chain - forward
+# links (to a word laid later) three bytes in their own form (linkbytes), backward ones sized as before.
+CO_USE, CO_WALK = None, {}
+if CO_ON:
+    assert BYTEHDR, 'chainorder: byte headers only'
+    CO_MIN = int(_opt('--chainorder-min') or 1); CO_USE = {}
+    for _l in open(_opt('--chainorder'), encoding='latin-1'):
+        if _l.strip() and not _l.startswith('#'):
+            _k, _n = _l.rstrip('\n').split(' ', 1)
+            if int(_k) >= CO_MIN: CO_USE[_n] = int(_k)
+    _nm = {w['s']: w['n'] for w in order}; _th = _co.defaultdict(list)
+    for w in order:
+        if w['s'] not in HL: _th[_wl_hash(w['n'])].append(w['s'])
+    for _h, _L in _th.items():
+        _L = _L[::-1]; _L.sort(key=lambda s: -CO_USE.get(_nm[s], 0))      # stable: newest first among equals
+        CO_WALK[_h] = _L
+        for _i, _s in enumerate(_L): _prev_in_thread[_s] = _L[_i + 1] if _i + 1 < len(_L) else None
+
 new_off, off = {}, PROLOGUE
 LINKLEN = {}
 # Iteration 204, the gene threads (results/loop-audit.md): --threads N - the
@@ -862,7 +908,7 @@ for w in order:
         pv = _prev_in_thread[w['s']]
         # Bound from above: the nfa lands at most 3 bytes past `off`, so
         # a link sized for that distance always fits the real one.
-        ll = 1 if pv is None else linklen(off + 3 - new_off[pv]['nfa'])
+        ll = 1 if pv is None else 3 if pv not in new_off else linklen(off + 3 - new_off[pv]['nfa'])   # 732: forward, three
         LINKLEN[w['s']] = ll
         new_off[w['s']] = {'link': off}; off += ll
         new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
@@ -922,7 +968,18 @@ for w in order:
     if w['s'] not in HL: threads[wl_hash(w['n'])].append(w)
 
 linkval = {}
-for t in threads:
+if CO_USE is not None:                               # Iteration 732: chainorder - the next name of the chain, back or forward
+    _bys = {w['s']: w for w in order}
+    for w in order:
+        if w['s'] in HL: continue
+        assert _wl_hash(w['n']) == wl_hash(w['n']), 'chainorder: the two hashes disagree at %s' % w['n']
+        pv = _prev_in_thread[w['s']]; d = 0 if pv is None else new_off[w['s']]['nfa'] - new_off[pv]['nfa']
+        linkval[w['s']] = d
+        assert d >= 0 or LINKLEN[w['s']] == 3, 'chainorder: a forward link not three bytes at %s' % w['n']
+        assert d < ((1 << (8 * LINKLEN[w['s']] - 2)) if TAG2_ON else
+                    (1 << LINKLEN[w['s']] * 7 + (1 if LINKLEN[w['s']] > 1 else 0))), 'link does not fit at %s' % w['n']
+    threads = [[_bys[s] for s in CO_WALK.get(_h, [])[::-1]] for _h in range(NTHREADS)]   # each chain's head last, as below
+for t in (threads if CO_USE is None else []):
     for i, w in enumerate(t):
         if i == 0:
             linkval[w['s']] = 0                          # end of chain

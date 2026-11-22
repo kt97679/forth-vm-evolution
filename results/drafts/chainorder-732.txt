@@ -1,0 +1,57 @@
+# chainorder measured (Iteration 732): results/drafts/chainorder-gene-732.py on a scratch clone with results/drafts/chainorder-732.patch
+
+## The first encoding - zigzag in every link (since replaced): smallest corpus 1.1317, parse 0.8451, image +72 B; the C walks' corpus 1.0071-1.0787
+
+## The encoding as patched - forward links their own three-byte form, backward links as before; hot names at least 4 lookups (CO_MIN 4)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| best-all-round | df097ba2e2 | 128 | 34216 / 34392 | 10332 / 10476 | same | 1.0046 | 0.9875 |
+| fastest-x86-64 | 9b15ba26f7 | 128 | 33256 / 33384 | 10152 / 10288 | same | 1.0039 | 0.9886 |
+| small-jit | 15eda54ebd | 16 | 18676 / 18708 | 8321 / 8513 | same | 1.0186 | 0.9325 |
+
+(smallest and portable-fastest at CO_MIN 4, from the same run before the three JIT roles' - its output file was reused:)
+| smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9189 | same | 0.9887 | 0.7738 |
+| portable-fastest | d727605472 | 32 | 16336 / 16448 | 10256 / 10424 | same | 1.0282 | 0.9232 |
+
+## CO_MIN 16 and 64 (smallest, portable-fastest)
+
+| min 16: smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9149 | same | 0.9852 | 0.7945 |
+| min 16: portable-fastest | d727605472 | 32 | 16336 / 16448 | 10256 / 10400 | same | 1.0282 | 0.9478 |
+| min 64: smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9109 | same | 0.9868 | 0.7862 |
+| min 64: portable-fastest | d727605472 | 32 | 16336 / 16448 | 10256 / 10360 | same | 1.0314 | 0.9465 |
+
+## As applied - CO_MIN 64 (Iteration 732): the ten roles at 8-byte cells
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| best-all-round | df097ba2e2 | 128 | 34216 / 34392 | 10332 / 10428 | same | 1.0063 | 0.9920 |
+| fastest-x86-32 | 11f956db93 | 128 | 30516 / 30564 | 9424 / 9512 | same | 1.0071 | 0.9909 |
+| fastest-x86-64 | 9b15ba26f7 | 128 | 33256 / 33384 | 10152 / 10248 | same | 1.0054 | 0.9928 |
+| least-memory | fb0d57c8a2 | 32 | 7574 / 7638 | 9566 / 9622 | same | 0.9984 | 0.9703 |
+| portable-arm | a8d35bdccc | 128 | 26790 / 26854 | 10055 / 10111 | same | 0.9998 | 0.9894 |
+| portable-fastest | d727605472 | 32 | 16336 / 16448 | 10256 / 10360 | same | 1.0314 | 0.9465 |
+| portable-knee | 48a012411a | 16 | 9424 / 9472 | 9105 / 9185 | same | 0.9970 | 0.9204 |
+| portable-small | ae99617f06 | 16 | 8806 / 8838 | 9135 / 9207 | same | 0.9972 | 0.9428 |
+| small-jit | 15eda54ebd | 16 | 18676 / 18708 | 8321 / 8441 | same | 1.0244 | 0.9468 |
+| smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9109 | same | 0.9868 | 0.7862 |
+gene-check: PASS - every output the same
+
+## hashk and chainorder together (GENES=hashk,chainorder)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| smallest | 219878ec89 | 16 | 4246 / 4246 | 9037 / 9093 | same | 0.9029 | 0.7096 |
+| portable-fastest | d727605472 | 32 | 16336 / 16464 | 10256 / 10360 | same | 0.9924 | 0.9425 |
+gene-check: PASS - every output the same
+
+## 4-byte cells (HK_W4=1; the instructions not measured here - cachegrind does not run the 32-bit engines; the outputs real)
+
+| role | id | chains | engine off / on | image off / on | outputs | corpus instructions on / off | parse |
+|---|---|---:|---|---|---|---:|---:|
+| smallest | 219878ec89 | 16 | 5254 / 5254 | 8301 / 8369 | same | 0.0000 | 0.0000 |
+| portable-fastest | d727605472 | 32 | 17056 / 17296 | 9604 / 9696 | same | 0.0000 | 0.0000 |
+| fastest-x86-32 | 11f956db93 | 128 | 29288 / 29384 | 8512 / 8600 | same | 0.0000 | 0.0000 |
+gene-check: PASS - every output the same
+
+Gene off: the 40 engines and images of the ten roles byte for byte results/drafts/designs-sha256-718.txt's (pack-designs.py, 20 of 20 builds 9 of 9 right); the stage images, validate; run-tests PASS with lab/evolve/test-resume.py's noise 1.0.

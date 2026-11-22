@@ -8,9 +8,11 @@ measurement (a speed from the id and a noise term - nothing built or run), its d
 would leave it, and the run started again on it: generations 1-6 (each generation's line, the operators, the attic) as
 the first attempt's - and, the control, not so with the replay off (EVOLVE_REPLAY=0), or the test proves nothing.
 tools/run-tests.sh runs it, a few seconds; exit 1 on a failure.
+Iteration 732: the noise 1.0, not 0.6 - the gene chainorder moved the draws, and at 0.6 the control no longer forked (at
+1.0 it forks with the gene and without; the replay passes at both).
 """
 import contextlib, io, json, os, shutil, subprocess, sys, tempfile
-AMP, FG, CUT, GENS = float(os.environ.get('RT_AMP', 0.6)), os.environ.get('RT_FG', '2'), int(os.environ.get('RT_CUT', 6)), int(os.environ.get('RT_GENS_ALL', 9))
+AMP, FG, CUT, GENS = float(os.environ.get('RT_AMP', 1.0)), os.environ.get('RT_FG', '2'), int(os.environ.get('RT_CUT', 6)), int(os.environ.get('RT_GENS_ALL', 9))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if len(sys.argv) > 1 and sys.argv[1] == 'child':
     sys.argv = ['x']; sys.path.insert(0, ROOT + '/lab/evolve'); import evolve as E

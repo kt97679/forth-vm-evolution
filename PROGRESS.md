@@ -12172,3 +12172,19 @@ Files: results/applied-hashk-cross-731/hashk-cross.patch, results/applied-hashk-
 results/drafts/hashk-cross-731.sh, results/drafts/hashk-cross-731.txt, results/drafts/chainorder-margin-731.py,
 results/drafts/chainorder-margin-731.txt; forth/cv8-hashk.4, forth/cross-cv8.4,
 tools/layout.py, lab/evolve/export-genes.py, lab/evolve/GENES.md, stages/s6-genes.4.
+
+## Iteration 732 - 2026-11-22 - Claude
+
+chainorder built and applied as a converter-only gene (results/applied-chainorder-732/; batch-check PASS). The owner
+chose "full, with self-hosting"; measured, it was a poor trade, and shown that he chose "gene now, self-host later" (the
+self-hosting part only if a final role takes it; G-NOT-YET until then). The zigzag encoding first: every walk step paid
+the decode - the smallest's corpus +13 %. As applied: backward links as before, a forward link its own three-byte form
+carved from the four-byte one; the names looked up 64 times in the held-out programs first (4, 16, 64 measured). The
+ten roles: outputs the same at 8-byte cells, three at 4, with hashk on two; corpus 0.987-1.031 of the instructions,
+parse 0.79-0.99, images +56-120 B; off, every byte as before. Found: bfind's bf_prev, a sixth link reader; test-resume's
+control stopped forking at noise 0.6 (the gene moved the draws) - 1.0 now, which forks with and without it.
+Files: forth/cv8-chainorder.4, forth/cv8t-chainorder.4, lab/evolve/chainorder-use.txt,
+results/applied-chainorder-732/chainorder.patch, results/applied-chainorder-732/ORDER.md,
+results/drafts/chainorder-use-732.py, results/drafts/chainorder-gene-732.py, results/drafts/chainorder-732.txt;
+engine/vm-lab.c, tools/layout.py, lab/evolve/evolve.py, lab/evolve/export-genes.py, lab/evolve/test-resume.py,
+lab/evolve/GENES.md.
