@@ -572,6 +572,7 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `drafts/demoscene-ioccc-727.md` - The demoscene's and the IOCCC's techniques against the register (Iteration 727): all covered or not for us but one - the hash seed searched per image (hashk), priced: with chainorder up to three fifths of the lookup's walk.
 - `drafts/process-rehearsal-736.md` - Seed 97's processing rehearsed on a stand-in made by the laptop's own path (Iteration 736): every step and check PASS, the stopping rule reading the new series; one guard added.
 - `drafts/ship-rehearsal-737.md` - The final shipping path rehearsed on today's tree (Iteration 737): export, ARM, self-built ship, the designs' builds, the pack - 20 of 20 images designs/'s; the order and inputs it needs.
+- `drafts/relf-handoff-739-test.md` - The notes file for the final handoff's generator, results/drafts/relf-handoff-739.py (Iteration 739): its form, and the test - the 726 roles against 657 with 726's prose.
 - `applied-hashk-730/ORDER.md` - The gene hashk (Iteration 730): the chain hash with one constant, after the demoscene's crinkler - the patch, how it was checked, applied.
 - `applied-hashk-cross-731/ORDER.md` - hashk in the self-hosting compiler (Iteration 731): HASH8, G-HASHK and THASH - three hashk designs self-built at both widths.
 - `applied-chainorder-732/ORDER.md` - The gene chainorder (Iteration 732): each chain's most looked-up names first, forward links their own form - converter-only, measured, applied.

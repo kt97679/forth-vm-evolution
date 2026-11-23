@@ -12308,3 +12308,22 @@ owner's call.
 Files: results/queued-layout2/data-layout2-after-series.patch, results/queued-layout2/ORDER.md,
 results/drafts/data-layout2-738.txt, results/drafts/stack-traps-738.sh; GOALS.md (rows 294, 295), HANDOFF.md,
 results/README.md.
+
+## Iteration 739 - 2026-11-22 - Claude
+
+While seed 97 runs (the owner: "continue" - 1 and 2). **The JIT roles' stack gap priced** (results/drafts/jit-guard-739.txt,
+jit-guard-739.py): on small-jit, fastest-x86-32 and fastest-x86-64 native recursion in JIT code dies the same way as the
+runaway push (139, nothing said - no stack left for the handler), at both widths. The guard gene on them fixes both and
+names each trap: +144-272 B at 8-byte cells (+152-408 at 4), memory +4-8 KB at 8-byte cells, and 6-8 % fewer
+instructions where the interpreter runs (corpus 0.916-0.924, kernel 0.932-0.943; fib and loop, run in JIT code, the
+same; small-jit's apps 0.937) - sandbox time the same direction on those two, the rest in the noise. As designs they are
+new (7a6c182638, b7a09aec76, fba7d5be3d): challengers for the roles' follow-up after the series. A slim fallback - one
+page at the data stack's floor, the handler on its own stack, +112-208 B, no instruction - as a draft patch
+(results/drafts/jit-guard-slim-739.patch); the back-edge check not built. **The final handoff's generator**
+(results/drafts/relf-handoff-739.py): designs/ (any roles), the records, the previous handoff (726's or 657's form) and
+a notes file give the document; it asserts every row against its record and computes the roles changed, the genes new
+since and the 25 % claim. Tests: against 657 with 726's prose (relf-handoff-739-test.md) its table and genes 726's byte
+for byte; against 726 "none of the ten changed"; a swapped smallest (90273721a1 with hashk) found with its new gene; a
+wrong record's JIT caught; every gene and expression key documented. Nothing sent.
+Files: results/drafts/jit-guard-739.txt, results/drafts/jit-guard-739.py, results/drafts/jit-guard-slim-739.patch,
+results/drafts/relf-handoff-739.py, results/drafts/relf-handoff-739-test.md; GOALS.md, HANDOFF.md, results/README.md.

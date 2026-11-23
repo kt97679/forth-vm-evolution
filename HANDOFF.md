@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 738.
+- master: Iteration 739.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -362,7 +362,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the 40 checksums designs-sha256-718.txt's; the lab's build - the converter's images). NEXT-RUN none.
   **727 (the owner: "finalize design evolution and ensure we found best designs, handoff to relf project after that")**:
   **relf's handoff held** - handoff-relf-726.md and the iter726 package not sent; both made again from the reopened
-  search's roles (results/drafts/relf-handoff-726.py adapted, pack-designs.py), one handoff at the end. The reopened
+  search's roles (results/drafts/relf-handoff-739.py since 739, pack-designs.py), one handoff at the end. The reopened
   search's preparation now: the queued genes (jitdead = V1', fixenv, jitfew) applied; chainorder's prototype, numfirst
   (a gene in its two forms - 'offer trade-offs as genes'), the fixed data layout's step 1 (GOALS.md's register, 713)
   each built as a gene where its prototype pays; the rehearsal of them together; then the series' first seed (the
@@ -453,6 +453,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   series ends, before the final build, and re-measure the shipped roles' memory then.** Found on the way (the same
   before): the JIT roles without the guard gene die 139 with no message on a runaway data-stack push, the engine
   overwritten first (GOALS.md's register, the owner's call). NEXT-RUN none (seed 97 runs from iter735's bundle).
+  **739 (the owner: "continue" - 1 and 2)**: **the JIT roles' stack gap priced** (results/drafts/jit-guard-739.txt):
+  native recursion in JIT code dies the same way (no stack for the handler). **The guard gene on the three JIT roles**
+  fixes both and names each trap, +144-408 B, memory +4-8 KB at 8-byte cells, and the interpreted part 6-8 % fewer
+  instructions (corpus, kernel; JIT-run fib and loop the same) - new designs 7a6c182638, b7a09aec76, fba7d5be3d,
+  **challengers for the roles' follow-up after the series** (the laptop's time decides); a slim fallback (one page and
+  the handler's own stack, +112-208 B) as results/drafts/jit-guard-slim-739.patch, not queued. **The final handoff's
+  generator**: results/drafts/relf-handoff-739.py - reads designs/ (any roles), the records, the previous handoff and a
+  notes file (the prose written at the end; results/drafts/relf-handoff-739-test.md the form); against 657 with 726's
+  prose its table and genes are 726's byte for byte, against 726 "none of the ten changed", a swapped role found with
+  its new gene. Nothing sent; NEXT-RUN none.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

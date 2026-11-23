@@ -1,0 +1,85 @@
+# The JIT roles' stack gap priced (Iteration 739; the finding: results/drafts/data-layout2-738.txt)
+
+The owner (739): "continue" - the fixes priced. On the JIT roles without the guard gene (small-jit, fastest-x86-32,
+fastest-x86-64) two runaways in JIT code die 139 with nothing on stderr and the output lost: a data-stack push (the
+JIT's code has no dsp bound; the push runs down through the engine's one RWE segment, the fault handler included) and,
+found now, native recursion (`: R3 RECURSE 1 ;` - JIT'd calls nest on the C stack; at its end the fault handler has no
+stack to run on: the kernel's SI_KERNEL SIGSEGV). Both at both widths (fastest-x86-32's i386 build has its JIT).
+best-all-round (JIT and guard) names both.
+
+Three variants, each the role's lab build (results/drafts/jit-guard-739.py MASTER SLIM; medians of 7, cachegrind):
+  base   the role as designs/ has it;
+  guard  the same genome with guard=1 - the gene: two guard pages, the handler on its own stack, the interpreter's
+         pushes unchecked (vm-lab.c's PUSH and RPUSH without the compare);
+  slim   results/drafts/jit-guard-slim-739.patch on master: for X_JIT designs without the gene one unreadable page at
+         the data stack's floor (the interpreter's bound a page above it, so it still names the overflow first) and
+         the handler on a 16 KB stack of its own (sigaltstack, SA_ONSTACK in every fault installer - none set: the
+         current stack, so no other design behaves differently).
+
+## 8-byte cells
+
+| role | variant | engine B | outputs | rss KB | corpus instr. / base | kernel instr. / base |
+|---|---|---:|---|---:|---:|---:|
+| small-jit | base | 18676 (+0) | same | 224 | 1.0000 | 1.0000 |
+| small-jit | guard | 18948 (+272) | same | 228 | 0.9164 | 0.9316 |
+| small-jit | slim | 18788 (+112) | same | 224 | 1.0000 | 1.0000 |
+| fastest-x86-32 | base | 30516 (+0) | same | 260 | 1.0000 | 1.0000 |
+| fastest-x86-32 | guard | 30740 (+224) | same | 268 | 0.9237 | 0.9398 |
+| fastest-x86-32 | slim | 30644 (+128) | same | 260 | 0.9999 | 1.0000 |
+| fastest-x86-64 | base | 33256 (+0) | same | 288 | 1.0000 | 1.0000 |
+| fastest-x86-64 | guard | 33400 (+144) | same | 292 | 0.9244 | 0.9431 |
+| fastest-x86-64 | slim | 33368 (+112) | same | 288 | 0.9999 | 1.0000 |
+
+## 4-byte cells (cachegrind does not run the 32-bit engines)
+
+| role | variant | engine B | outputs | rss KB |
+|---|---|---:|---|---:|
+| small-jit | base | 19296 (+0) | same | 224 |
+| small-jit | guard | 19560 (+264) | same | 228 |
+| small-jit | slim | 19472 (+176) | same | 224 |
+| fastest-x86-32 | base | 29288 (+0) | same | 252 |
+| fastest-x86-32 | guard | 29696 (+408) | same | 248 |
+| fastest-x86-32 | slim | 29496 (+208) | same | 248 |
+| fastest-x86-64 | base | 29616 (+0) | same | 268 |
+| fastest-x86-64 | guard | 29768 (+152) | same | 268 |
+| fastest-x86-64 | slim | 29824 (+208) | same | 268 |
+
+## The traps (status, stderr's last line; the same at both widths)
+
+| variant | push loop | push recursion | native recursion | data underflow | return underflow | 25 FIB |
+|---|---|---|---|---|---|---|
+| base | killed (SIGSEGV), nothing | killed, nothing | killed, nothing | 70 segmentation fault | 70 segmentation fault | 75025 |
+| guard | 70 data stack overflow | 70 data stack overflow | 70 native (C) stack overflow | 70 data stack underflow | 70 segmentation fault (not a stack guard) | 75025 |
+| slim | 70 segmentation fault | 70 segmentation fault | 70 segmentation fault | 70 segmentation fault | 70 segmentation fault | 75025 |
+
+Each of the three roles alike. guard names every trap; slim stops the overwrite and lets the handler run (status 70,
+output flushed), with the one message the designs without the gene have.
+
+## Where guard's instructions go
+
+The unchecked pushes are the interpreter's, so the gain is where the interpreter runs - the compile-heavy workloads -
+not in JIT code. guard / base, cachegrind, 8-byte cells:
+
+| role | corpus | kernel | apps | fib | loop |
+|---|---:|---:|---:|---:|---:|
+| fastest-x86-64 | 0.9244 | 0.9431 | 0.9937 | 0.9999 | 0.9998 |
+| small-jit | 0.9164 | 0.9316 | 0.9368 | 0.9999 | 0.9998 |
+
+CPU time in this sandbox (fastest-x86-64, 15 alternations a workload, median of the pairs' ratios; noisy - runs of
+3-17 ms on a shared machine): kernel 0.952, corpus 0.952, fib 0.993, loop 1.022, bubble 0.998, ackermann 1.050, apps
+1.006; geometric mean 0.996. The direction the instructions give, on the two workloads they move; the rest within the
+noise. The laptop's alternated measurement is what decides a speed role.
+
+## What it comes to
+
+- **The guard gene on the three JIT roles** closes both gaps, names each trap, and runs the interpreted part 6-8 %
+  fewer instructions (small-jit's apps 6 % - it translates fewer words): +144-272 B at 8-byte cells, +152-408 at 4,
+  memory +4-8 KB at 8-byte cells (fastest-x86-32 268 against 260: the 8 KB rule's edge) and -4 to +4 at 4. As designs
+  they are new - 7a6c182638 (small-jit's), b7a09aec76 (fastest-x86-32's), fba7d5be3d (fastest-x86-64's), never measured
+  by the search. They are challengers for the roles' follow-up chains after the series: the rule (1 % smaller, no class
+  2 % slower, memory within 8 KB; a speed role's challenger 2 % faster at 2 SE) decides, on the laptop's time.
+- **slim** (+112-128 B at 8-byte cells, +176-208 at 4; no instruction, no page) is the fallback if guard loses on time:
+  the corruption and the lost output gone, the message generic. A draft patch, not queued - it changes JIT designs'
+  engines, so it would wait for the series' end like step 2.
+- **A dsp check on the JIT's loop back-edges** - not built: it would cost time in JIT code, where these roles win, to
+  give what guard gives with none; and native recursion would still need the handler's own stack.
