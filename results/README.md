@@ -587,3 +587,5 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `candidates-guard-740.md` - The guard gene's challengers to the three JIT roles (Iteration 740): 7a6c182638, b7a09aec76, fba7d5be3d - the roles' genomes with guard=1, for the follow-up after the series.
 - `queued-thumb/ORDER.md` - The thumb gene (Iteration 742): the 32-bit ARM engines in Thumb-2, 25-31 % smaller, x86 and every id unchanged - checked, queued for the series' end; the Tegra's speed decides.
 - `queued-thumb/candidates-thumb-742.md` - The thumb gene's variants of the six roles without the JIT (Iteration 742): their ARM builds Thumb-2, their x86 builds their parents' - moved to results/ when the gene applies.
+- `queued-jitguard/ORDER.md` - The JIT designs' stack guard (Iteration 743): one page at the data stack's floor and the handler's own stack for JIT designs without the guard gene - queued after step 2; no shipped role dies silently.
+- `applied-known-743/ORDER.md` - s1-sod16's ARM reach listed as known in tools/arm-cross-check.py (Iteration 743): a hand-made stage's limit on apps, no design affected - applied.

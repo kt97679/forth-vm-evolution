@@ -12386,3 +12386,21 @@ Files: results/drafts/thumb-742.txt, results/drafts/small-vms-742.md, results/dr
 results/queued-thumb/ORDER.md, results/queued-thumb/thumb-gene-after-series.patch, results/queued-thumb/candidates-thumb-742.md;
 results/drafts/roles-screen-741.py, results/drafts/roles-screen-741.sh, results/drafts/endgame-740.md, GOALS.md,
 HANDOFF.md, results/README.md.
+
+## Iteration 743 - 2026-11-22 - Claude
+
+The owner: "for open questions - I don't have strong opinions, please continue as you think is most reasonable". Decided
+and recorded (results/drafts/endgame-740.md, "Decided (743)"; GOALS.md's rows; HANDOFF.md's standing decisions): the
+series' seeds 16 hours each, a chain's hours as its content needs; trades in the roles' chains by 718's rule; Thumb-2 per
+ARM role when the Tegra's pairs show no loss (2 % at 2 SE), else A32; the outliner and the two paper candidates a later
+search's. **The JIT stack gap closed** for every JIT design without the guard gene - jit-guard-slim-739.patch rebased on
+step 2 (the data stack's floor with STK_PAD) and made JIT-only (SA_ONSTACK under X_JIT in the runtimes and the libc
+installer): measured in a scratch tree against step 2 alone - small-jit +112 B, fastest-x86-32 +128, fastest-x86-64 +112
+at 8-byte cells (+176, +208, +208 at 4), their push loop, push recursion and native recursion status 70 with the
+handler's message; best-all-round, smallest, least-memory, portable-knee, portable-arm, portable-fastest byte for byte and
+trap for trap the same. Queued after step 2 (results/queued-jitguard; batch-check with BASE=results/queued-layout2). The
+guard variants still compete by the rule. s1-sod16's ARM reach listed as known in tools/arm-cross-check.py (results/
+applied-known-743, batch-check PASS, applied).
+Files: results/queued-jitguard/ORDER.md, results/queued-jitguard/jit-guard-after-layout2.patch,
+results/applied-known-743/ORDER.md, results/applied-known-743/arm-known-sod16-743.patch; tools/arm-cross-check.py,
+results/drafts/endgame-740.md, GOALS.md, HANDOFF.md, results/README.md.

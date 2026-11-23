@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 742.
+- master: Iteration 743.
 - **The route to the end: results/drafts/endgame-740.md** - from seed 97 to relf's handoff, every step's command and check.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
@@ -485,6 +485,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   priced (x86 0 to -3.1 %, a later search's gene); small VMs and interpretable compression surveyed (results/drafts/
   small-vms-742.md: nothing for now, two paper candidates). Step 2's GCC ARM check run: +0-4 B, alive. Found: the
   hand-made s1-sod16 meets a 128 KB DOES> reach on apps in its ARM GCC build (master too; no design). NEXT-RUN none.
+  **743 (the owner: "for open questions - I don't have strong opinions, please continue as you think is most
+  reasonable")**: decided and recorded (results/drafts/endgame-740.md, "Decided (743)"): the series' seeds 16 hours
+  each; trades by 718's rule; **the JIT stack gap closed for every JIT design without the guard gene** - the slim guard
+  queued after step 2 (results/queued-jitguard: +112-128 B at 8-byte cells, +176-208 at 4, the three runaways status
+  70; every other engine byte for byte - SA_ONSTACK only under X_JIT; batch-check with BASE PASS); Thumb-2 per ARM role
+  when the Tegra shows no loss; s1-sod16's ARM reach in arm-cross-check.py's KNOWN (results/applied-known-743, applied);
+  the outliner and the paper candidates a later search's. NEXT-RUN none.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
@@ -645,7 +652,10 @@ Three commands, the judgment between them (Iteration 560; each step's detail and
 The full list, with the reasons: HANDOFF-REFERENCE.md.
 - Every patch tested, then verified to apply in order on a fresh clone; batches wait in results/pending/ with ORDER.md;
   `tools/batch-check.sh` runs that test.
-- Run lengths are the owner's - ask for each run's hours.
+- Run lengths are the owner's - ask for each run's hours. **743: delegated** - the owner: "for open questions - I don't
+  have strong opinions, please continue as you think is most reasonable": the series' seeds 16 hours each (as seed 97), a
+  chain's hours as its content needs, each said before it starts; the other open questions decided in
+  results/drafts/endgame-740.md, "Decided (743)". Still: tell the owner when the laptop is needed.
 - The roles' memory rule 8 KB (708; 4 before - one page is a design's own noise).
 - The search reopens after the new roles: chainorder and mechanism 9's V1' built as genes, then a new series (708).
 - relf's handoff once, after the reopened search's roles - "ensure we found best designs" first (727).
