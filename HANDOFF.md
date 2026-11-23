@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 741.
+- master: Iteration 742.
 - **The route to the end: results/drafts/endgame-740.md** - from seed 97 to relf's handoff, every step's command and check.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
@@ -476,6 +476,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   challengers; on 705's inputs its record lines 705's byte for byte, roles-screen-741.sh) and designs/README.md's table
   (results/drafts/designs-table-741.py: any records, NAMES and chains in order of preference; today's table byte for
   byte, designs-table-741.sh; a design no chain measured is an error). endgame-740.md names both. NEXT-RUN none.
+  **742 (the owner: other sources for ideas, then "continue")**: **Thumb-2 for the ARM engines** (results/drafts/
+  thumb-742.txt): every ARM engine is A32 - clang's cross build and the Tegra's GCC alike (726's engine sizes are the A32
+  builds'), so the ARMv7 comparisons were never confounded; Thumb-2 makes the six ARM roles' engines 25-31 % smaller,
+  all alive. **The gene `thumb` queued for the series' end** (results/queued-thumb, batch-check PASS; HELD - never bred,
+  x86 and every id unchanged); the follow-up puts the six variants on the Tegra's list (roles-screen-741.py --also-arm),
+  results/drafts/thumb-pairs-742.py reads the pairs - **the owner's then**: ship Thumb-2 or not. The machine outliner
+  priced (x86 0 to -3.1 %, a later search's gene); small VMs and interpretable compression surveyed (results/drafts/
+  small-vms-742.md: nothing for now, two paper candidates). Step 2's GCC ARM check run: +0-4 B, alive. Found: the
+  hand-made s1-sod16 meets a 128 KB DOES> reach on apps in its ARM GCC build (master too; no design). NEXT-RUN none.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

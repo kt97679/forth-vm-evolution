@@ -1,0 +1,71 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 999ab21c..f90e762e 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -83,6 +83,7 @@ as the record of what each does.
+ | the chain hash with one constant (`hashk`: 0, 1; Iteration 729; every CV8 design - results/drafts/demoscene-ioccc-727.md, after the demoscene's crinkler): a name's chain ((v * 18835) >> 8) & (chains - 1), v kernel.4's HASH (the length and the first two characters) - K searched on the held-out programs for the ten roles and 16-128 chains at once (results/drafts/hashk-table-728.py; K = 256 is today's hash); forth/cv8-hashk.4's HASH8 in every dump becomes HASH's body (tools/layout.py --hashk, which threads the image by it too), the engine's L_x_hash and (FIND) by -DHASHK (vm-lab.c's CHAIN; gen-msc.py's); off, HASH8 leaves the image - every design's bytes as before. Measured (729, results/drafts/hashk-gene-729.py): the lookup's walk shorter - the smallest's parse -17.5 % of its instructions on the prototype. In the self-hosting compiler since 731: G-HASHK in THASH, cv8-hashk.4 among a design's overlays where HASH is no op | results/drafts/demoscene-ioccc-727.md |
+ | each chain's most looked-up names first (`chainorder`: 0, 1; Iteration 732; every CV8 design - results/drafts/demoscene-ioccc-727.md, chainorder-margin-731.txt): the names looked up at least 64 times in the held-out programs (lab/evolve/chainorder-use.txt, results/drafts/chainorder-use-732.py) at the front of their chains, most first, the rest newest first as before; a link to a word laid later is its own form, three bytes (tag F0-FF; tag 2's E0-FF), carved from the four-byte one (28 and 29 bits back now); backward links as before. forth/cv8-chainorder.4 and cv8t-chainorder.4 in every dump - LINK-LEN8 (the narrower reach) and NEXT-NFA88 (the forward form) swapped in by tools/layout.py --chainorder, dropped off; the engine's PREVNFA and bfind's bf_prev by -DCHAINORDER. Measured (results/drafts/chainorder-732.txt, the ten roles): the images +56-120 B; the corpus's instructions 0.987-1.031 of off (the smallest, its walk Forth, 0.987; five C walks a little better, five a little worse); parse (held out) 0.79-0.99; with hashk the smallest's corpus 0.903. In the self-hosting compiler since Iteration 736 (results/drafts/chainorder-cross-736.txt): each pass logs its headers, the second's give the walk, the third lays each link to its walk's next - forward three bytes, patched when the headers are down; the link words before cv8b.4 by G-TRIM8 and G-ONCE; self-built parse 0.789 (smallest) and 0.943 of the instructions without | results/drafts/chainorder-732.txt |
+ | a token of digits converted without its lookup (`numfirst`: 0, 1; Iteration 733; every byte-header CV8 design - results/drafts/esolangs-717.md, numfirst-722.md): while no name of the form -?[0-9]+ is defined, a token of that form goes to NUMBER? without FIND's walk; the flag NF-FLAG is the prologue's last padding byte (START + 2 cells - 1, never run), so SAVE-SYSTEM keeps it, and HEADER8 sets it when it lays such a name. Two forms: with klookup the engine's (FIND) answers c-addr 0 at once (-DNUMFIRST, NF_SKIP - vm-lab.c, gen-msc.py and gen-tos.py's copies); without it, forth/cv8-numfirst.4's INTERPRET8 skips FIND for [0-9]+. forth/cv8-numfirst.4 and cv8t-numfirst.4 in every dump with cv8b.4 or cv8bt.4 - tools/layout.py --numfirst c|forth keeps HEADER8 (and INTERPRET8 in the Forth form; DIGITS? and NF-FLAG headerless), drops the file's words off, before the hot-inline pass. Measured (results/drafts/numfirst-733.txt, the ten roles): the images +55-106 B, the engines +0-384 B; the corpus's instructions 0.756-0.999 of off (the smallest, the Forth form, 0.756; with hashk 0.725), parse (held out) 0.683-0.994 (with hashk 0.587). In the self-hosting compiler since Iteration 736 (results/drafts/numfirst-cross-736.txt): the file last in G-OVERLAYS, DIGITS? and NF-FLAG headerless, G-SKIP the marker (and INTERPRET8 in the C form); self-built corpus 0.83 (smallest) of the instructions without | results/drafts/numfirst-733.txt |
++| the 32-bit ARM engine in Thumb-2 (`thumb`: 0, 1; Iteration 742; every design - results/drafts/thumb-742.txt): -mthumb in an ARM build alone (clang's cross build is A32 by default, the Tegra's GCC 16 builds A32 too - its engines' sizes; Ubuntu's cross GCC defaults to Thumb-2), so the ARM engine is 25-31 % smaller (clang: 6,100 -> 4,440 B for smallest; GCC A32 16,862 -> 12,506 for portable-arm) and every x86 build byte for byte its parent's; HELD (evolve.py): measured by id only, never mutated or drawn - on x86 a variant is its parent's twin. Its Tegra speed is the question (the roles' follow-up after the series: results/candidates-thumb-742.md on the Tegra's list) |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 59d5eaf8..b4ad6f5e 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -173,6 +173,7 @@ gene('tag2', needs=lambda g, e: g['enc'] == 'cv8' and g['bytehdr'])            #
+ gene('hotcalls', values=HOTN, needs=lambda g, e: e.get('varcall') and not e.get('tag2'))   # far-call prefixes; none under the tag
+ gene('t2hot', needs=lambda g, e: e.get('tag2'))                                # Iteration 71: with the tag (values: GENE_VALUES below)
+ gene('hotinl', values=HOTINLN, needs=lambda g, e: e.get('tag2'))               # Iteration 92: designs in the tag
++gene('thumb', values=range(2))   # Iteration 742: the 32-bit ARM engine in Thumb-2 (-mthumb) - the ARM build alone (clang's cross build, the Tegra's GCC); x86 the same bytes. HELD: measured by id, never bred
+ gene('t2wide', needs=lambda g, e: t2wide_on(g))                                # Iteration 95: the tag, not multi-state
+ gene('rtempty', needs=lambda g, e: e.get('tag2'))                              # Iteration 101: the tag's run-time compiler
+ gene('kstack', needs=lambda g, e: e.get('tag2') and not kinput_on(g))          # Iteration 116: the tag's dumps; kinput has it already
+@@ -945,7 +946,7 @@ def ccflags(g):
+     # noinls, gotodup and alignhot on the families that do not express them.
+     e = express(g)
+     if e.get('compiler'):                   # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
+-        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if e.get(k) and k not in GCC_ONLY for w in f.split()] + _EXTRA_CFLAGS
++        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if e.get(k) and k not in GCC_ONLY for w in f.split()] + _thumb(e) + _EXTRA_CFLAGS
+     f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if e.get(k) for w in f.split()]   # a flag gene a genome lacks is off
+     if e.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[e['gotodup']]]   # Iteration 260
+     # Iteration 407 (open item 0d): not on 32-bit ARM - there GCC places the engine's literal pools without the padding
+@@ -955,7 +956,10 @@ def ccflags(g):
+     if e.get('alignhot') and not ARM32: f += ['-falign-jumps=%s' % ALIGNV[e['alignhot']], '-falign-labels=%s' % ALIGNV[e['alignhot']],
+                                 '-falign-functions=%s' % ALIGNV[e['alignhot']]]   # Iteration 298: a handler's entry - a computed goto's
+                                 # target, or a tail engine's function - on a fetch window's start
+-    return f + _EXTRA_CFLAGS
++    return f + _thumb(e) + _EXTRA_CFLAGS
++# Iteration 742 (results/drafts/thumb-742.txt): Thumb-2 in a 32-bit ARM build alone - clang's cross build is A32 by default,
++# the Tegra's GCC its own default; thumb=0 adds nothing, so every design builds as before
++_thumb = lambda e: ['-mthumb'] if e.get('thumb') and (ARM32 or arm_cross()) else []
+ _EXTRA_CFLAGS = os.environ.get('EVOLVE_CFLAGS', '').split()   # Iteration 294: a measurement's -g (missmap.py) - never the evolution's
+ 
+ # Iteration 456 (the owner; results/gene-votes.md): tail-call threading removed - tail_offenders(), build_tail() and
+@@ -1092,6 +1096,8 @@ REQUIRE = []
+ # opcodes only (rtloopall_on), so every front design's id stands - a genome with rtloop and fewer reads rtloop dormant.
+ FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1,
+           'bytehdr': 1, 'rtloopall': 1}
++HELD = ('thumb',)   # Iteration 742: genes measured by id only (results/candidates-thumb-742.md) - never mutated or drawn: on x86 a
++                    # thumb=1 design is its parent's twin, so a search would breed copies
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1)
+@@ -1636,7 +1642,7 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
+ def mutate(g, rnd):
+     g = canon(g); what = []
+     for _ in range(rnd.choice([1, 1, 2])):
+-        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if not (g['enc'] == 'cv8' and x in FROZEN)] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's; 590: CV8's, as require()
++        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if not (g['enc'] == 'cv8' and x in FROZEN) and x not in HELD] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's; 590: CV8's, as require(); 742: not HELD's
+         if 'nojit' in REQUIRE: pool = [x for x in pool if not x.startswith('jit')]   # 602: the JIT's genes dormant in every design - a mutation there repeats its parent
+         k = rnd.choice(pool)
+         if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
+@@ -2241,6 +2247,7 @@ def random_genome(rnd):
+     pairs from the founders' fixed pool (no profiling per draw)."""
+     g = dict(HUMAN['s6-cv8b']); g['enc'] = rnd.choice(FAMILIES)
+     for k in list(EXPRESSED[g['enc']]) + list(CC0):
++        if k in HELD: continue                     # Iteration 742: measured by id only, off here
+         v = g.get(k, CC0.get(k))
+         if k in GENE_VALUES and len(GENE_VALUES[k][0]) > 2: g[k] = rnd.choice(GENE_VALUES[k][0])   # Iteration 276: the gene table
+         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]

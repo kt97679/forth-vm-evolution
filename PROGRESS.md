@@ -12363,3 +12363,26 @@ are designs/README.md's (designs-table-741.sh, PASS); a design no chain measured
 chain B alone). results/drafts/endgame-740.md names both.
 Files: results/drafts/roles-screen-741.py, results/drafts/roles-screen-741.sh, results/drafts/designs-table-741.py,
 results/drafts/designs-table-741.sh; results/drafts/endgame-740.md, HANDOFF.md.
+
+## Iteration 742 - 2026-11-22 - Claude
+
+While seed 97 runs (the owner: other sources for ideas, then "continue"). **Thumb-2 for the ARM engines**
+(results/drafts/thumb-742.txt): no ARM build names a mode - clang's cross build is A32, and the Tegra's GCC 16 too (its
+three GCC engines at 726, 16,782, 13,014 and 11,158 B, are this sandbox's -marm builds' sizes, not Thumb-2's 12,506,
+9,754, 8,410), so every ARM design was measured in one instruction set. Thumb-2 makes the six ARM roles' engines 25-31 %
+smaller (clang: smallest 6,100 -> 4,440 B, portable-knee 12,896 -> 8,848, portable-fastest 18,128 -> 12,728), every build
+alive and fib and apps the reference's under qemu. **The gene `thumb`, queued** (results/queued-thumb: -mthumb in an ARM
+build alone; HELD - never mutated or drawn): ids of 6,330 recorded designs the same with and without it; the six variants'
+x86 builds at both widths byte for byte their parents'; the clang variants through arm-cross-check, the Tegra line's
+sample (xcheck.py --arm --bundle carries their Thumb-2 engines) and export-arm.py (`make forth-arm` the lab's bytes);
+batch-check PASS. The follow-up's screen takes them on the Tegra's list alone (roles-screen-741.py --also-arm, tested);
+results/drafts/thumb-pairs-742.py pairs each with its parent (self-test PASS). The machine outliner priced: x86 0 to -3.1
+%, a later search's gene. Small VMs and interpretable compression surveyed (results/drafts/small-vms-742.md): nothing for
+now; two paper candidates (the tag's tables as const data; a learned grammar over the bytecode - ~80 % of the smallest's
+bytes, xz 62-64 % of the images). With the cross GCC in for the hour: step 2's GCC ARM check (+0-4 B, alive, as clang's),
+and a find - the hand-made s1-sod16's ARM GCC build meets a 128 KB DOES> reach on apps (on master too, without the layout
+script too; no design affected). gcc-multilib restored.
+Files: results/drafts/thumb-742.txt, results/drafts/small-vms-742.md, results/drafts/thumb-pairs-742.py,
+results/queued-thumb/ORDER.md, results/queued-thumb/thumb-gene-after-series.patch, results/queued-thumb/candidates-thumb-742.md;
+results/drafts/roles-screen-741.py, results/drafts/roles-screen-741.sh, results/drafts/endgame-740.md, GOALS.md,
+HANDOFF.md, results/README.md.

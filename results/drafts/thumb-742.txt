@@ -1,0 +1,64 @@
+# Thumb-2 for the ARM engines, and LLVM's machine outliner (Iteration 742)
+
+The owner (741, "can you think of anything else we can check?"; 742, "continue"): embedded toolchains' size practice
+- the two flags such guides name first, tried on the roles.
+
+## The ARM engines are A32 - all of them
+
+No ARM build names a mode. clang's cross build (evolve.py's ARM_CROSS_CC: --target=arm-linux-gnueabihf -march=armv7-a)
+defines no __thumb__: A32. The Tegra's GCC (Gentoo 16.2.1): its three GCC designs' engines at 726 (results/rage-designs-
+726.md) were 16,782, 13,014 and 11,158 B - this sandbox's builds of the same designs with Ubuntu's cross GCC 13 are
+16,862, 13,070 and 11,186 B with -marm and 12,506, 9,754 and 8,410 B in Thumb-2 (that GCC's default, --with-mode=thumb).
+So the Tegra builds A32 too, and every ARM design - clang's and GCC's - was measured in one instruction set: the roles'
+ARMv7 comparisons are not confounded. (`cc -dM -E - </dev/null | grep -c __thumb2__` on the Tegra would say 0.)
+
+## Thumb-2 (-mthumb), the ARM engine's bytes
+
+| role | design | compiler | A32 B | Thumb-2 B | change | fib and apps (qemu-arm) |
+|---|---|---|---:|---:|---:|---|
+| smallest | 219878ec89 | clang | 6,100 | 4,440 | -27.2 % | the reference's |
+| portable-knee | 48a012411a | clang | 12,896 | 8,848 | -31.4 % | the reference's |
+| portable-fastest | d727605472 | clang | 18,128 | 12,728 | -29.8 % | the reference's |
+| least-memory | fb0d57c8a2 | GCC 13 | 11,186 | 8,410 | -24.8 % | the reference's |
+| portable-small | ae99617f06 | GCC 13 | 13,070 | 9,754 | -25.4 % | the reference's |
+| portable-arm | a8d35bdccc | GCC 13 | 16,862 | 12,506 | -25.8 % | the reference's |
+
+Every build passed the lab's alive check (the corpus, the kernel, far, full) and gave the reference's fib and apps
+(tools/arm-cross-check.py). The records' size is the x86-64 build's, so none of this moves a record or a role; it is what
+ships for ARM (relf's `make arm`). The speed on a Cortex-A9 is the question: Thumb-2's narrower instructions fit the
+cache better and decode as fast on most cores, but some sequences take more instructions - only the Tegra can say.
+
+As a gene, queued for the series' end (results/queued-thumb/ORDER.md): `thumb` adds -mthumb to an ARM build alone. Its
+checks - ids of the 6,330 recorded designs the same with and without it; mutate() (4,000 draws) and random_genome()
+(2,000) never set it (HELD); the six variants' x86 builds at 8- and 4-byte cells byte for byte their parents'; the
+clang variants' ARM builds the table's Thumb-2 column (arm-cross-check: alive, identical); the Tegra line's sample
+(xcheck.py --sample --cell 4 --bundle --arm --also) bundling the three Thumb-2 engines and leaving the GCC three to the
+host; export-designs.py and export-arm.py on two variants - each Makefile's `forth-arm` carries -mthumb and builds the
+lab's bytes (8,848 B for portable-knee's), running. With Ubuntu's cross GCC (Thumb-2 by default) a GCC variant is its
+parent's bytes; on the Tegra (A32 by default) it is the Thumb-2 build. The follow-up after the series measures the
+pairs on the Tegra (results/candidates-thumb-742.md on its list; results/drafts/thumb-pairs-742.py, self-test PASS).
+
+## LLVM's machine outliner (-mllvm -enable-machine-outliner), x86-64, 8-byte cells
+
+| role | design | engine B | outlined B | change |
+|---|---|---:|---:|---:|
+| smallest | 219878ec89 | 4,246 | 4,246 | 0 |
+| portable-knee | 48a012411a | 9,424 | 9,248 | -1.9 % |
+| portable-fastest | d727605472 | 16,336 | 15,824 | -3.1 % |
+| small-jit | 15eda54ebd | 18,676 | 18,244 | -2.3 % |
+| fastest-x86-64 | 9b15ba26f7 | 33,256 | 32,504 | -2.3 % |
+
+clang designs only (GCC has no outliner); every build alive. The outlined sequences become calls, so the speed likely
+pays: a compiler-flag gene for a later search (the evolver would find where it pays), not a change to the roles. Not
+built as a gene here.
+
+## Found on the way
+
+The hand-made stage s1-sod16, built for ARM by the cross GCC (arm-cross-check.py --gcc), gives "sod16: DOES> tail beyond
+128 KB" on apps where the x86 4-byte build (build/s1-sod16-32) passes - on master as with step 2, and the same without
+engine/data-layout.ld, so neither layout step's. A reach limit of the 16-bit stage, as s2-cpt16's on apps (KNOWN in
+tools/arm-cross-check.py); no design is affected. Not looked into further.
+
+The data layout's step 2 with the cross GCC (the check 738 could not run): the GCC three and s6 alive and the
+reference's on fib and apps, +0-4 B an engine (12,506 -> 12,510, 9,754 the same, 8,410 -> 8,414; s6 11,208 -> 11,212)
+- the 0x50400 immediate, as clang's.

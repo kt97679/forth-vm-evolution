@@ -15,7 +15,7 @@ screen), the 5 smallest JIT designs, and the holders:
   --holders FILE: 705's form - records whose why reads "a holder: ROLE (SOURCE) ..." (results/roles-holders-705.md).
 A holder in the pool keeps the pool's record. --also FILE (any number): records added to the list as they are - their
 genome is what the chain measures (results/candidates-guard-740.md: the guard challengers); JIT-free ones go on the ARM
-list too. LIST: every candidate (the laptop and dream, both widths); ARMLIST: the JIT-free ones, the whole pool's set (a
+list too. --also-arm FILE: on the ARM list alone (742: results/candidates-thumb-742.md - on x86 their parents' twins). LIST: every candidate (the laptop and dream, both widths); ARMLIST: the JIT-free ones, the whole pool's set (a
 JIT design on ARMv7 is its JIT-off build) and the holders (the Tegra). One record a line with "why" and "src" (loadtest.py
 --ids FILE, measure-ids.py --ids FILE and xcheck.py --also @FILE read them; the remote lines find genomes by id in
 results/evolve-*-seed*.md, results/candidates-*.md and results/relf-designs-*.md - keep an --also file under one of
@@ -36,6 +36,7 @@ k, band = int(opt('--k', '30')), float(opt('--band', '0.05'))
 ITER, SERIES = opt('--iter', '?'), opt('--series')
 DESIGNS, RECORDS, HOLDERS = opt('--designs'), opt('--records'), opt('--holders')
 ALSO = opt('--also', many=True)
+ALSO_ARM = opt('--also-arm', many=True)   # 742: the Tegra's list alone (the thumb variants: on x86 their parents' twins)
 DBL, HSRC = opt('--db-label'), opt('--holders-src')
 if len(A) < 4 or not (HOLDERS or (DESIGNS and RECORDS)): sys.exit(__doc__)
 out, armout, db, files = A[0], A[1], A[2], A[3:]
@@ -109,6 +110,13 @@ for f in ALSO:                                           # 741: designs asked fo
         add(r['id'], 'also (%s): %s' % (os.path.basename(f), r.get('why', '')))
 ARM |= {i for i in C if i in pool and i not in jit}
 ARM |= {i for i in C if i not in pool and not E.jit_on(E.canon(E.require(dict(R[i]['genome']))))}
+ARMONLY = set()
+for f in ALSO_ARM:                                       # 742: on the Tegra's list only
+    for l in open(f):
+        if not l.startswith('{'): continue
+        r = json.loads(l)
+        if r['id'] not in R: R[r['id']] = r; src[r['id']] = os.path.basename(f)
+        add(r['id'], 'also, the Tegra (%s): %s' % (os.path.basename(f), r.get('why', ''))); ARM.add(r['id']); ARMONLY.add(r['id'])
 
 head = ('# The roles\' screen (Iteration %s; results/drafts/roles-screen-741.py) - %d designs, %s\n\n'
         'The series\' pool (%s): the whole and its JIT-free designs, each by final-set.py\'s select() to %d and '
@@ -116,10 +124,11 @@ head = ('# The roles\' screen (Iteration %s; results/drafts/roles-screen-741.py)
         'merged) and the knee; the JIT-free true front after merging (the ARM roles\' screen), the 5 smallest JIT designs, '
         'the roles\' holders%s. %s Read by loadtest.py --ids FILE and xcheck.py --also @FILE.\n\n')
 ser = SERIES or ', '.join([os.path.basename(f) for f in files] + [DBL])
-alsot = (' and ' + ', '.join(os.path.basename(f) for f in ALSO)) if ALSO else ''
+alsot = (' and ' + ', '.join(os.path.basename(f) for f in ALSO + ALSO_ARM)) if ALSO or ALSO_ARM else ''
 with open(out, 'w') as o:
     o.write(head % (ITER, len(C), 'the laptop and dream', ser, k, round(100 * band), alsot, 'Every candidate.'))
-    for i, w in C.items(): o.write(json.dumps(dict(R[i], why='; '.join(w), src=src[i]), sort_keys=True) + '\n')
+    for i, w in C.items():
+        if i not in ARMONLY: o.write(json.dumps(dict(R[i], why='; '.join(w), src=src[i]), sort_keys=True) + '\n')
 with open(armout, 'w') as o:
     o.write(head % (ITER, len(ARM), 'the Tegra', ser, k, round(100 * band), alsot, 'The JIT-free ones, the whole pool\'s set '
                     '(on ARMv7 a JIT design is its JIT-off build) and the holders.'))
@@ -132,7 +141,7 @@ for ws in C.values():
     for w in set(x.split(' (')[0].split(' into ')[0].split(': a holder')[0] for x in ws):
         cnt[w if not w.startswith('a holder') else 'a holder'] += 1
 print('\nThe list: %d designs (JIT %d, JIT-free %d); the ARM list %d (JIT %d)' % (
-    len(C), sum(1 for i in C if isjit(i)), sum(1 for i in C if not isjit(i)), len(ARM), sum(1 for i in ARM if isjit(i))))
+    len(C) - len(ARMONLY), sum(1 for i in C if isjit(i)), sum(1 for i in C if not isjit(i)), len(ARM), sum(1 for i in ARM if isjit(i))))
 for w, n in sorted(cnt.items()): print('  %4d  %s' % (n, w))
 P = [i for i in C if i in pool]
 fr = [i for i in P if i not in jit]
