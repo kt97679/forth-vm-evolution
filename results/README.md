@@ -575,6 +575,7 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `drafts/relf-handoff-739-test.md` - The notes file for the final handoff's generator, results/drafts/relf-handoff-739.py (Iteration 739): its form, and the test - the 726 roles against 657 with 726's prose.
 - `drafts/endgame-740.md` - The endgame from seed 97 to relf's handoff, in order (Iteration 740): each step's command, needs, checks and rehearsal; the owner's decisions marked.
 - `drafts/small-vms-742.md` - Small VMs' and interpretable code compression's techniques against the register (Iteration 742): Java Card, RPL, PostScript, MicroPython, eLua; Proebsting, BRISC, Evans and Fraser - nothing for now, two paper candidates.
+- `drafts/early-look-745.md` - Two looks while seed 98 runs (Iteration 745): the roles after seed 97 alone by each role's rule (a forecast: the knee, the smallest and least-memory likely to change), and seed 96's re-measure gap traced to a step on the laptop around 2026-11-19.
 - `applied-hashk-730/ORDER.md` - The gene hashk (Iteration 730): the chain hash with one constant, after the demoscene's crinkler - the patch, how it was checked, applied.
 - `applied-hashk-cross-731/ORDER.md` - hashk in the self-hosting compiler (Iteration 731): HASH8, G-HASHK and THASH - three hashk designs self-built at both widths.
 - `applied-chainorder-732/ORDER.md` - The gene chainorder (Iteration 732): each chain's most looked-up names first, forward links their own form - converter-only, measured, applied.

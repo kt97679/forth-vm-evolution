@@ -27,6 +27,10 @@ seed 97 generation 0: 9102 alive
 2. seed 97 generation 0 / the fronts' in-run readings (seeds 93-96, the newest table for a design)
   JIT      1.003 (IQR 0.981-1.051, n 434)
   not JIT  1.084 (IQR 1.025-1.131, n 587)
+  seed93: JIT 1.019 (IQR 0.989-1.062, n 141), not JIT 1.094 (IQR 1.025-1.141, n 158)
+  seed94: JIT 1.000 (IQR 0.983-1.060, n 128), not JIT 1.088 (IQR 1.040-1.137, n 151)
+  seed95: JIT 1.005 (IQR 0.987-1.041, n 108), not JIT 1.089 (IQR 1.040-1.141, n 189)
+  seed96: JIT 0.984 (IQR 0.965-1.041, n 99), not JIT 1.068 (IQR 0.997-1.106, n 186)
   speed 0.121-0.200: 0.991 (IQR 0.976-1.009, n 170), JIT 170
   speed 0.200-0.264: 1.010 (IQR 0.981-1.061, n 170), JIT 170
   speed 0.264-0.467: 1.084 (IQR 1.040-1.134, n 170), JIT 65

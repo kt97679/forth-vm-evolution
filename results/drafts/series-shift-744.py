@@ -74,6 +74,10 @@ ids = sorted(old, key=lambda i: old[i][0])
 ratio = {i: g0[i]['speed'] / old[i][0] for i in ids}
 for name, sel in (('JIT', jit), ('not JIT', lambda i: not jit(i))):
     print('  %-8s %s' % (name, q([ratio[i] for i in ids if sel(i)])))
+for res in results:                                       # 745: by the run whose table it is (early-look-745.md)
+    own = {i: s for i, s, r, t, m in front(res) if i in g0}
+    print('  %s: JIT %s, not JIT %s' % (re.search(r'seed\d+', res).group(0), q([g0[i]['speed'] / s for i, s in own.items() if jit(i)]),
+                                        q([g0[i]['speed'] / s for i, s in own.items() if not jit(i)])))
 k = len(ids) // 6
 for a in range(0, 6 * k, k):
     part = ids[a:a + k]

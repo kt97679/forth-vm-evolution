@@ -74,7 +74,7 @@ the JIT designs 0.934 (20; kernel 0.907, bubble 0.893, apps 1.008), the rest 0.9
 reads 3-7 % faster against s6, so its extremes do not compare with seeds 92-96's (as 727 said: a new series). The old
 fronts' in-run readings of the portable designs ran 8 % optimistic against chain A (1.083, 12 designs); seed 96's own
 end-of-run re-measure of its portable fast end agrees with neither (seed 97 / it 1.101, 42 designs; the JIT designs
-0.958) - not explained, noted. The bytes -730 B median (the batch's engines), the memory -16 KB median (the layout).
+0.958) - a step on the laptop between seed 96's run and chain A, the code the same (results/drafts/early-look-745.md). The bytes -730 B median (the batch's engines), the memory -16 KB median (the layout).
 
 **The held-out code** (lab/evolve/heldout-code.py; results/drafts/heldout-code-seed97.txt): 87 designs, the
 selection's code counted again the record's for 87 of 87; Spearman 0.709 with the selection's code (seeds 92-96 0.813,

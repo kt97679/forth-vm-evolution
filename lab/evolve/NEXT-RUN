@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 745: none - seed 98 is running (started 2026-11-23 from iter744's bundle, `seed 98 16h widths` below in its
+#   history); this bundle changes nothing it builds or measures. Its archive's processing next, then the next line.
 # Iteration 744 (seed 97 processed - results/evolve-amd-ryzen-7-pro-8840hs-seed97.md): seed 98 16h widths - the series'
 #   second run on seed 97's method, nothing changed in what it builds or measures; 16 hours as seed 97 (the owner, 743:
 #   the series' seeds 16 hours each). The newest four runs' fronts carried (seed 97's among them), measured again in
@@ -424,4 +426,4 @@
 # (ran from 720's bundle at be190a273 - chain D, processed at 725: results/followup-roles-seed96-jitband.md) experiment rage-designs.py then experiment pool-sizes.py --list results/followup-seed96-jitband.md --free 0 --jit 39100 --below-jit 35980 --jit-speed 0.2116 --jit-speed32 0.2354 --minutes 40 --write build/evolve/jitband-list.md --anchors all --cap 30 then experiment measure-ids.py --ids build/evolve/jitband-list.md --rounds 3 then experiment selfhost-speed.py --rounds 10 --pairs 5 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10 then experiment loadtest.py --ids build/evolve/jitband-list.md --rounds 10
 # Iteration 714's line, chain C: experiment measure-ids.py --ids results/followup-seed96-roles-c.md --rounds 3 then experiment pool-sizes.py --list results/followup-seed96-roles-c.md  ... (loadtest.py 10 times)
 
-seed 98 16h widths
+none

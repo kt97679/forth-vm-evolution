@@ -12418,3 +12418,16 @@ the smallest tenth), jitdead 125, jitfew 69, numfirst 22, chainorder 16. The new
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed97.md, results/drafts/newgenes-seed97.txt,
 results/drafts/series-shift-744.py, results/drafts/series-shift-744.txt, results/drafts/heldout-code-seed97.txt;
 lab/evolve/newgenes.py, lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF.md.
+
+## Iteration 745 - 2026-11-23 - Claude
+
+While seed 98 runs (the owner: both looks in this chat) - results/drafts/early-look-745.md. The roles after seed 97
+alone, by each role's rule on its in-run and re-measured readings (results/drafts/roles-early-745.py, .txt):
+fastest-x86-64 holds; the knee (178 by the rule), the smallest (196 hashk designs 37 B smaller, no width slower) and
+least-memory (designs at 100 KB faster than its old record) likely to change; the screen's lists 663 and 383. Seed 96's
+re-measure gap explained as far as the repository can: not a stale remeasure.json nor the chain's measure - seeds 93-96
+read the portable designs ~8 % faster against s6 than chain A on the same code (series-shift-744.py now per run), seed
+97 like chain A: a step on the laptop around 2026-11-19.
+Files: results/drafts/early-look-745.md, results/drafts/roles-early-745.py, results/drafts/roles-early-745.txt;
+results/drafts/series-shift-744.py, results/drafts/series-shift-744.txt, results/evolve-amd-ryzen-7-pro-8840hs-seed97.md,
+HANDOFF.md, lab/evolve/NEXT-RUN (none: seed 98 running), results/README.md.
