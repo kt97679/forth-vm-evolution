@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 740.
+- master: Iteration 741.
 - **The route to the end: results/drafts/endgame-740.md** - from seed 97 to relf's handoff, every step's command and check.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
@@ -471,6 +471,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   found two gaps the post-series chain would have hit: the challengers' genomes found by the remote lines only under a
   candidates-*.md name, and two holders (9b15ba26f7, 11f956db93) in no file xcheck.py read - fixed, xcheck.py reads
   results/relf-designs-*.md (results/applied-xcheck-740, batch-check PASS; seed runs ask for no ids). NEXT-RUN none.
+  **741 (the owner: "continue")**: **the runbook's last two hand adaptations made general** - the roles' screen
+  (results/drafts/roles-screen-741.py: any series, the holders from designs/ and their records, --also for the guard
+  challengers; on 705's inputs its record lines 705's byte for byte, roles-screen-741.sh) and designs/README.md's table
+  (results/drafts/designs-table-741.py: any records, NAMES and chains in order of preference; today's table byte for
+  byte, designs-table-741.sh; a design no chain measured is an error). endgame-740.md names both. NEXT-RUN none.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

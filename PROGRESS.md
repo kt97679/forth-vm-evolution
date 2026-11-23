@@ -12347,3 +12347,19 @@ batch-check PASS; seed runs ask for no ids, so seed 98 is unchanged).
 Files: results/drafts/endgame-740.md, results/candidates-guard-740.md, results/drafts/guard-challengers-740.sh,
 results/applied-xcheck-740/ORDER.md, results/applied-xcheck-740/xcheck-holders-740.patch; lab/evolve/xcheck.py,
 GOALS.md, HANDOFF.md, results/README.md.
+
+## Iteration 741 - 2026-11-22 - Claude
+
+While seed 97 runs (the owner: "continue"): the endgame's last two hand-adapted scripts made general and tested against
+what they made. **The roles' screen** (results/drafts/roles-screen-741.py, from new-roles-705.py): any series' results
+files and last database; the holders from designs/ and their records (or 705's holders file); --also adds records as
+they are (the guard challengers: the laptop's and dream's list, not the Tegra's). Seed 96's database is not here, so the
+test is equivalence on seeds 92-95's results files with seed 96's standing in: 705's script and the general one with
+705's arguments - stdout and both lists' record lines byte for byte; in the endgame's form all ten holders on both
+lists, the three challengers on the first only (results/drafts/roles-screen-741.sh, PASS). **designs/README.md's table**
+(results/drafts/designs-table-741.py, from designs-table-718.py): the records, NAMES and the chains' readings in order of
+preference as arguments, the JIT from the expression; on 718's inputs designs-table-718.py's rows byte for byte, which
+are designs/README.md's (designs-table-741.sh, PASS); a design no chain measured is reported and exits 1 (small-jit with
+chain B alone). results/drafts/endgame-740.md names both.
+Files: results/drafts/roles-screen-741.py, results/drafts/roles-screen-741.sh, results/drafts/designs-table-741.py,
+results/drafts/designs-table-741.sh; results/drafts/endgame-740.md, HANDOFF.md.
