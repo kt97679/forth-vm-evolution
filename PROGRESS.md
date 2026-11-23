@@ -12284,3 +12284,27 @@ packages before phase 1 (lld found no ARM libgcc), the clang ARM step before the
 asm/errno.h), and the gate's verdicts handed to phase 2 as TRANSLATOR= from a file (without them the three JIT roles
 shipped self-built, not as 725 decided). No code changed.
 Files: results/drafts/ship-rehearsal-737.sh, results/drafts/ship-rehearsal-737.md.
+
+## Iteration 738 - 2026-11-22 - Claude
+
+While seed 97 runs (the owner: "proceed with step 2"): the data layout's step 2 built and queued, not applied
+(results/queued-layout2; results/drafts/data-layout2-738.txt). engine/vm-lab.c's stacks' chunk (STACKSEP) STK_PAD =
+1024 bytes longer on the return stack's side - still page-aligned, it ends 1 KB into a page - and engine/data-layout.ld
+puts it first in .bss.hot, the small variables straight after it: the return stack's top and the variables share a page.
+Both floors and the guard pages stay page-aligned (the six `STK_END - RSTACK_BYTES` take `- STK_PAD`); without STACKSEP
+STK_PAD is 0; lab/evolve/data-layout-check.py excepts stackmem in .bss.hot. Measured against master
+(data-layout-734.py): outputs the same, x86 engines byte for byte their size, the record's memory 0-8 KB less on the ten
+roles at 8-byte cells (smallest 104 -> 96, small-jit 228 -> 220, best-all-round 300 -> 292) and on smallest at 4-byte
+cells (124 -> 116); over 31 runs a fault fewer on every workload but the small interpreters' ackermann (its return
+stack runs deeper than the shared kilobyte). The traps (results/drafts/stack-traps-738.sh) the same in both trees on the
+ten roles and on the three clang ARM designs under qemu-arm; arm-cross-check 3 of 3, each ARM engine +4 B (0x50400 is
+no longer one ARM immediate; unavoidable with the floors page-aligned - a constant, no ranking moves). The first trial
+(stackmem not page-aligned) grew engines (portable-knee +80 B) and measured 512 and 2048 worse than 1024. Queued because
+it changes the memory reading: applied when the series ends, before the final build, the roles' memory re-measured then.
+Found on the way, the same before: the JIT roles without the guard gene (small-jit, fastest-x86-32, fastest-x86-64) die
+139 with nothing on stderr on a runaway data-stack push - JIT code has no dsp bound, and the push runs down through the
+engine's one RWE segment, the fault handler included (strace: first fault at 0x3ffff8); in GOALS.md's register, the
+owner's call.
+Files: results/queued-layout2/data-layout2-after-series.patch, results/queued-layout2/ORDER.md,
+results/drafts/data-layout2-738.txt, results/drafts/stack-traps-738.sh; GOALS.md (rows 294, 295), HANDOFF.md,
+results/README.md.

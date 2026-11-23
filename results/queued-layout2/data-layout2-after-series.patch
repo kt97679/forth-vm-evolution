@@ -1,0 +1,135 @@
+diff --git a/engine/data-layout.ld b/engine/data-layout.ld
+index f1698df6..e0ef3bee 100644
+--- a/engine/data-layout.ld
++++ b/engine/data-layout.ld
+@@ -4,26 +4,31 @@
+    .bss.NAME (a function's static: NAME, NAME.N or FUNCTION.NAME). In the order a start-up meets them:
+ 
+      .data           as before - the initialized variables, on the file's last page
+-     .bss.hot        every small variable, from the next page on: the few hundred bytes a run touches on one page
+-                     with the tables after them. Not in the file page's tail: that page is the file's, and the first
+-                     write to it is a fault of its own (copy on write) - free only where .data is written anyway; the
+-                     least-memory role paid a fault for it (results/drafts/data-layout-734.txt)
++     .bss.hot        from the next page on: the stacks' chunk first (stackmem, page-aligned; step 2, Iteration 738 -
++                     it ends STK_PAD = 1024 B into a page, and that last kilobyte is the return stack's top), then
++                     every small variable straight after it: the few hundred bytes a run touches, on the page the
++                     return stack's top already writes, with the tables after them. Not in the file page's tail: that
++                     page is the file's, and the first write to it is a fault of its own (copy on write) - free only
++                     where .data is written anyway; the least-memory role paid a fault for it
++                     (results/drafts/data-layout-734.txt)
+      .bss.tab        the tables of 512 B to 2 KB a run touches (dispatch, the tag's maps, the JIT's per-word marks),
+                      then the two buffers a run touches from their start: t_obuf (written from 0 at every output) and
+                      the loader's heads (8 bytes a chain of its 32 KB) - so their used part continues the block
+      .bss            whatever no pattern here names - empty on today's engines
+-     .bss.big        the other buffers of 4 KB and more, the stacks first; each touched only where it is used
++     .bss.big        the other buffers of 4 KB and more; each touched only where it is used
+ 
+    A section is placed by the first statement that names it, and the statements here come before the default
+    script's, so .bss.big's and .bss.tab's names win over .bss.hot's catch-all. A buffer of 4 KB or more missing
+    from the lists lands in .bss.hot and costs pages, not correctness: lab/evolve/data-layout-check.py lists
+-   each output section's members from the link map. Step 2 (the two stack tops on one page) is not here. */
++   each output section's members from the link map (stackmem is .bss.hot's by design). Step 2 measured: about a fault
++   fewer a workload, the record's memory 0-8 KB less on the ten roles, no x86 engine byte; +4 B on a 32-bit ARM
++   engine, whose stacks' end is no longer one immediate (results/drafts/data-layout2-738.txt). Without STACKSEP the
++   stacks are mem's top: STK_PAD 0. */
+ 
+ SECTIONS
+ {
+   .bss.big (NOLOAD) : ALIGN(4096)
+   {
+-    *(.bss.stackmem)
+     *(.bss.mem_dict)
+     *(.bss.t_fbb .bss.g_altstack)
+     *(.bss.jit_ic .bss.jit_st .bss.jit_k .bss.map .bss.map.* .bss.*.map)
+@@ -53,6 +58,7 @@ SECTIONS
+ {
+   .bss.hot (NOLOAD) : ALIGN(4096)
+   {
++    *(.bss.stackmem)                    /* 738: the stacks, ending STK_PAD (1024) B into a page */
+     *(.bss.* COMMON)
+   }
+ }
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 92a3a244..40c4fcaf 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -507,9 +507,14 @@ static inline UNS64 bf_walk(UNS64 a, UNS64 nb) {    /* THREAD-FIND: the nfa whos
+ #include <signal.h>
+ #endif
+ #define PAGE 4096
+-static UNS8 stackmem[RSTACK_BYTES + DSTACK_BYTES] __attribute__((aligned(PAGE)));   /* the stacks' own chunk */
++/* Iteration 738, the data layout's step 2: the return stack's region STK_PAD bytes past its RSTACK_BYTES (1 KB more
++ * return stack), so the chunk ends that far into a page - engine/data-layout.ld lays the small variables right after
++ * it: the return stack's top on a page the run writes anyway. Its floor and the guards stay on page boundaries; only
++ * constants change (x86: no byte; 32-bit ARM: +4, the end is no longer one immediate - results/drafts/data-layout2-738.txt). */
++#define STK_PAD 1024
++static UNS8 stackmem[RSTACK_BYTES + STK_PAD + DSTACK_BYTES] __attribute__((aligned(PAGE)));   /* the stacks' own chunk */
+ static UNS8 *mem;                                                  /* the dictionary: mmap'd at load */
+-#define STK_END ((UNS64)(uintptr_t)stackmem + RSTACK_BYTES + DSTACK_BYTES)
++#define STK_END ((UNS64)(uintptr_t)stackmem + RSTACK_BYTES + STK_PAD + DSTACK_BYTES)
+ #else
+ #if GUARD
+ #include <sys/mman.h>
+@@ -520,6 +525,7 @@ static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((aligned(PAGE), section(
+ static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((section(".bss.mem_dict")));
+ #endif
+ #define STK_END ((UNS64)(uintptr_t)base + MEMSIZE)
++#define STK_PAD 0
+ #endif
+ 
+ /*
+@@ -716,8 +722,8 @@ static void guard_trap(int sig, siginfo_t *si, void *uc) {
+  *  The two guard pages come out of the data stack, so the stacks stay
+  *  where they were and only the usable data depth shrinks by 8 KB. */
+ static void install_guards(UNS8 *b) {
+-    UNS64 dfloor = STK_END - RSTACK_BYTES - DSTACK_BYTES;   /* the stacks' top: their own chunk with STACKSEP */
+-    UNS64 rfloor = STK_END - RSTACK_BYTES;
++    UNS64 dfloor = STK_END - RSTACK_BYTES - STK_PAD - DSTACK_BYTES;   /* the stacks' top: their own chunk with STACKSEP */
++    UNS64 rfloor = STK_END - RSTACK_BYTES - STK_PAD;
+     (void)b;
+     struct sigaction sa;
+     stack_t ss;
+@@ -2861,17 +2867,17 @@ int main(int argc, char **argv) {
+      *  TWO cells of slack, not one: with TOS caching dsp sits one cell
+      *  ABOVE the logical top, so with one cell the empty stack would
+      *  put dsp exactly on the guard and any NOS read would trap. */
+-    g_dsp = STK_END - RSTACK_BYTES - PAGE - 2 * CELL_BYTES
++    g_dsp = STK_END - RSTACK_BYTES - STK_PAD - PAGE - 2 * CELL_BYTES
+             - 64 * CELL_BYTES - DSKEW;   /* Iteration 119: slack for a shallow underflow -
+                                     ?STACK reports it after the word, as without
+                                     the guard ("Stack error DROP"); only a
+                                     runaway one reaches the guard page */
+ #else
+     install_fault_trap();
+-    g_dsp = STK_END - RSTACK_BYTES - CELL_BYTES - DSKEW;
++    g_dsp = STK_END - RSTACK_BYTES - STK_PAD - CELL_BYTES - DSKEW;
+ #endif
+-    g_rp_limit  = STK_END - RSTACK_BYTES;
+-    g_dsp_limit = STK_END - RSTACK_BYTES - DSTACK_BYTES
++    g_rp_limit  = STK_END - RSTACK_BYTES - STK_PAD;
++    g_dsp_limit = STK_END - RSTACK_BYTES - STK_PAD - DSTACK_BYTES
+ #if GUARD
+                   + PAGE
+ #endif
+diff --git a/lab/evolve/data-layout-check.py b/lab/evolve/data-layout-check.py
+index 59104d0e..63483704 100644
+--- a/lab/evolve/data-layout-check.py
++++ b/lab/evolve/data-layout-check.py
+@@ -1,7 +1,7 @@
+ #!/usr/bin/env python3
+ """lab/evolve/data-layout-check.py MAP [MAP ...] | --self-test - engine/data-layout.ld checked on a link map (ld -Map; Iteration 734):
+ each of .bss.hot, .bss.tab, .bss and .bss.big with its members (name, size), and a FAULT for a member of 4 KB or more
+-outside .bss.big (t_obuf and heads excepted: .bss.tab's end, by design) or one of 512 B or more in .bss.hot (a name engine/data-layout.ld's lists missed). Exit 1 on a fault.
++outside .bss.big (t_obuf and heads excepted: .bss.tab's end, by design; stackmem, .bss.hot's first - 738) or one of 512 B or more in .bss.hot (a name engine/data-layout.ld's lists missed). Exit 1 on a fault.
+ --self-test: two roles built by the lab with a map, checked (run-tests)."""
+ import os, re, shutil, sys, tempfile
+ 
+@@ -53,7 +53,7 @@ for path in maps:
+         ms = sorted(mem[k], key=lambda x: -x[1])
+         print('  %-9s %7d B  %3d members: %s' % (k, size.get(k, 0), len(ms), ', '.join('%s %d' % (n[5:] or n, s) for n, s in ms[:12]) + (' ...' if len(ms) > 12 else '')))
+         for n, s in ms:
+-            if (k != '.bss.big' and s >= 4096 and not (k == '.bss.tab' and re.search(r'(^|\.)(t_obuf|heads)(\.\d+)?$', n[5:]))) or (k == '.bss.hot' and s >= 512):
++            if (k != '.bss.big' and s >= 4096 and not (k == '.bss.tab' and re.search(r'(^|\.)(t_obuf|heads)(\.\d+)?$', n[5:])) and not (k == '.bss.hot' and n[5:] == 'stackmem')) or (k == '.bss.hot' and s >= 512 and n[5:] != 'stackmem'):   # 738: the stacks' chunk first in .bss.hot, by design
+                 print('  FAULT     %s (%d B) in %s - engine/data-layout.ld names it nowhere it belongs' % (n, s, k)); bad += 1
+ if 'tmp' in dir(): shutil.rmtree(tmp, ignore_errors=True)
+ print('data-layout-check: %s' % ('PASS - %d links, every buffer of 4 KB or more in .bss.big' % len(maps) if not bad else 'FAILED - %d' % bad))

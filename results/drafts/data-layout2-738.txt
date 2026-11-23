@@ -1,0 +1,90 @@
+# The fixed data layout, step 2 - the return stack's top on the hot page (Iteration 738; queued: results/queued-layout2)
+
+The owner (737): "proceed with step 2". Step 1 (Iteration 734, results/drafts/data-layout-734.txt) put the small
+variables on a page of their own; every run also writes the top of the return stack, one page more. Step 2 makes them
+one page: engine/vm-lab.c's stacks' chunk (STACKSEP, every role) is STK_PAD = 1024 bytes longer, the extra on the
+return stack's side, so the chunk - still page-aligned - ends 1 KB into a page; engine/data-layout.ld puts it first in
+.bss.hot and the small variables straight after it. The return stack's floor, the data stack's floor and the guard
+pages stay on page boundaries (the six `STK_END - RSTACK_BYTES` became `... - STK_PAD`); the return stack is 1 KB
+deeper. Without STACKSEP (the stacks at mem's top) STK_PAD is 0. lab/evolve/data-layout-check.py excepts stackmem in
+.bss.hot. Not applied: it changes the memory reading, so seeds 97 on would not compare (ORDER.md: apply when the series
+ends).
+
+Built in a git clone of e198c8b3 (Iteration 737) - run-tests PASS, validate 7 of 7, data-layout-check --self-test PASS -
+and measured against master by results/drafts/data-layout-734.py (BASE NEW; its tables keep step 1's title).
+
+## The ten roles, 8-byte cells (medians of 7)
+
+| role | engine B | outputs | start-up faults | start-up data+BSS pages present | rss KB (the record's reading) | the workloads' faults, new - base | corpus instructions new / base |
+|---|---:|---|---:|---:|---:|---|---:|
+| best-all-round | 34216 / 34216 | same | 25 -> 24 | 7 -> 6 (of 134, 134) | 300 -> 292 | kernel -2, fib -1, corpus -2, loop -2, bubble -1, ackermann -2, apps +0 | 0.9999 |
+| fastest-x86-32 | 30516 / 30516 | same | 24 -> 22 | 7 -> 6 (of 129, 129) | 264 -> 260 | kernel -3, fib -1, corpus -1, loop -1, bubble -1, ackermann -1, apps +4 | 0.9999 |
+| fastest-x86-64 | 33256 / 33256 | same | 24 -> 24 | 8 -> 7 (of 131, 131) | 284 -> 284 | kernel +0, fib -1, corpus +0, loop -2, bubble -1, ackermann +1, apps -1 | 0.9999 |
+| least-memory | 7574 / 7574 | same | 15 -> 14 | 5 -> 4 (of 91, 91) | 104 -> 100 | kernel -1, fib -1, corpus +0, loop -2, bubble -2, ackermann +0, apps +0 | 0.9988 |
+| portable-arm | 26790 / 26790 | same | 16 -> 14 | 5 -> 4 (of 103, 103) | 120 -> 116 | kernel -1, fib +0, corpus -1, loop -2, bubble -1, ackermann +0, apps -1 | 0.9999 |
+| portable-fastest | 16336 / 16336 | same | 15 -> 15 | 6 -> 5 (of 104, 104) | 120 -> 120 | kernel +0, fib -1, corpus +0, loop -1, bubble -1, ackermann +1, apps -1 | 0.9999 |
+| portable-knee | 9424 / 9424 | same | 16 -> 15 | 5 -> 5 (of 103, 104) | 120 -> 116 | kernel -1, fib +0, corpus +0, loop +0, bubble +0, ackermann +1, apps +0 | 0.9999 |
+| portable-small | 8806 / 8806 | same | 15 -> 14 | 5 -> 4 (of 97, 97) | 108 -> 108 | kernel +0, fib +0, corpus -1, loop -1, bubble -1, ackermann +0, apps -2 | 1.0000 |
+| small-jit | 18676 / 18676 | same | 22 -> 21 | 6 -> 5 (of 102, 102) | 228 -> 220 | kernel +0, fib -1, corpus -2, loop -1, bubble +0, ackermann -2, apps -2 | 1.0000 |
+| smallest | 4246 / 4246 | same | 14 -> 13 | 4 -> 3 (of 90, 90) | 104 -> 96 | kernel -2, fib -2, corpus -1, loop +0, bubble +0, ackermann +0, apps -1 | 0.9997 |
+data-layout: every output the same
+
+## Three at 4-byte cells (medians of 5)
+
+| role | engine B | outputs | start-up faults | start-up data+BSS pages present | rss KB (the record's reading) | the workloads' faults, new - base | corpus instructions new / base |
+|---|---:|---|---:|---:|---:|---|---:|
+| smallest | 5254 / 5254 | same | 18 -> 17 | 4 -> 3 (of 86, 86) | 124 -> 116 | kernel -2, fib -1, corpus -1, loop -1, bubble -2, ackermann -1, apps +0 | - |
+| portable-fastest | 17056 / 17056 | same | 20 -> 19 | 5 -> 4 (of 99, 99) | 132 -> 132 | kernel +0, fib -1, corpus +1, loop -2, bubble -1, ackermann +1, apps -2 | - |
+| fastest-x86-32 | 29288 / 29288 | same | 27 -> 27 | 6 -> 5 (of 112, 112) | 248 -> 248 | kernel -1, fib -1, corpus +0, loop -1, bubble +0, ackermann -1, apps -3 | - |
+data-layout: every output the same
+
+## Faults over 31 runs a workload, mean, master -> step 2
+
+Medians of 7 move by a fault either way from run to run (734's least-memory note), so four roles were run 31 times:
+
+| role | BYE | kernel | fib | corpus | loop | bubble | ackermann |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| least-memory | 14.6 -> 13.7 | 26.8 -> 25.6 | 14.8 -> 13.8 | 19.8 -> 18.7 | 14.7 -> 13.7 | 15.5 -> 14.8 | 14.5 -> 14.7 |
+| smallest | 13.8 -> 12.6 | 25.9 -> 24.9 | 14.0 -> 12.8 | 18.8 -> 17.7 | 13.8 -> 12.8 | 14.7 -> 13.8 | 13.8 -> 13.6 |
+| best-all-round | 24.5 -> 23.6 | 63.5 -> 61.9 | 46.6 -> 45.3 | 74.1 -> 72.8 | 46.7 -> 45.5 | 49.8 -> 48.7 | 49.5 -> 48.7 |
+| small-jit | 21.5 -> 20.4 | 48.0 -> 47.0 | 33.0 -> 32.0 | 56.7 -> 55.8 | 32.9 -> 31.7 | 41.6 -> 40.2 | 46.6 -> 45.1 |
+
+A fault fewer on every workload but ackermann on the two small interpreters: its return stack runs deeper than the
+1 KB that shares the page, so it touches the page below either way. The kernel workload's return stack stays within it.
+
+## The pad's size and alignment
+
+1024: the kernel workload's return stack stays within it (under gdb at exit). The first trial (stackmem not
+page-aligned, the offset by its placement) measured 512 and 2048 worse than 1024 and grew engines (portable-knee
++80 B). Page-aligned with the pad inside, as taken: no x86 byte.
+
+## The stacks' traps (results/drafts/stack-traps-738.sh, both trees)
+
+The ten roles' x86 builds (data-layout-734.py's dlay-ROLE) and the three clang ARM designs of
+results/relf-designs-718.md (219878ec89, d727605472, 48a012411a; 4-byte cells, under qemu-arm): every program's
+status and message the same in both trees - return stack overflow, data stack overflow, a runaway underflow of
+either stack, 20000-deep recursion (the overflow trap), 25 FIB (75025). The guard designs say "data stack underflow",
+the others "segmentation fault" from the fault trap, as before.
+
+## ARM (tools/arm-cross-check.py results/relf-designs-718.md)
+
+3 of 3 built, alive, fib and apps identical; each engine +4 B (6100 -> 6104, 12896 -> 12900, 18128 -> 18132). The
+stacks' end, stackmem + 0x50400, is no longer one ARM immediate (0x50000 was): the VM's entry adds 0x10400 first, then
+0x40000. Unavoidable with this layout - the return stack's floor must stay page-aligned and its top 1 KB into a page,
+so some address the engine forms is always two adds from the chunk's base. A constant on every ARM engine, no ranking
+moves. The ARM faults are not measured here (qemu-user's faults are its own); the Tegra can, and `#define STK_PAD 0`
+under `__arm__` takes the bytes back if it shows none fewer (ORDER.md). The GCC ARM build (--gcc, the cross GCC) was
+not run: the cross compiler is not installed now (ship-rehearsal-737.sh's order puts it in last).
+
+## Found on the way, the same before and after: the JIT's code has no data-stack bound
+
+On the three JIT roles without the guard gene (small-jit, fastest-x86-32, fastest-x86-64) `: OVF BEGIN 1 0 UNTIL ; OVF`
+dies 139 with nothing on stderr. The interpreter checks dsp against g_dsp_limit; the JIT's compiled code does not, and
+without a guard page the push runs down through everything below the stacks - under strace the first fault is at
+0x3ffff8, just below the engine's first page: the tightened engine is one RWE segment, so its tables, data and code,
+the fault handler's included, were overwritten on the way; the handler then faults (si_addr NULL) and the kernel kills
+it. Iteration 151's symptom, back for JIT code alone - any output still buffered is lost. best-all-round (JIT and
+guard) reports "data stack overflow" correctly. The owner's call (GOALS.md's register): the guard gene on those roles
+(256-448 B, Iteration 251's price), a single PROT_NONE page below the data stack for JIT designs, a dsp check on the
+JIT's loop back-edges, or leave it. `: DEEP RECURSE ;` on best-all-round and the JIT roles loops (124 at 20 s): the
+tail call makes it a jump - by design.

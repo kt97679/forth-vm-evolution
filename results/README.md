@@ -579,3 +579,4 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `applied-data-layout-734/ORDER.md` - The fixed data layout, step 1 (Iteration 734): the engine's small variables on one page by an augmenting linker script (engine/data-layout.ld), the big buffers after - measured, applied.
 - `applied-plain-dump-735/ORDER.md` - The plain design's dump with hashk, chainorder or numfirst (Iteration 735): a dump of its own with their files - found by the rehearsal, fixed, applied.
 - `applied-selfhost-736/ORDER.md` - numfirst and chainorder in the self-hosting compiler, and review-checks.py's curse guarded (Iteration 736) - checked by shipping five designs self-built, applied.
+- `queued-layout2/ORDER.md` - The fixed data layout, step 2 (Iteration 738): the return stack's top on the small variables' page - measured, every trap the same, queued until the series ends (it changes the memory reading).

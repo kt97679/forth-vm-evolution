@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 737.
+- master: Iteration 738.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -445,6 +445,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   needs: CROSS=1's packages first, the clang ARM step before the cross GCC, the gate's verdicts as TRANSLATOR= (from a
   file), a new handoff generator for the new roles. No code changed. **Next: process seed 97** (process-rehearsal-736.sh
   shows the steps); then the series, the roles' follow-up chains, the final build by ship-rehearsal-737.sh's order.
+  **738 (the owner: "proceed with step 2")**: **the data layout's step 2 built and queued** (results/queued-layout2,
+  results/drafts/data-layout2-738.txt): the stacks' chunk 1 KB longer on the return stack's side and first in
+  .bss.hot, so the return stack's top shares the small variables' page - the record's memory 0-8 KB less on the ten
+  roles, about a fault fewer a workload, every stack trap the same (results/drafts/stack-traps-738.sh, x86 and ARM
+  under qemu), no x86 byte, +4 B on every ARM engine. **Not applied: it changes the memory reading - apply it when the
+  series ends, before the final build, and re-measure the shipped roles' memory then.** Found on the way (the same
+  before): the JIT roles without the guard gene die 139 with no message on a runaway data-stack push, the engine
+  overwritten first (GOALS.md's register, the owner's call). NEXT-RUN none (seed 97 runs from iter735's bundle).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
