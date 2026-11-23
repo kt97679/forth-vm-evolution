@@ -12327,3 +12327,23 @@ for byte; against 726 "none of the ten changed"; a swapped smallest (90273721a1 
 wrong record's JIT caught; every gene and expression key documented. Nothing sent.
 Files: results/drafts/jit-guard-739.txt, results/drafts/jit-guard-739.py, results/drafts/jit-guard-slim-739.patch,
 results/drafts/relf-handoff-739.py, results/drafts/relf-handoff-739-test.md; GOALS.md, HANDOFF.md, results/README.md.
+
+## Iteration 740 - 2026-11-22 - Claude
+
+While seed 97 runs (the owner: "do 1 and 2"). **The endgame runbook** (results/drafts/endgame-740.md): the steps left from
+seed 97 to relf's handoff in order - the series and its stopping rule (earliest stop after seed 99), step 2's batch when
+it stops, the roles' follow-up chains (the screen, the guard challengers, the rule, the gate and the rage check), the
+final build in ship-rehearsal-737.sh's order, the handoff by relf-handoff-739.py - each with its command, checks and
+rehearsal, the owner's decisions marked; every file it names exists. **The guard challengers ready**
+(results/candidates-guard-740.md: 7a6c182638, b7a09aec76, fba7d5be3d) and their path rehearsed
+(results/drafts/guard-challengers-740.sh, PASS): with their holders, measure-ids.py at both widths, dream's prebuilt64
+and prebuilt32 lines (xcheck.py's sample and bundle, then --prebuilt - this machine standing in) and loadtest.py, three
+sessions, laid out as chain-sessions.py does, then followup-roles.py's rule: every source 6 of 6, each challenger against
+its holder. Found on the way, two gaps the post-series chain would have hit: xcheck.py's --also takes genomes only from
+results/evolve-*-seed*.md, results/candidates-*.md and the laptop's database - the challengers under another name left
+out (hence the candidates name), and two holders, 9b15ba26f7 and 11f956db93, in none (chains A-C found them in seed 96's
+database) - followup-roles.py refused. Fixed: xcheck.py reads results/relf-designs-*.md too (results/applied-xcheck-740,
+batch-check PASS; seed runs ask for no ids, so seed 98 is unchanged).
+Files: results/drafts/endgame-740.md, results/candidates-guard-740.md, results/drafts/guard-challengers-740.sh,
+results/applied-xcheck-740/ORDER.md, results/applied-xcheck-740/xcheck-holders-740.patch; lab/evolve/xcheck.py,
+GOALS.md, HANDOFF.md, results/README.md.

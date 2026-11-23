@@ -41,7 +41,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 739.
+- master: Iteration 740.
+- **The route to the end: results/drafts/endgame-740.md** - from seed 97 to relf's handoff, every step's command and check.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -463,6 +464,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   notes file (the prose written at the end; results/drafts/relf-handoff-739-test.md the form); against 657 with 726's
   prose its table and genes are 726's byte for byte, against 726 "none of the ten changed", a swapped role found with
   its new gene. Nothing sent; NEXT-RUN none.
+  **740 (the owner: "do 1 and 2")**: **the endgame runbook** (results/drafts/endgame-740.md: the series, step 2's
+  batch, the roles' chains, the final build, the handoff - the owner's decisions marked, every file it names checked) and
+  **the guard challengers ready** (results/candidates-guard-740.md; rehearsed by results/drafts/guard-challengers-740.sh,
+  PASS: measure-ids, dream's two lines stood in for here, loadtest, followup-roles.py's rule on all six). The rehearsal
+  found two gaps the post-series chain would have hit: the challengers' genomes found by the remote lines only under a
+  candidates-*.md name, and two holders (9b15ba26f7, 11f956db93) in no file xcheck.py read - fixed, xcheck.py reads
+  results/relf-designs-*.md (results/applied-xcheck-740, batch-check PASS; seed runs ask for no ids). NEXT-RUN none.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

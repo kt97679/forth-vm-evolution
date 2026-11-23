@@ -1,0 +1,81 @@
+# The endgame - from seed 97 to relf's handoff, in order (Iteration 740)
+
+The owner (727): finish the design evolution, make sure the best designs are found, then one handoff to relf. This is
+every step left, in order, with its command, what it needs and what checks it - each one rehearsed on today's tree
+(the last column). The owner's decisions are marked **[owner]**; the rest is mechanical. Commands from the repository's
+top, as the build user unless marked root. HANDOFF.md stays the card; this is the route.
+
+## 1. The series (seeds 97, 98, ... on the method "from seed 97")
+
+| step | command | checks | rehearsed |
+|---|---|---|---|
+| a seed's archive arrives | HANDOFF.md, "Processing a returned seed": as root the sandbox from the bundle; `setsid nohup sh lab/evolve/process-run.sh ITERATION ...`, judged at "summary"; `sh lab/evolve/process-finish.sh N ITERATION` | process-checks.sh: run-tests, validate 7 of 7, the gate, ans-check, the jail; process-finish names anything missing | 736: results/drafts/process-rehearsal-736.md - every step PASS on a stand-in |
+| the stopping rule | stopping.py (in the summary): a run gains if its hypervolume beats the series' best by 1 % or an extreme by its threshold; stop when, after at least three runs on the method, the last two gain nothing | seed 97 opens the series ("nothing earlier") - so the earliest stop is after seed 99 | 736 |
+| the predictions | seed 97's five (results/predictions.md, 735) scored; the next written before the next run | process-finish.sh asks | every seed |
+| the next run | NEXT-RUN `seed N widths` - **[owner]** the hours | next-run.sh's own checks before it runs | 735 (seed 97's start) |
+
+The gene votes count runs, not series: seed 97's are read with seeds 95-96's (736's note) - a new gene rare on the front
+gathers removal votes early; they stay information until the rule's 11 of 12 over three runs.
+
+## 2. When the series stops - what was held for it
+
+| step | command | checks | rehearsed |
+|---|---|---|---|
+| the data layout's step 2 | `env PENDING=results/queued-layout2 RECORD=1 sh tools/batch-check.sh`, then `git apply results/queued-layout2/data-layout2-after-series.patch`, `git mv` to results/applied-layout2-ITER, `LAYOUTS=1 bash tools/build-stages.sh`, `python3 lab/evolve/evolve.py --validate` | run-tests, validate 7 of 7, the jail; data-layout-check --self-test | 738: batch-check PASS; results/drafts/data-layout2-738.txt |
+| anything else queued then | results/pending/ or another results/queued-*, if present (none besides queued-layout2 at 740) - each by its ORDER.md | its batch-check | - |
+
+Applied before the roles' chains, so the chains measure every candidate's memory on the shipped layout (the records'
+rss change by 0-8 KB; the in-run readings the screen uses are only for choosing candidates).
+
+## 3. The roles chosen again (the follow-up chains, as 705-725)
+
+| step | command | checks | rehearsed |
+|---|---|---|---|
+| the screen's lists | results/drafts/new-roles-705.py adapted to the series' pool (seeds 97..N-1's results files, seed N's database; the ten holders as anchors) -> LIST (the laptop and dream) and ARMLIST (the Tegra) | its counts; every holder in LIST | 705 (chain A) |
+| the guard challengers | append results/candidates-guard-740.md's three lines to LIST (not ARMLIST - JIT designs); keep the file where it is: dream's and the Tegra's lines take genomes for `--also` ids only from results files and results/candidates-*.md | in LIST; measure-ids.py gives their laptop numbers; the remote sample's log says "3 of 3 asked for by id" | 740: results/drafts/guard-challengers-740.sh |
+| chain A (the screen) | NEXT-RUN: `experiment measure-ids.py --ids LIST`, then `loadtest.py --ids LIST --rounds 10` repeated; REMOTES: dream and the Tegra (`--also @FILE` - the ids' genomes from results/evolve-*-seed*.md, results/candidates-*.md and, since 740, results/relf-designs-*.md: a design in none of them is left out) - **[owner]** the hours; the predictions before it | the chain's checks (tests, validate, jail); each remote sample.log's "N of N asked for by id" | 705, 713; 740 (the lookup's two gaps) |
+| its processing | `HANDOFF=results/handoff-relf-726.md PRED=ITER sh lab/evolve/process-followup.sh NAME ITERATION ROLES` (ROLES: fast64=..,fast32=..,allround=..,smalljit=.. and the six portable) | followup-roles.py: each role against its holder by the rule - 1 % smaller, no class 2 % slower, memory within 8 KB; a speed role's challenger 2 % faster at 2 SE | 721 (chainD-rehearsal-721.sh), 740 (followup-roles.py on the challengers) |
+| chains B, C, D as needed | a shortlist of the undecided (chainC-list-714.py's way), the smallest JIT design's band (pool-sizes.py) | the same | 713-725 |
+| the decisions | results/new-roles-ITER.md: each role kept or changed, every near design kept on record; **[owner]** the trades (a design better on one criterion, worse on another) | - | 718 |
+| the guard challengers' outcome | fast64 and fast32 by the rule (they must be 2 % faster; the gain is on the interpreted workloads only, so it may not reach it); small-jit's is larger by 0.75 %, so a trade at best. **[owner]** if none wins: guard as a correctness choice anyway, results/drafts/jit-guard-slim-739.patch (+112-208 B), or leave the gap and tell relf (GOALS.md's register) | - | 739 |
+| the records | results/relf-designs-ITER.md - the ten, one record a line, master's sizes and the laptop's memory (the chain's measure-ids records) | export-designs.py reads it | 718 |
+| the gate and the rage check | a chain carrying `experiment rage-designs.py` (the Tegra: the GCC designs' forth-arm, their self-built images) and lab/evolve/selfhost-speed.py (the laptop: each self-built role against its translator-built image, 5 alternations of 10 rounds, both widths; above 1.02 it ships translator-built) - **[owner]** the hours | rage-designs.md PASS; selfhost-speed.md's ratios | 720-726 |
+
+## 4. The final build (results/drafts/ship-rehearsal-737.sh's order)
+
+| step | command | checks | rehearsed |
+|---|---|---|---|
+| the packages | root: `CROSS=1 sh tools/setup-sandbox.sh` (lld, qemu-user, the armhf libc and libgcc) - before phase 1 | - | 737: without them lld found no ARM libgcc |
+| phase 1 | `sh results/drafts/roles-build-718.sh 1 . results/relf-designs-ITER.md NAMES` - the stages, validate, export-designs.py, export-arm.py (the clang designs) | /tmp/fz/status: build, validate 7 of 7, export, export-arm | 737 |
+| the GCC designs' ARM | root: `apt-get install -y gcc-arm-linux-gnueabihf` (gcc-multilib goes); `python3 lab/evolve/export-arm.py /tmp/fz/designs RECORDS NAMES --gcc arm-linux-gnueabihf-gcc`; root: `apt-get install -y gcc-multilib` | the lab's bytes, running under qemu-arm | 737 (the clang step must come first) |
+| phase 2 | the gate's verdicts into a file (NAME:REASON lines joined by `|`), then `TRANSLATOR="$(cat FILE)" sh results/drafts/roles-build-718.sh 2 . RECORDS NAMES` - selfhost-ship.sh, the designs' make, test, selfhost, 32, libc, pack-designs.py | test ok, selfhost byte for byte, pack-designs 20 of 20 right | 737 (from a file: the reasons hold quotes) |
+| designs/ | the export into designs/ with designs/README.md's table (results/drafts/designs-table-718.py adapted to the chains' readings) and designs/TRANSLATOR-BUILT | relf-handoff-739.py asserts every row against its record | 718, 739 |
+| the package | pack-designs.py's directory tarred: forth-vm-evolution-designs-iterITER.tar.gz; its checksums results/drafts/designs-sha256-ITER.txt | rebuilt byte for byte from the repository | 718, 726 |
+
+## 5. The handoff
+
+| step | command | checks | rehearsed |
+|---|---|---|---|
+| the notes | results/drafts/handoff-notes-ITER.md - "## Changed" (the series 97-N and its genes, the layout's two steps, the roles' chains), "## For relf" (the JIT stack gap's outcome; anything relf should know), "## History" (one paragraph) - results/drafts/relf-handoff-739-test.md is the form | - | 739 |
+| the document | `python3 results/drafts/relf-handoff-739.py --iter ITER --records results/relf-designs-ITER.md --previous results/handoff-relf-726.md --package forth-vm-evolution-designs-iterITER.tar.gz --notes results/drafts/handoff-notes-ITER.md --sha results/drafts/designs-sha256-ITER.txt > results/handoff-relf-ITER.md` | its asserts: every row a record, sizes and memory the record's, the JIT the expression's | 739: 726's table and genes byte for byte; a swapped role found |
+| delivered | the bundle, the package and the handoff to the owner, who sends them to relf - **[owner]**; the held iter726 package and results/handoff-relf-726.md superseded (the history) | make-bundle's handoff check | every iteration |
+
+## 6. After
+
+The article (the owner, 636: the last step, once the search has ended, the designs are frozen and relf has them) -
+article/article-en-draft.md and article-ru-draft.md, every figure recomputed on the final roles.
+
+## Found by rehearsing this route (740)
+
+- The guard challengers under another file name: dream and the Tegra left all three out (no genome) - hence
+  results/candidates-guard-740.md.
+- Two holders, 9b15ba26f7 (fastest-x86-64) and 11f956db93 (fastest-x86-32), in no file xcheck.py read - chains A-C found
+  them in the laptop's seed 96 database only; after the series the follow-up would have measured neither on dream and
+  followup-roles.py refused. Fixed: xcheck.py reads results/relf-designs-*.md (results/applied-xcheck-740).
+
+## What is not settled yet
+
+- How many seeds: the stopping rule's (at least 97-99).
+- Each run's and chain's hours - the owner's.
+- Whether any role changes - the chains'; the guard challengers' outcome - the rule's, then the owner's.
+- The rage check needs the Tegra; the gate needs the laptop; chain A needs dream too.

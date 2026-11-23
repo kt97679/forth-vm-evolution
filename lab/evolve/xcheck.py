@@ -17,7 +17,8 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       RESULTS.md - Iteration 429: in a chain RESULTS.md is the archived run's report.md), after the
       sample - the Tegra's rebuild test of the designs that once failed there (open item 0d); marked
       'asked', reported apart and kept out of the agreement, which is about this front. Iteration 430: genomes
-      from results/candidates-*.md too, and a paired check (--from) takes its pair's asked designs.
+      from results/candidates-*.md too, and a paired check (--from) takes its pair's asked designs; 740: and
+      results/relf-designs-*.md, the roles' records - the holders.
 
   xcheck.py DESIGNS.json OUT.json [--rounds N] [--until EPOCH]
       on the host, in a clone at the same commit, its stages built: the host's
@@ -257,7 +258,9 @@ if '--sample' in ARGS:
         # Iteration 429: the repository's results first - in a chain src is runs/archived-*/build/evolve/report.md,
         # where no results file lies (428's lookup looked only beside it, and would have found none there)
         # Iteration 430: and results/candidates-*.md - designs kept by id that no front holds (a rejected one's genome)
-        for f in sorted(glob.glob(os.path.join(E.ROOT, 'results', 'evolve-*-seed*.md'))) + sorted(glob.glob(os.path.join(E.ROOT, 'results', 'candidates-*.md'))) + sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(src)), 'evolve-*-seed*.md'))):
+        # Iteration 740: and results/relf-designs-*.md - the roles' records: two holders (9b15ba26f7, 11f956db93) are in no
+        # results file, and the laptop's database found them only while it was seed 96's (results/drafts/endgame-740.md)
+        for f in sorted(glob.glob(os.path.join(E.ROOT, 'results', 'evolve-*-seed*.md'))) + sorted(glob.glob(os.path.join(E.ROOT, 'results', 'candidates-*.md'))) + sorted(glob.glob(os.path.join(E.ROOT, 'results', 'relf-designs-*.md'))) + sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(src)), 'evolve-*-seed*.md'))):
             for l in open(f):
                 if l.startswith('{"'):
                     try: r = json.loads(l)
