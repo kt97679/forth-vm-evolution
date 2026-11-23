@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 746.
+- master: Iteration 747.
 - **The route to the end: results/drafts/endgame-740.md** - from seed 97 to relf's handoff, every step's command and check.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
@@ -520,6 +520,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   code**: layout2 + jitguard on master, five interpreted holders' virtual_machine in place, at most one instruction (an
   address) different - the series' readings carry to the roles' screen. Option noted, not proposed: pin
   virtual_machine at 64 (a method change).
+  **747 (the owner: space probes' software)** - results/drafts/space-probes-747.md: the RTX2010 (Philae, ACE), the AGC's
+  interpreter, VML, JWST's onboard JavaScript, MicroPython on LEON, Deep Space 1's REPL, Voyager, the Power of Ten -
+  each here or priced (the free EXIT is `folds`). Kept for relf's handoff: freeze the engines, change the images.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest

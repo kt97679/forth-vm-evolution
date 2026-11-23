@@ -12447,3 +12447,13 @@ results/gen0/seed97.jsonl.gz, results/drafts/scalecheck-746.md, results/drafts/s
 results/drafts/scalecheck-96-97.txt, results/drafts/placement-746.py, results/drafts/placement-746.txt,
 results/drafts/placement-step2-746.txt; results/drafts/early-look-745.md, results/drafts/series-shift-744.py,
 results/evolve-amd-ryzen-7-pro-8840hs-seed97.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 747 - 2026-11-23 - Claude
+
+The owner: "can you find information on space probes software?" - results/drafts/space-probes-747.md, against the
+register (GOALS.md's row): the RTX2010's address-as-call, return bit, short literals and on-chip stacks (Philae, ACE),
+the AGC's interpreter (two 7-bit opcodes a word, interpretive code inline after its call), JPL's VML, JWST's onboard
+JavaScript, ESA's MicroPython OBCPs, Deep Space 1's REPL, Voyager's code relocated in 2024, the Power of Ten's static
+memory, Galileo's onboard compression - each here already or priced. One practice kept for relf's handoff: freeze the
+engines and change the images (746: an engine change re-rolls the interpreted designs' placement).
+Files: results/drafts/space-probes-747.md; GOALS.md, results/README.md, HANDOFF.md.
