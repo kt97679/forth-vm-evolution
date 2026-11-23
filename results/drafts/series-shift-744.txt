@@ -1,0 +1,38 @@
+seed 97 generation 0: 9102 alive
+
+0. seed 97 generation 0 / chain A's laptop readings (chain B's records)
+  JIT      0.934 (IQR 0.898-0.960, n 20)
+    kernel    0.907
+    fib       0.978
+    corpus    0.941
+    loop      0.924
+    bubble    0.893
+    ackermann 0.922
+    apps      1.008
+  not JIT  0.972 (IQR 0.946-1.008, n 40)
+    kernel    0.966
+    fib       1.004
+    corpus    0.965
+    loop      0.964
+    bubble    0.951
+    ackermann 0.983
+    apps      1.001
+  chain A / the fronts' in-run, not JIT (the old in-run readings' optimism): 1.083 (IQR 1.037-1.183, n 12)
+
+1. seed 97 generation 0 / seed 96 re-measured (no curse on either side)
+  all      1.054 (IQR 0.950-1.111, n 66)   (seed 96 in-run / re-measured, its curse: 0.992 (IQR 0.956-1.010, n 66))
+  JIT      0.958 (IQR 0.926-0.998, n 24)   (seed 96 in-run / re-measured, its curse: 0.951 (IQR 0.944-0.965, n 24))
+  not JIT  1.101 (IQR 1.038-1.163, n 42)   (seed 96 in-run / re-measured, its curse: 1.007 (IQR 0.995-1.017, n 42))
+
+2. seed 97 generation 0 / the fronts' in-run readings (seeds 93-96, the newest table for a design)
+  JIT      1.003 (IQR 0.981-1.051, n 434)
+  not JIT  1.084 (IQR 1.025-1.131, n 587)
+  speed 0.121-0.200: 0.991 (IQR 0.976-1.009, n 170), JIT 170
+  speed 0.200-0.264: 1.010 (IQR 0.981-1.061, n 170), JIT 170
+  speed 0.264-0.467: 1.084 (IQR 1.040-1.134, n 170), JIT 65
+  speed 0.468-0.669: 1.049 (IQR 0.996-1.084, n 170), JIT 4
+  speed 0.670-0.877: 1.102 (IQR 1.051-1.137, n 170), JIT 8
+  speed 0.878-1.244: 1.103 (IQR 0.987-1.159, n 170), JIT 17
+
+3. bytes (binary + image + the five programs' code) and memory, seed 97 - own run
+  bytes median -730 (-2136 to -482); memory KB median -16 (-44 to +4); n 1021

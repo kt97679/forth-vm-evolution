@@ -12404,3 +12404,17 @@ applied-known-743, batch-check PASS, applied).
 Files: results/queued-jitguard/ORDER.md, results/queued-jitguard/jit-guard-after-layout2.patch,
 results/applied-known-743/ORDER.md, results/applied-known-743/arm-known-sod16-743.patch; tools/arm-cross-check.py,
 results/drafts/endgame-740.md, GOALS.md, HANDOFF.md, results/README.md.
+
+## Iteration 744 - 2026-11-23 - Claude
+
+Seed 97 processed (results/evolve-amd-ryzen-7-pro-8840hs-seed97.md): 16 hours, 52,332 designs, 169 generations, the
+checks clean (the gate 482 of 482, ans-check 0 of 110, every death an expected class: 8 sod16, 14 cpt16; no stall). It
+opens the series from seed 97 - the hypervolume 0.38185, the fastest 0.1125 (generation 0's carried 9b15ba26f7; the run
+0.02 %), at 32 bits 0.1408, the smallest 21,636 B, the memory 96 KB; the earliest stop after seed 99. The new genes on
+the true front of 422 (lab/evolve/newgenes.py takes GENES= now; results/drafts/newgenes-seed97.txt): hashk 214 (all of
+the smallest tenth), jitdead 125, jitfew 69, numfirst 22, chainorder 16. The new scale (results/drafts/series-shift-744.py,
+.txt): carried designs 0.934 (JIT) and 0.972 of chain A's laptop readings. The held-out code: Spearman 0.709, regret
++14 B (results/drafts/heldout-code-seed97.txt). Predictions 3 of 5; seed 98's written. NEXT-RUN `seed 98 16h widths`.
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed97.md, results/drafts/newgenes-seed97.txt,
+results/drafts/series-shift-744.py, results/drafts/series-shift-744.txt, results/drafts/heldout-code-seed97.txt;
+lab/evolve/newgenes.py, lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF.md.

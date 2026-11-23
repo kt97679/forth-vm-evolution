@@ -1,0 +1,19 @@
+seed 97: 34368 alive (25266 children, generation 1 on), the true front 422 (tenths of 42)
+
+| gene | children with it | the front with it | enrichment | fastest tenth | smallest tenth | leanest tenth | fastest tenth at 32 bits |
+|---|---|---|---|---|---|---|---|
+| jitdead | 29.4% | 125 (29.6%) | 1.01 | 35 | 0 | 0 | 35 |
+| jitfew | 18.9% | 69 (16.4%) | 0.86 | 24 | 0 | 0 | 24 |
+| hashk | 29.9% | 214 (50.7%) | 1.70 | 10 | 42 | 26 | 10 |
+| chainorder | 5.8% | 16 (3.8%) | 0.65 | 3 | 0 | 0 | 3 |
+| numfirst | 9.0% | 22 (5.2%) | 0.58 | 7 | 0 | 0 | 9 |
+
+The pairs - the same expressed genome but for the gene, both alive (on / off; below 1 the gene faster; size on - off, bytes):
+
+| gene | pairs | speed, geometric mean | at 32 bits | of them faster with it | binary + image + app, median | of which app | per workload (median on / off) |
+|---|---|---|---|---|---|---|---|
+| jitdead | 155 | 1.003 | 0.999 | 77 of 155 | -678 | -702 | ackermann 0.994, apps 1.005, bubble 1.000, corpus 0.997, fib 0.999, kernel 1.015, loop 0.997, parse 1.006, sieve 1.003 |
+| jitfew | 208 | 0.992 | 0.995 | 136 of 208 | +400 | +0 | ackermann 0.989, apps 0.997, bubble 0.989, corpus 0.991, fib 0.998, kernel 0.986, loop 0.999, parse 0.996, sieve 0.988 |
+| hashk | 601 | 1.011 | 1.007 | 311 of 601 | -1 | -18 | ackermann 1.006, apps 0.999, bubble 1.001, corpus 0.988, fib 1.005, kernel 1.005, loop 1.008, parse 0.974, sieve 1.010 |
+| chainorder | 500 | 1.003 | 1.015 | 232 of 500 | +113 | +8 | ackermann 1.002, apps 1.001, bubble 1.002, corpus 1.001, fib 1.005, kernel 0.998, loop 1.007, parse 0.963, sieve 1.006 |
+| numfirst | 462 | 1.010 | 1.015 | 194 of 462 | +120 | +0 | ackermann 1.022, apps 1.005, bubble 1.012, corpus 0.950, fib 1.014, kernel 1.010, loop 1.016, parse 0.928, sieve 1.013 |

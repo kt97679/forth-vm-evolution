@@ -8,6 +8,7 @@ on the front it sits (the fastest, smallest and leanest tenths). Then the pairs:
 as expressed the same but for that gene - the in-run speed ratio (on / off, below 1 the gene faster), at both widths,
 the size difference (bytes, exact), and the per-workload ratios' medians. In-run speeds are the run's own single
 measures, so a pair's ratio carries the run's noise; the medians over many pairs do not. Reads only: safe beside a run.
+Iteration 744: GENES=a,b,... another list (the reopened search's five: GENES=jitdead,jitfew,hashk,chainorder,numfirst).
 """
 import collections, json, math, os, re, statistics, sys
 
@@ -17,7 +18,7 @@ DB, RES = sys.argv[1], sys.argv[2]
 m = re.search(r'seed(\d+)', os.path.basename(RES)); SEED = m.group(1) if m else '?'
 sys.argv = ['x']
 import evolve as E
-GENES = ['rtvar', 'rtconst', 'rtinline', 'jitvar', 'jitdoes', 'varslot', 'rtimm']
+GENES = os.environ.get('GENES', 'rtvar,rtconst,rtinline,jitvar,jitdoes,varslot,rtimm').split(',')
 R = {}
 for l in open(DB, errors='replace'):
     try: r = json.loads(l)

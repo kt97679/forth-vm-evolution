@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 743.
+- master: Iteration 744.
 - **The route to the end: results/drafts/endgame-740.md** - from seed 97 to relf's handoff, every step's command and check.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
@@ -492,6 +492,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   70; every other engine byte for byte - SA_ONSTACK only under X_JIT; batch-check with BASE PASS); Thumb-2 per ARM role
   when the Tegra shows no loss; s1-sod16's ARM reach in arm-cross-check.py's KNOWN (results/applied-known-743, applied);
   the outliner and the paper candidates a later search's. NEXT-RUN none.
+  **744: seed 97 processed** (results/evolve-amd-ryzen-7-pro-8840hs-seed97.md): 52,332 designs, 169 generations (14.5 h),
+  the checks clean (the gate 482 of 482, ans-check 0 of 110, deaths all expected - 8 sod16, 14 cpt16, no stall); **it
+  opens the series** - the hypervolume 0.38185, the fastest 0.1125 (in generation 0: 9b15ba26f7, carried; the run moved it
+  0.02 %), at 32 bits 0.1408, the smallest 21,636 B, the memory 96 KB; the earliest stop after seed 99. The new genes on
+  the true front (422): hashk 214 - all 42 of the smallest tenth -, jitdead 125, jitfew 69, numfirst 22, chainorder 16;
+  pairs: jitdead -678 B at the same speed, the lookup genes corpus/parse 0.93-0.99 and ~1.01 overall
+  (results/drafts/newgenes-seed97.txt). **The new scale**: carried designs read 0.934 (JIT) / 0.972 (the rest) of chain
+  A's laptop readings - so seed 96's figures do not compare (results/drafts/series-shift-744.txt; seed 96's own end
+  re-measure of the portable fast end is off from both by ~10 %, not explained). Predictions 3 of 5 (both misses took a
+  pre-batch bar). **NEXT-RUN: `seed 98 16h widths`** (743's rule); then process it as this one.
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
@@ -617,7 +627,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 97's five (Iteration 735) - scored when it is processed. Scored: the rage check again and portable-fastest's
+- **Predictions due** (results/predictions.md): seed 98's five (Iteration 744) - scored when it is processed. Scored: seed 97's (735) 3 of 5; the rage check again and portable-fastest's
   gate (725) 3 of 3; chain D's (717-720) 4 of 7, one void; chain C's (714) 4 of 8; chain B's (714) 7 of 8; chain A's (713) 6 of 6; the rage
   check's (654) 1 of 1; the final check's (648-649) 2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the

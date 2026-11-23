@@ -1656,3 +1656,27 @@ below seed 96's 0.1190 - 40/60 (the series edged 0.8-1.3 % a run; the five genes
 more of the true front at the last generation - 55/45 (the selection's instructions 0.944-0.999 on the portable and
 smallest roles, the corpus 0.71-0.99; mutation reaches it about 1 % of the time, some hundreds of tries in a run). (5)
 The smallest below 22,409 B - 15/85 (unmoved since seed 94's generation 4; each new gene adds bytes).
+
+**Scored at seed 97 (Iteration 744)**, results/evolve-amd-ryzen-7-pro-8840hs-seed97.md: (1) right - the deaths 8 sod16
+(apps: shellmix past its 128 KB DOES> reach, 693), 14 cpt16 (application size, the 16-bit reach) and the 2 frozen
+founders; 7 of the 22 had a new gene on, each its family's reach all the same (deaths-check: every death of an expected
+class, none to rebuild); no stall, no time-out. (2) right - 96 KB (generation 23). (3) wrong - 0.1125 already in generation 0
+(9b15ba26f7, carried); the run itself moved it 0.02 %. The new series' scale: the carried designs read 0.934 (JIT) and
+0.972 (the rest) of chain A's laptop readings of the same designs (results/drafts/series-shift-744.txt) - seed 96's
+0.1190 was on the old scale. (4) right, barely - numfirst on 22 of 422 (5.2 %; enrichment 0.58). (5) wrong - 21,636 B;
+22,409 was seed 96's, before the after-seed-96 batch's smaller engines (713: every engine 482-2,224 B smaller) -
+generation 0's carried designs already 21,666 B, the run 30 bytes more. Both wrong ones took a pre-batch, pre-fixenv
+figure for the bar. Seed 97's: 3 of 5.
+
+## Seed 98, the new series' second run (16 hours - the owner's rule, 743; both widths) - predicted (Iteration 744)
+
+Seed 97's method unchanged; the newest four databases carried (seed 97's among them). (1) The stopping rule: seed 98
+gains on seed 97 by at least one criterion at its last generation (the bars: the hypervolume 0.38567, the fastest
+0.1102, the smallest 21,420 B, the memory 88 KB, at 32 bits 0.1380) - 25/75 (seed 97 moved the fastest 0.02 %, at 32
+bits 0.9 %, the smallest 30 B; its hypervolume 0.3745 at generation 10 to 0.3830 at 90, then flat; seed 93, the old
+series' second run, gained only by the extremes' 2.2 %). (2) The deaths only the 16-bit families' reach and the frozen
+founders - 80/20 (seed 97 clean; seeds 94 and 96 each had a stall). (3) hashk on half the true front or more, and on
+every design of its smallest tenth - 70/30 (214 of 422 and 42 of 42 at seed 97; enrichment 1.70). (4) numfirst on 5 %
+or more of the true front - 40/60 (5.2 % at seed 97, below its children's 9.0 %; its pairs 1.010 of the speed for
++120 B). (5) The curse, the fastest tenth re-measured / in-run, its median between 1.05 and 1.10 - 75/25 (seeds 92-97
+1.056-1.097).
