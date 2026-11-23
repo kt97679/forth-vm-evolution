@@ -14,6 +14,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `compare-fronts-amd-ryzen-7-pro-8840hs.md` - every comparison session: the fronts of all runs measured again together, judged by the five measures.
 - `predictions.md` - the predictions written before each run, then scored.
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
+- `gen0/README.md` - every run's generation-0 readings since seed 97, one extract a run (Iteration 746; lab/evolve/scalecheck.py --extract): the next run's scale check compares against it.
 - `evolve-amd-ryzen-7-pro-8840hs-seedN.md` - each run, seeds 1-76 (none for seed 48, the owner's choice; Iteration 384 brought this line from 47): the verdict and the facts, then the pack's report with every front design's genome (the gate, ans-check and the other tools read genomes from these).
 - `seed63-rules.md` - Seed 63's decisions, the rules written before its results (Iterations 430-431, adopted): ten rules and the gene rule - a gene out only after three runs unused, no front design depending on it, frozen off for a run first.
 - `gene-votes.md` - The gene votes, run by run (from Iteration 432): each gene's four removal votes a run - under 10% of the front, in none of its fastest, smallest, best-Q tenths - appended at each processing from seed 63 on; results/seed63-rules.md says how they count.
@@ -576,6 +577,7 @@ The drafts also hold scripts and patches - the work behind some of these, kept w
 - `drafts/endgame-740.md` - The endgame from seed 97 to relf's handoff, in order (Iteration 740): each step's command, needs, checks and rehearsal; the owner's decisions marked.
 - `drafts/small-vms-742.md` - Small VMs' and interpretable code compression's techniques against the register (Iteration 742): Java Card, RPL, PostScript, MicroPython, eLua; Proebsting, BRISC, Evans and Fraser - nothing for now, two paper candidates.
 - `drafts/early-look-745.md` - Two looks while seed 98 runs (Iteration 745): the roles after seed 97 alone by each role's rule (a forecast: the knee, the smallest and least-memory likely to change), and seed 96's re-measure gap traced to a step on the laptop around 2026-11-19.
+- `drafts/scalecheck-746.md` - The scale between runs (Iteration 746): lab/evolve/scalecheck.py validated (one code 0.998; the series boundary JIT 0.984, the rest 1.061), the boundary's step the code's placement (instructions the same), step 2 moving no x86 code; 744's and 745's readings corrected.
 - `applied-hashk-730/ORDER.md` - The gene hashk (Iteration 730): the chain hash with one constant, after the demoscene's crinkler - the patch, how it was checked, applied.
 - `applied-hashk-cross-731/ORDER.md` - hashk in the self-hosting compiler (Iteration 731): HASH8, G-HASHK and THASH - three hashk designs self-built at both widths.
 - `applied-chainorder-732/ORDER.md` - The gene chainorder (Iteration 732): each chain's most looked-up names first, forward links their own form - converter-only, measured, applied.

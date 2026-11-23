@@ -3,6 +3,8 @@
 scale against the old one, from seed 97's generation 0: the carried designs (the fronts of seeds 93-96, measured again
 in seed 97's generation 0 before any selection in it) against earlier readings of the same designs.
 
+  (746: superseded - chain A's readings are not on the runs' scale; lab/evolve/scalecheck.py compares two runs'
+     generation 0, results/drafts/scalecheck-746.md)
   0. against chain A's laptop readings (CHAINB: results/followup-seed96-roles-b.md, whose records carry them - 5
      sessions, before the after-seed-96 batch) - the reference: no selection on either side;
   1. against seed 96's re-measured fast end (the front table's 're-measured' column: 6 rounds after the run);

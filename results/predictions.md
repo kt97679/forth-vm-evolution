@@ -1663,7 +1663,8 @@ founders; 7 of the 22 had a new gene on, each its family's reach all the same (d
 class, none to rebuild); no stall, no time-out. (2) right - 96 KB (generation 23). (3) wrong - 0.1125 already in generation 0
 (9b15ba26f7, carried); the run itself moved it 0.02 %. The new series' scale: the carried designs read 0.934 (JIT) and
 0.972 (the rest) of chain A's laptop readings of the same designs (results/drafts/series-shift-744.txt) - seed 96's
-0.1190 was on the old scale. (4) right, barely - numfirst on 22 of 422 (5.2 %; enrichment 0.58). (5) wrong - 21,636 B;
+0.1190 was on the old scale. (746: on the runs' own measure the JIT designs 0.984 of seed 96's generation 0 - the
+score stands; results/drafts/scalecheck-746.md.) (4) right, barely - numfirst on 22 of 422 (5.2 %; enrichment 0.58). (5) wrong - 21,636 B;
 22,409 was seed 96's, before the after-seed-96 batch's smaller engines (713: every engine 482-2,224 B smaller) -
 generation 0's carried designs already 21,666 B, the run 30 bytes more. Both wrong ones took a pre-batch, pre-fixenv
 figure for the bar. Seed 97's: 3 of 5.

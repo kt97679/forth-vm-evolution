@@ -1,0 +1,15 @@
+f0ab9ee997-67767161 -> f0ab9ee997-7081f965
+  instructions on the input 53,298,443 -> 53,298,118 (-325); engine 6696 -> 5952 B
+  virtual_machine at 0x400400 (line offset 0) -> 0x4003e2 (34); 747 -> 744 instructions, 95 differ, the first at +146
+c15ec6a706-67767161 -> c15ec6a706-7081f965
+  instructions on the input 25,009,818 -> 25,009,520 (-298); engine 11112 -> 10416 B
+  virtual_machine at 0x4003eb (line offset 43) -> 0x4003d1 (17); 1944 -> 1943 instructions, 20 differ, the first at +5492
+e2b7c31a92-67767161 -> e2b7c31a92-7081f965
+  instructions on the input 27,395,351 -> 27,395,054 (-297); engine 10184 -> 9504 B
+  virtual_machine at 0x4003eb (line offset 43) -> 0x4003d1 (17); 1673 -> 1672 instructions, 19 differ, the first at +4985
+d9c6d1587f-67767161 -> d9c6d1587f-7081f965
+  instructions on the input 33,833,100 -> 33,838,207 (+5107); engine 8520 -> 7910 B
+  virtual_machine at 0x400aaa (line offset 42) -> 0x400731 (49); 1089 -> 1078 instructions, 382 differ, the first at +2
+08e3517f54-67767161 -> 08e3517f54-7081f965
+  instructions on the input 36,257,293 -> 36,257,293 (+0); engine 17820 -> 17286 B
+  virtual_machine at 0x400fa0 (line offset 32) -> 0x400ec0 (0); 2927 -> 2926 instructions, 108 differ, the first at +1189

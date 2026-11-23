@@ -77,6 +77,14 @@ if [ -n "$SP" ]; then
     python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
     p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'
     fi
+    if [ -n "${VN:-}" ]; then     # Iteration 746: the scale against the last run (scalecheck.py), then this run's extract for the next
+        PG=; for x in "$REPO"/results/gen0/seed*.jsonl.gz; do n=$(basename "$x" | sed -n 's/^seed\([0-9]*\)\.jsonl\.gz$/\1/p')
+            [ -n "$n" ] && [ "$n" -lt "$VN" ] && { [ -z "$PG" ] || [ "$n" -gt "$PN" ]; } && { PG=$x; PN=$n; }; done
+        if [ -n "$PG" ]; then python3 "$EV/scalecheck.py" "$PG" "$SP/db.jsonl" > scalecheck.txt 2>&1
+            p ""; p "## scalecheck.py (scalecheck.txt) - seed $PN's generation 0 against this run's, the designs carried into both: one series reads 0.99-1.01 (seeds 95 -> 96 0.998); outside, a step carries into the stopping rule's speeds"; p '```'; cut -c1-300 scalecheck.txt >> "$S"; p '```'
+        else p ""; p "## scalecheck.py - not run: no earlier results/gen0/seed*.jsonl.gz"; fi
+        python3 "$EV/scalecheck.py" --extract "$SP/db.jsonl" "$REPO/results/gen0/seed$VN.jsonl.gz" >> scalecheck.txt 2>&1 || p "scalecheck.py --extract failed (scalecheck.txt)"
+    fi
     python3 "$EV/lifted.py" "$SP/db.jsonl" > lifted.txt 2>&1   # Iteration 557: the freezes lifted at 556, on the true front
     p ""; p "## lifted.py (lifted.txt) - the freezes lifted at 556 on the true front; prediction 556"; p '```'; grep -v '^|---' lifted.txt | cut -c1-300 >> "$S"; p '```'
     python3 "$EV/review-checks.py" rules "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > rules.txt 2>&1   # Iteration 438

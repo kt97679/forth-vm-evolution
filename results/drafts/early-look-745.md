@@ -25,6 +25,9 @@ memory), two possible, hashk on most of the small-end challengers.
 
 ## Seed 96's re-measure against chain A and seed 97 - a step on the laptop
 
+**Superseded by results/drafts/scalecheck-746.md (Iteration 746)**: the kernel was the same throughout and the machine's
+drift cancels; chain A's readings are the odd ones, and the boundary's step is the code's placement. Kept as written.
+
 results/drafts/series-shift-744.txt found seed 96's end-of-run re-measure of its portable fast end ~10 % off seed 97's
 generation 0, while chain A's laptop readings agree with seed 97. Checked here:
 

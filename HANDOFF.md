@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 745.
+- master: Iteration 746.
 - **The route to the end: results/drafts/endgame-740.md** - from seed 97 to relf's handoff, every step's command and check.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
@@ -498,17 +498,28 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   0.02 %), at 32 bits 0.1408, the smallest 21,636 B, the memory 96 KB; the earliest stop after seed 99. The new genes on
   the true front (422): hashk 214 - all 42 of the smallest tenth -, jitdead 125, jitfew 69, numfirst 22, chainorder 16;
   pairs: jitdead -678 B at the same speed, the lookup genes corpus/parse 0.93-0.99 and ~1.01 overall
-  (results/drafts/newgenes-seed97.txt). **The new scale**: carried designs read 0.934 (JIT) / 0.972 (the rest) of chain
-  A's laptop readings - so seed 96's figures do not compare (results/drafts/series-shift-744.txt). Predictions 3 of 5
+  (results/drafts/newgenes-seed97.txt). **The new scale** (corrected at 746): seed 96's generation 0 against this
+  one's, JIT 0.984 and the rest 1.061 - seed 96's figures do not compare. Predictions 3 of 5
   (both misses took a pre-batch bar). **NEXT-RUN: `seed 98 16h widths`** (743's rule; running since 2026-11-23); then
   process it as this one.
   **745 (seed 98 running; the owner: both looks in this chat)** - results/drafts/early-look-745.md: **the roles after
   seed 97 alone** (results/drafts/roles-early-745.py, .txt - a forecast, the chains decide): fastest-x86-64 holds; the
   knee (178 by the rule, 2-3 % smaller), the smallest (196 hashk designs 37 B smaller, none slower - 649's precedent)
   and least-memory (designs at 100 KB faster than the holder's old record) likely to change; portable-fastest and
-  small-jit one challenger each; the screen's lists 663 / 383. **The re-measure gap**: not a stale file nor the chain's
-  measure - seeds 93-96 read the portable designs ~8 % faster against s6 than chain A on the same code, seed 97 like
-  chain A: a step on the laptop around 2026-11-19 (cause there; Linux 6.17.0-1033-oem now). Nothing depends on it.
+  small-jit one challenger each; the screen's lists 663 / 383. Its re-measure-gap part superseded by 746.
+  **746 (seed 98 running; the owner sent seeds 95's and 96's packs and his laptop's kernels)** - results/drafts/
+  scalecheck-746.md. **lab/evolve/scalecheck.py**: two runs' generation 0, the designs carried into both read twice
+  unselected - one code 0.998 (seeds 95 -> 96, every time 2-3 % faster alike: the machine's drift, which the ratio takes
+  out); the series boundary JIT 0.984, the rest 1.061. **Now in every processing**: process-seed.sh compares the newest
+  earlier results/gen0/seed*.jsonl.gz with the run (summary.md's scalecheck.py section, beside stopping.py - within a
+  series expect 0.99-1.01) and writes the run's own extract (about 1 MB; process-finish commits it - name it in the
+  PROGRESS entry). results/gen0/seed97.jsonl.gz is seed 98's reference. **The boundary's step is code placement**: the
+  after-seed-96 batch shrank every engine, so each interpreter moved in its cache line - 5 designs' instructions on loop
+  the same (cachegrind), clang -Os' loop 1.256 (0.975 on one code); the carried designs' placements had been chosen
+  lucky. The kernel the same in every pack (Nov 12-23); chain A's readings are the odd ones (open). **Step 2 moves no x86
+  code**: layout2 + jitguard on master, five interpreted holders' virtual_machine in place, at most one instruction (an
+  address) different - the series' readings carry to the roles' screen. Option noted, not proposed: pin
+  virtual_machine at 64 (a method change).
   **718 (the owner, on the three choices: "no strong opinions - the most reasonable way, not losing any good designs")**:
   each decided by the chains' own rule (1 % smaller, no class 2 % slower, memory within 8 KB; 649's precedent for the
   smallest) - results/new-roles-718.md: **smallest 219878ec89** (the 23 smaller all trades), **portable-fastest
@@ -653,7 +664,8 @@ Three commands, the judgment between them (Iteration 560; each step's detail and
    tools/wait-for.sh /tmp/process-run/status 'summary|DONE|STOP'` - the archive unpacked and checked, the results
    drafted, the batch checked and applied, the checks on master, the control. At "summary" read /tmp/process/summary.md
    and judge while the rest runs: the stopping rule (stopping.py; GOALS.md), the verdict from both CPUs, the predictions
-   scored and the next written (results/predictions.md), the results file's TODO lines, the spread's session; NEXT-RUN
+   scored and the next written (results/predictions.md), the results file's TODO lines, the spread's session, the
+   scale check (summary.md's scalecheck.py section: 0.99-1.01 within a series, else the speeds carry a step - 746); NEXT-RUN
    (the owner's hours), this card, the PROGRESS entry; at DONE /tmp/process-checks/heldout-code.txt (the held-out programs'
    code on the front, 698) for the results file. Run nothing as claude while the status's last line says "jail".
    A detached job dies when the turn ends (the sandbox suspends; /tmp stays - 561): start it early, see it to DONE in

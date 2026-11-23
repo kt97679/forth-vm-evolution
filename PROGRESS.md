@@ -12431,3 +12431,19 @@ read the portable designs ~8 % faster against s6 than chain A on the same code (
 Files: results/drafts/early-look-745.md, results/drafts/roles-early-745.py, results/drafts/roles-early-745.txt;
 results/drafts/series-shift-744.py, results/drafts/series-shift-744.txt, results/evolve-amd-ryzen-7-pro-8840hs-seed97.md,
 HANDOFF.md, lab/evolve/NEXT-RUN (none: seed 98 running), results/README.md.
+
+## Iteration 746 - 2026-11-23 - Claude
+
+While seed 98 runs (the owner sent seeds 95's and 96's packs and his laptop's kernels) - results/drafts/scalecheck-746.md.
+lab/evolve/scalecheck.py: two runs' generation 0, the designs carried into both - one code 0.998 (seeds 95 -> 96), the
+series boundary JIT 0.984 and the rest 1.061 (results/drafts/scalecheck-95-96.txt, results/drafts/scalecheck-96-97.txt).
+Now in process-seed.sh beside stopping.py, against the newest earlier results/gen0/seed*.jsonl.gz, and writing the run's
+own extract (rehearsed on seed 97's archive). The boundary's step is code placement, not instructions
+(results/drafts/placement-746.py, .txt: five designs at seed 96's tree and the batch's); step 2's patches move no x86
+code (results/drafts/placement-step2-746.txt). The kernel was the same in every pack: 745's "a step on the laptop" and
+744's chain-A scale corrected where they stand.
+Files: lab/evolve/scalecheck.py, lab/evolve/process-seed.sh, lab/evolve/README.md, results/gen0/README.md,
+results/gen0/seed97.jsonl.gz, results/drafts/scalecheck-746.md, results/drafts/scalecheck-95-96.txt,
+results/drafts/scalecheck-96-97.txt, results/drafts/placement-746.py, results/drafts/placement-746.txt,
+results/drafts/placement-step2-746.txt; results/drafts/early-look-745.md, results/drafts/series-shift-744.py,
+results/evolve-amd-ryzen-7-pro-8840hs-seed97.md, results/predictions.md, results/README.md, HANDOFF.md.

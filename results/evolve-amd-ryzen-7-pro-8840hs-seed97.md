@@ -68,7 +68,7 @@ corpus 0.988); chainorder 1.003 for +113 (parse 0.963); numfirst 1.010 for +120 
 workloads 1.005-1.022). The lookup genes pay in time where the rehearsal counted instructions (corpus, parse; 735) and
 little or nothing on the whole; hashk's place is the small end, where its bytes decide.
 
-**The new series' scale** (results/drafts/series-shift-744.py, its output .txt): the carried designs, measured again
+**The new series' scale** - corrected at 746 (results/drafts/scalecheck-746.md): on the runs' own measure, seed 96's generation 0 against this one's (7,117 designs in both), the JIT designs 0.984 and the rest 1.061 - the rest's step the code's placement (the batch shrank every engine; the instructions the same; clang -Os most: 1.088). As first written, against chain A, whose readings are not on the runs' scale (results/drafts/series-shift-744.py, its output .txt): the carried designs, measured again
 in generation 0, against chain A's laptop readings of the same designs (5 sessions, before the after-seed-96 batch):
 the JIT designs 0.934 (20; kernel 0.907, bubble 0.893, apps 1.008), the rest 0.972 (40; apps 1.001) - the new series
 reads 3-7 % faster against s6, so its extremes do not compare with seeds 92-96's (as 727 said: a new series). The old
